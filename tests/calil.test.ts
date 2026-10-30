@@ -211,3 +211,45 @@ describe("表示する館の指定", () => {
     ).toBe("工学部図書館");
   });
 });
+
+describe("calilStatus", () => {
+  it("貸出可があれば available", async () => {
+    const { summarizeCalil } = await import("../src/domain/calilStatus");
+    const branches = [
+      { configured: true, state: "貸出可" },
+      { configured: true, state: "貸出中" },
+    ] as never;
+    expect(
+      summarizeCalil({
+        branches,
+        checkedAt: "2026-10-30T15:00:00+09:00",
+        library: "x",
+      })
+    ).toMatchObject({
+      hits: 1,
+      state: "available",
+      total: 2,
+    });
+  });
+
+  it("7日を超えたら要確認", async () => {
+    const { calilBadgeText, isCalilStale, summarizeCalil } = await import(
+      "../src/domain/calilStatus"
+    );
+    const summary = summarizeCalil({
+      branches: [{ configured: true, state: "貸出可" }] as never,
+      checkedAt: "2026-10-20T00:00:00+09:00",
+      library: "x",
+    });
+    const now = new Date("2026-10-30T00:00:00+09:00");
+    expect(isCalilStale(summary, now)).toBe(true);
+    expect(calilBadgeText(summary, now)).toBe("要確認");
+  });
+
+  it("未確認は数字を出さない", async () => {
+    const { calilBadgeText, emptyCalilSummary } = await import(
+      "../src/domain/calilStatus"
+    );
+    expect(calilBadgeText(emptyCalilSummary(), new Date())).toBe("未確認");
+  });
+});

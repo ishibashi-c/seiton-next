@@ -2,6 +2,8 @@ import type { Plugin } from "obsidian";
 
 export interface SeitonCommandsHost {
   bulkEditBooks: () => void;
+  embedBookCovers: () => void;
+  makePlaceholderCovers: () => void;
   newPromptSession: () => void;
   openActiveWebClipPreview: () => void;
   openAddBook: () => void;
@@ -109,6 +111,16 @@ export function registerCommands(
     callback: () => void host.runCalilBulk(),
     id: "calil-bulk-search",
     name: "カーリルで一括検索",
+  });
+  plugin.addCommand({
+    callback: () => host.makePlaceholderCovers(),
+    id: "make-placeholder-covers",
+    name: "表紙が無い本に仮表紙を作る",
+  });
+  plugin.addCommand({
+    callback: () => host.embedBookCovers(),
+    id: "embed-book-covers",
+    name: "表紙をノートに埋め込む",
   });
   plugin.addCommand({
     callback: () => void host.openCoverCacheForAll(),

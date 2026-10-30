@@ -1,15 +1,23 @@
 const GOOGLE_BOOKS_API = "https://www.googleapis.com/books/v1/volumes";
 
-/** Google Booksの検索URL。表紙とISBNだけに絞ってレスポンスを小さくする。 */
+/** 表紙だけを取るときのフィールド。レスポンスを小さく保つ。 */
+const COVER_FIELDS = "items(volumeInfo(industryIdentifiers,imageLinks))";
+
+/** 書誌も取るときのフィールド。 */
+export const BOOK_FIELDS =
+  "items(volumeInfo(title,authors,publisher,publishedDate,industryIdentifiers,imageLinks))";
+
+/** Google Booksの検索URL。 */
 export function googleBooksSearchUrl(
   query: string,
   apiKey: string,
   country = "JP",
-  maxResults = 10
+  maxResults = 10,
+  fields = COVER_FIELDS
 ): string {
   const params = new URLSearchParams({
     country,
-    fields: "items(volumeInfo(industryIdentifiers,imageLinks))",
+    fields,
     key: apiKey.trim(),
     maxResults: String(maxResults),
     q: query,
@@ -100,6 +108,69 @@ export function googleBooksCoverUrl(
     if (url) {
       return url;
     }
+  }
+  return null;
+}
+
+export interface GoogleBookCandidate {
+  authors: string[];
+  coverUrl: string;
+  published: string;
+  publisher: string;
+  title: string;
+}
+
+/**
+ * 検索結果から、ISBNが一致する最初の1件を書誌として取り出す。
+ * 一致するものが無ければ null（ISBNが違う本を登録しないため）。
+ */
+export function googleBooksCandidate(
+  payload: unknown,
+  isbn: string
+): GoogleBookCandidate | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+  const items = (payload as { items?: unknown }).items;
+  if (!Array.isArray(items)) {
+    return null;
+  }
+  for (const item of items) {
+    if (!itemMatchesIsbn(item, isbn)) {
+      continue;
+    }
+    const volumeInfo = (item as { volumeInfo?: unknown }).volumeInfo;
+    if (!volumeInfo || typeof volumeInfo !== "object") {
+      continue;
+    }
+    const info = volumeInfo as Record<string, unknown>;
+    const title = typeof info.title === "string" ? info.title.trim() : "";
+    if (title === "") {
+      continue;
+    }
+    const authors = Array.isArray(info.authors)
+      ? info.authors
+          .filter((value): value is string => typeof value === "string")
+          .map((value) => value.trim())
+          .filter((value) => value !== "")
+      : [];
+    const links = info.imageLinks;
+    const coverUrl =
+      links && typeof links === "object"
+        ? (imageLink((links as Record<string, unknown>).large) ??
+          imageLink((links as Record<string, unknown>).medium) ??
+          imageLink((links as Record<string, unknown>).thumbnail) ??
+          "")
+        : "";
+    return {
+      authors,
+      coverUrl,
+      published:
+        typeof info.publishedDate === "string" ? info.publishedDate.trim() : "",
+      publisher:
+        typeof info.publisher === "string" ? info.publisher.trim() : "",
+      title,
+    };
   }
   return null;
 }

@@ -56,6 +56,35 @@ export function toSeitonError(
   });
 }
 
+/**
+ * HTTPステータスを、利用者に意味の通る日本語へ言い換える。
+ * 数字そのものは内部（detail・ログ）に残し、画面には出さない。
+ */
+export function httpStatusHint(status: number): string {
+  if (status === 400) {
+    return "リクエストの内容が受け付けられませんでした";
+  }
+  if (status === 401) {
+    return "認証が必要です。APIキーを確認してください";
+  }
+  if (status === 403) {
+    return "アクセスが拒否されました。APIキーか利用制限を確認してください";
+  }
+  if (status === 404) {
+    return "見つかりませんでした";
+  }
+  if (status === 408 || status === 504) {
+    return "応答が返ってきませんでした";
+  }
+  if (status === 429) {
+    return "回数制限に達しました。しばらく待ってから試してください";
+  }
+  if (status >= 500) {
+    return "相手先のサービスで問題が起きています。時間をおいて試してください";
+  }
+  return "通信できませんでした";
+}
+
 /** UI表示用。内部エラーの詳細はログへ、画面には短い説明を出す。 */
 export function userMessageOf(error: unknown): string {
   if (isSeitonError(error)) {

@@ -14,6 +14,7 @@ import {
   VIEW_TYPE_PROMPT,
   VIEW_TYPE_TSUBUYAKI,
 } from "./config";
+import { embedCoverInDocument, hasCoverEmbed } from "./domain/book";
 import { isSeitonError } from "./domain/errors";
 import { parseSharedWebText } from "./domain/webclip";
 import {
@@ -25,7 +26,9 @@ import { SeitonBookshelfView } from "./platform/bookshelfView";
 import { BulkIsbnModal } from "./platform/bulkIsbnModal";
 import { CalilBulkModal } from "./platform/calilBulkModal";
 import { registerCommands } from "./platform/commands";
+import { ConfirmModal } from "./platform/confirmModal";
 import { CoverCacheModal } from "./platform/coverCacheModal";
+import { renderPlaceholderCover } from "./platform/coverPlaceholder";
 import { registerFormatting } from "./platform/formatting";
 import { SeitonHomeView } from "./platform/homeView";
 import { SeitonLibraryView } from "./platform/libraryView";
@@ -110,6 +113,7 @@ export default class SeitonNextPlugin extends Plugin {
       index: this.indexService,
       logError,
       properties: this.properties,
+      renderPlaceholderCover,
     });
     this.migration = new MigrationService({
       logError,
@@ -249,6 +253,8 @@ export default class SeitonNextPlugin extends Plugin {
 
     registerCommands(this, {
       bulkEditBooks: () => void this.bulkEditBooks(),
+      embedBookCovers: () => void this.embedBookCovers(),
+      makePlaceholderCovers: () => void this.makePlaceholderCovers(),
       newPromptSession: () => void this.newPromptSession(),
       openActiveWebClipPreview: () => this.openActiveWebClipPreview(),
       openAddBook: () => this.openAddBook(),
@@ -340,6 +346,77 @@ export default class SeitonNextPlugin extends Plugin {
   private async runCalilBulk(): Promise<void> {
     const records = await this.books.listBooks();
     this.openCalilBulk(records);
+  }
+
+  /** 表紙が無い本に、書名入りの仮表紙を作って割り当てる。 */
+  private async makePlaceholderCovers(): Promise<void> {
+    const index = await this.indexService.get();
+    const targets = index.notes.filter(
+      (note) =>
+        note.kind === "book" &&
+        (note.book.book_cover ?? "").trim() === "" &&
+        (note.book.book_isbn ?? "").trim() !== ""
+    );
+    if (targets.length === 0) {
+      new Notice("表紙が無い本はありません。");
+      return;
+    }
+    new ConfirmModal(this.app, {
+      confirmingLabel: "作る",
+      message: `${targets.length}冊に仮表紙を作ります。`,
+      onConfirm: async () => {
+        let done = 0;
+        for (const note of targets) {
+          const ok = await this.books.applyPlaceholderCover(note);
+          if (ok) {
+            done += 1;
+          }
+        }
+        new Notice(`${done}冊に仮表紙を作りました。`);
+        this.indexService.invalidate();
+      },
+      title: "仮表紙を作る",
+    }).open();
+  }
+
+  /** 既存の本の本文先頭に、保存済みの表紙をまとめて埋め込む。 */
+  private async embedBookCovers(): Promise<void> {
+    const index = await this.indexService.get();
+    const targets: { cover: string; file: TFile }[] = [];
+    for (const note of index.notes) {
+      const cover = (note.book.book_cover ?? "").trim();
+      if (note.kind !== "book" || cover === "") {
+        continue;
+      }
+      const file = this.app.vault.getAbstractFileByPath(note.path);
+      if (!(file instanceof TFile)) {
+        continue;
+      }
+      const text = await this.app.vault.read(file);
+      if (!hasCoverEmbed(text, cover)) {
+        targets.push({ cover, file });
+      }
+    }
+    if (targets.length === 0) {
+      new Notice("表紙はすべて埋め込み済みです。");
+      return;
+    }
+    new ConfirmModal(this.app, {
+      confirmingLabel: "埋め込む",
+      message: `${targets.length}冊のノート本文の先頭に表紙を追加します。`,
+      onConfirm: async () => {
+        let done = 0;
+        for (const target of targets) {
+          await this.app.vault.process(target.file, (data) =>
+            embedCoverInDocument(data, target.cover)
+          );
+          done += 1;
+        }
+        new Notice(`${done}冊に表紙を埋め込みました。`);
+        this.indexService.invalidate();
+      },
+      title: "表紙をノートに埋め込む",
+    }).open();
   }
 
   private async openCoverCacheForAll(): Promise<void> {

@@ -185,3 +185,57 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Calil: last checked state on cards and in the detail modal */
+.seiton-book-card-calil,
+.seiton-calil-saved {
+  align-items: baseline;
+  display: flex;
+  gap: 4px;
+}
+
+.seiton-calil-badge {
+  font-size: var(--st-text-2xs);
+  font-weight: 500;
+}
+
+.seiton-calil-badge.is-available {
+  color: var(--st-data);
+}
+
+.seiton-calil-badge.is-late,
+.seiton-calil-badge.is-loaned,
+.seiton-calil-badge.is-unknown {
+  color: var(--st-muted);
+}
+
+.seiton-calil-when,
+.seiton-calil-saved-note {
+  color: var(--st-muted);
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-calil-branches {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.seiton-calil-branch {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.seiton-calil-branch-name {
+  color: var(--st-ink);
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-calil-branch-state {
+  color: var(--st-muted);
+  font-size: var(--st-text-2xs);
+  white-space: nowrap;
+}

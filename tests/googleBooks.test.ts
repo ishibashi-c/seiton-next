@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  googleBooksCandidate,
   googleBooksCoverUrl,
   googleBooksSearchUrl,
 } from "../src/domain/googleBooks";
@@ -86,5 +87,45 @@ describe("googleBooksCoverUrl", () => {
   it("画像がない場合はnull", () => {
     expect(googleBooksCoverUrl({ items: [{ volumeInfo: {} }] })).toBeNull();
     expect(googleBooksCoverUrl({})).toBeNull();
+  });
+});
+
+describe("googleBooksCandidate", () => {
+  const payload = {
+    items: [
+      {
+        volumeInfo: {
+          authors: ["深澤直人"],
+          imageLinks: {
+            thumbnail: "//books.google.com/books/content?id=x&zoom=1",
+          },
+          industryIdentifiers: [
+            { identifier: "9784887062603", type: "ISBN_13" },
+          ],
+          publishedDate: "2005-12",
+          publisher: "TOTO出版",
+          title: "デザインの輪郭",
+        },
+      },
+    ],
+  };
+
+  it("ISBNが一致する書誌を取り出す", () => {
+    const found = googleBooksCandidate(payload, "9784887062603");
+    expect(found).toEqual({
+      authors: ["深澤直人"],
+      coverUrl: "https://books.google.com/books/content?id=x&zoom=1",
+      published: "2005-12",
+      publisher: "TOTO出版",
+      title: "デザインの輪郭",
+    });
+  });
+
+  it("ISBNが一致しなければ null", () => {
+    expect(googleBooksCandidate(payload, "9780000000000")).toBeNull();
+  });
+
+  it("items が無ければ null", () => {
+    expect(googleBooksCandidate({}, "9784887062603")).toBeNull();
   });
 });

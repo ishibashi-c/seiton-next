@@ -1,7 +1,7 @@
 import type { App } from "obsidian";
 import { Modal, Notice } from "obsidian";
 import type { BookCandidate } from "../domain/book";
-import { mapWithConcurrency } from "../domain/concurrency";
+import { mapWithConcurrency, sleep } from "../domain/concurrency";
 import { parseIsbnList } from "../domain/isbnBatch";
 import type { BookService } from "../services/bookService";
 
@@ -138,7 +138,7 @@ export class BulkIsbnModal extends Modal {
     );
 
     let done = 0;
-    await mapWithConcurrency(this.rows, 2, async (row) => {
+    await mapWithConcurrency(this.rows, 1, async (row) => {
       if (this.closed) {
         return;
       }
@@ -167,6 +167,8 @@ export class BulkIsbnModal extends Modal {
       done += 1;
       this.setStatus(`確認中 ${done}/${this.rows.length}`);
       this.renderRows();
+      // 外部APIのレート制限を避けるため、1件ずつ間隔を空ける。
+      await sleep(300);
     });
 
     this.busy = false;

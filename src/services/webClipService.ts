@@ -4,7 +4,7 @@ import Defuddle from "defuddle/full";
 import type { App } from "obsidian";
 import { normalizePath } from "obsidian";
 import { NOTES_FOLDER } from "../config";
-import { userMessageOf } from "../domain/errors";
+import { httpStatusHint, userMessageOf } from "../domain/errors";
 import { buildFrontmatter, yamlQuoted } from "../domain/frontmatter";
 import { domainOf, normalizeSourceUrl } from "../domain/network";
 import { sanitizeNoteTitle } from "../domain/notes";
@@ -158,7 +158,7 @@ export class WebClipService {
     }
     if (response.status < 200 || response.status >= 300) {
       throw new WebClipError(
-        `URLの取得に失敗しました（HTTP ${response.status}）。`
+        `URLを取得できませんでした。${httpStatusHint(response.status)}。`
       );
     }
     const contentType = headerValue(response.headers, "content-type");
@@ -205,7 +205,7 @@ export class WebClipService {
     }
     if (response.status < 200 || response.status >= 300) {
       throw new WebClipError(
-        `ページの取得に失敗しました（HTTP ${response.status}）。`
+        `ページを取得できませんでした。${httpStatusHint(response.status)}。`
       );
     }
     const contentType = headerValue(response.headers, "content-type");

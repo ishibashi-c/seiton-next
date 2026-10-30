@@ -24,3 +24,10 @@ export async function mapWithConcurrency<T, R>(
   await Promise.all(runners);
   return results;
 }
+
+/** 連続リクエストの間隔を空けるための待機。 */
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}

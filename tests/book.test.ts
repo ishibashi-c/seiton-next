@@ -756,3 +756,72 @@ describe("カーリル実レスポンス", () => {
     });
   });
 });
+
+describe("表紙の埋め込み", () => {
+  const base = [
+    "---",
+    "kind: book",
+    'book_cover: "Seiton/System/Assets/Covers/9784887062603.jpg"',
+    "---",
+    "",
+    "感想",
+    "",
+  ].join("\n");
+  const cover = "Seiton/System/Assets/Covers/9784887062603.jpg";
+
+  it("本文の先頭に1行だけ入れる", async () => {
+    const { embedCoverInDocument, hasCoverEmbed } = await import(
+      "../src/domain/book"
+    );
+    const result = embedCoverInDocument(base, cover);
+    expect(result).toContain(`![[${cover}|240]]\n\n感想`);
+    expect(hasCoverEmbed(result, cover)).toBe(true);
+  });
+
+  it("二度実行しても増えない", async () => {
+    const { embedCoverInDocument } = await import("../src/domain/book");
+    const once = embedCoverInDocument(base, cover);
+    expect(embedCoverInDocument(once, cover)).toBe(once);
+  });
+});
+
+describe("メモ欄から表紙を除く", () => {
+  const cover = "Seiton/System/Assets/Covers/1.jpg";
+  const body = `![[${cover}|240]]\n\n感想\n`;
+
+  it("読み込み時に表紙行を落とす", async () => {
+    const { stripCoverEmbed } = await import("../src/domain/book");
+    expect(stripCoverEmbed(body, cover)).toBe("感想");
+  });
+
+  it("保存時に表紙行を戻す", async () => {
+    const { withCoverEmbed } = await import("../src/domain/book");
+    expect(withCoverEmbed("感想", cover)).toBe(`![[${cover}|240]]\n\n感想`);
+  });
+
+  it("表紙が無ければ何もしない", async () => {
+    const { stripCoverEmbed, withCoverEmbed } = await import(
+      "../src/domain/book"
+    );
+    expect(stripCoverEmbed("感想", "")).toBe("感想");
+    expect(withCoverEmbed("感想", "")).toBe("感想");
+  });
+});
+
+describe("代替表紙の判定", () => {
+  it("既知のハッシュを弾く", async () => {
+    const { isPlaceholderHash } = await import("../src/domain/coverQuality");
+    expect(
+      isPlaceholderHash(
+        "a9af512c1e52ed9cafd06b8f212bf13940976703ee3a38573df558e28ce31a21"
+      )
+    ).toBe(true);
+    expect(isPlaceholderHash("deadbeef")).toBe(false);
+  });
+
+  it("灰色で一様な画像は表紙ではない", async () => {
+    const { isLikelyPlaceholder } = await import("../src/domain/coverQuality");
+    expect(isLikelyPlaceholder({ saturation: 0.01, stddev: 8 })).toBe(true);
+    expect(isLikelyPlaceholder({ saturation: 0.3, stddev: 40 })).toBe(false);
+  });
+});

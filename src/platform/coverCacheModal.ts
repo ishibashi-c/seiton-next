@@ -1,6 +1,6 @@
 import type { App } from "obsidian";
 import { Modal, Notice } from "obsidian";
-import { mapWithConcurrency } from "../domain/concurrency";
+import { mapWithConcurrency, sleep } from "../domain/concurrency";
 import { type CoverCacheAnalysis, formatBytes } from "../domain/coverCache";
 import type { BookService } from "../services/bookService";
 import type { CoverStore } from "../services/coverStore";
@@ -232,7 +232,7 @@ export class CoverCacheModal extends Modal {
     let done = 0;
     let downloaded = 0;
     this.setStatus(`再取得中 0/${missing.length}`);
-    await mapWithConcurrency(missing, 2, async (record) => {
+    await mapWithConcurrency(missing, 1, async (record) => {
       if (this.closed) {
         return;
       }
@@ -246,6 +246,7 @@ export class CoverCacheModal extends Modal {
       }
       done += 1;
       this.setStatus(`再取得中 ${done}/${missing.length}`);
+      await sleep(250);
     });
     this.busy = false;
     this.onDone();

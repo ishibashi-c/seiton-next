@@ -10,6 +10,11 @@ import {
   DEFAULT_BOOK_FILTERS,
   filterBooks,
 } from "../domain/bookshelf";
+import {
+  calilBadgeText,
+  calilCheckedLabel,
+  calilSummaryFromFrontmatter,
+} from "../domain/calilStatus";
 import type { NoteRecord, VaultIndexService } from "../services/vaultIndex";
 import { renderBookCoverFallback, resolveCover } from "./bookCover";
 import { makeCardClickable } from "./cardClick";
@@ -366,6 +371,19 @@ export class SeitonBookshelfView extends ItemView {
       .join(" · ");
     if (state) {
       body.createDiv({ cls: "seiton-book-card-state", text: state });
+    }
+    // 直近のカーリル結果をカードに出す。未確認の本には何も足さない。
+    const calil = calilSummaryFromFrontmatter(record.frontmatter);
+    if (calil.checkedAt !== "") {
+      const line = body.createDiv({ cls: "seiton-book-card-calil" });
+      line.createSpan({
+        cls: `seiton-calil-badge is-${calil.state}`,
+        text: calilBadgeText(calil, new Date()),
+      });
+      const when = calilCheckedLabel(calil.checkedAt);
+      if (when !== "") {
+        line.createSpan({ cls: "seiton-calil-when", text: ` ${when}` });
+      }
     }
     const actions = body.createDiv({ cls: "seiton-item-actions" });
     const detail = actions.createEl("button", {

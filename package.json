@@ -1,6 +1,6 @@
 {
   "name": "seiton-next",
-  "version": "0.4.5",
+  "version": "0.4.12",
   "description": "Seiton Next - personal capture and rediscovery plugin for Obsidian",
   "private": true,
   "type": "module",

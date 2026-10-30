@@ -56,9 +56,14 @@ import {
   calilLibraryUrl,
   parseCalilLibrarySelection,
 } from "../domain/calil";
-import { isSeitonError } from "../domain/errors";
+import type { CalilSummary } from "../domain/calilStatus";
+import type { ImageStats } from "../domain/coverQuality";
+import { isLikelyPlaceholder, isPlaceholderHash } from "../domain/coverQuality";
+import { httpStatusHint, isSeitonError } from "../domain/errors";
 import { bodyAfterFrontmatter, frontmatterField } from "../domain/frontmatter";
 import {
+  BOOK_FIELDS,
+  googleBooksCandidate,
   googleBooksCoverUrl,
   googleBooksSearchUrl,
 } from "../domain/googleBooks";
@@ -87,6 +92,11 @@ export interface BookServiceOptions {
   logError?: (context: string, error: unknown) => void;
   now?: () => Date;
   properties?: PropertyService;
+  /** 表紙を取得できなかったときに、仮表紙を描く関数。 */
+  renderPlaceholderCover?: (input: {
+    author: string;
+    title: string;
+  }) => Promise<ArrayBuffer | null>;
 }
 
 export type BookLookupAttemptStatus = "ok" | "empty" | "error";
@@ -168,6 +178,76 @@ export interface CalilSearchResult {
 const SEARCH_TEXT_LIMIT = 20_000;
 const EXCERPT_LIMIT = 180;
 
+/** SHA-256を16進で返す。Googleの代替画像の判定に使う。 */
+async function sha256Hex(buffer: ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * 画像を32x32に縮小し、彩度と明度のばらつきを測る。
+ * DOMが無い環境（テスト）では null。
+ */
+async function measureImageStats(
+  buffer: ArrayBuffer
+): Promise<ImageStats | null> {
+  if (typeof Image === "undefined" || typeof document === "undefined") {
+    return null;
+  }
+  const url = URL.createObjectURL(new Blob([buffer], { type: "image/jpeg" }));
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error("decode failed"));
+      element.src = url;
+    });
+    const size = 32;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return null;
+    }
+    context.drawImage(image, 0, 0, size, size);
+    const { data } = context.getImageData(0, 0, size, size);
+    let sum = 0;
+    let sumSquares = 0;
+    let saturation = 0;
+    let count = 0;
+    for (let index = 0; index < data.length; index += 4) {
+      const r = data[index] ?? 0;
+      const g = data[index + 1] ?? 0;
+      const b = data[index + 2] ?? 0;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      sum += luminance;
+      sumSquares += luminance * luminance;
+      saturation += max === 0 ? 0 : (max - min) / max;
+      count += 1;
+    }
+    if (count === 0) {
+      return null;
+    }
+    const mean = sum / count;
+    return {
+      saturation: saturation / count,
+      stddev: Math.sqrt(Math.max(0, sumSquares / count - mean * mean)),
+    };
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+const COVER_PLACEHOLDER_ERROR =
+  "表紙が見つかりませんでした（提供元の代替画像のため保存しません）。";
+
 function bookIoError(
   message: string,
   error: unknown,
@@ -235,6 +315,12 @@ function sortBooks(records: NoteRecord[]): NoteRecord[] {
 }
 
 export class BookService {
+  private readonly renderPlaceholderCover:
+    | ((input: {
+        author: string;
+        title: string;
+      }) => Promise<ArrayBuffer | null>)
+    | undefined;
   private readonly app: App;
   private readonly calilInfoCache = new Map<string, CalilLibraryInfo[]>();
   private readonly getSettings: () =>
@@ -257,6 +343,7 @@ export class BookService {
     this.logError = options.logError;
     this.now = options.now ?? (() => new Date());
     this.properties = options.properties ?? new PropertyService(options.app);
+    this.renderPlaceholderCover = options.renderPlaceholderCover;
   }
 
   // -------------------------------------------------------------------------
@@ -310,6 +397,12 @@ export class BookService {
     const attempts: BookLookupAttempt[] = [];
     const lookedUpAt = formatLocalIso(this.now());
 
+    // APIキーがあるときは Google Books を最初に試す。ISBNが一致したものだけ使う。
+    const google = await this.lookupGoogle(isbn, attempts);
+    if (google) {
+      return { attempts, candidate: google, isbn, lookedUpAt };
+    }
+
     const openBd = await this.lookupOpenBd(isbn, attempts);
     if (openBd) {
       return { attempts, candidate: openBd, isbn, lookedUpAt };
@@ -317,6 +410,59 @@ export class BookService {
 
     const openLibrary = await this.lookupOpenLibrary(isbn, attempts);
     return { attempts, candidate: openLibrary, isbn, lookedUpAt };
+  }
+
+  /** Google BooksでISBNを引き、書誌と表紙URLをまとめて得る。キー未設定なら何もしない。 */
+  private async lookupGoogle(
+    isbn: string,
+    attempts: BookLookupAttempt[]
+  ): Promise<BookCandidate | null> {
+    const apiKey = (this.getSettings?.()?.googleBooksApiKey ?? "").trim();
+    if (apiKey === "") {
+      return null;
+    }
+    try {
+      const response = await this.http.get(
+        googleBooksSearchUrl(`isbn:${isbn}`, apiKey, "JP", 5, BOOK_FIELDS)
+      );
+      if (response.status !== 200) {
+        attempts.push({
+          message: httpStatusHint(response.status),
+          source: "googlebooks",
+          status: "error",
+        });
+        return null;
+      }
+      const found = googleBooksCandidate(response.json, isbn);
+      if (!found) {
+        attempts.push({
+          message: "登録がありませんでした",
+          source: "googlebooks",
+          status: "empty",
+        });
+        return null;
+      }
+      return {
+        authors: found.authors,
+        category: "",
+        coverUrl: found.coverUrl,
+        isbn,
+        published: found.published,
+        publisher: found.publisher,
+        series: "",
+        source: "googlebooks",
+        title: found.title,
+        volume: "",
+      };
+    } catch (error) {
+      attempts.push({
+        message: httpStatusHint(0),
+        source: "googlebooks",
+        status: "error",
+      });
+      this.logError?.("book.googleBooksLookup", error);
+      return null;
+    }
   }
 
   private async lookupOpenBd(
@@ -327,7 +473,7 @@ export class BookService {
       const response = await this.http.get(openBdLookupUrl(isbn));
       if (response.status !== 200) {
         attempts.push({
-          message: `HTTP ${response.status}`,
+          message: httpStatusHint(response.status),
           source: "openbd",
           status: "error",
         });
@@ -375,7 +521,7 @@ export class BookService {
       }
       if (response.status !== 200) {
         attempts.push({
-          message: `HTTP ${response.status}`,
+          message: httpStatusHint(response.status),
           source: "openlibrary",
           status: "error",
         });
@@ -503,6 +649,15 @@ export class BookService {
           coverError = fetched.error;
         }
       }
+    }
+
+    if (cover === "" && isbn !== "") {
+      cover =
+        (await this.writePlaceholderCover(
+          isbn,
+          input.title,
+          parseAuthors(input.authors).join(" / ")
+        )) ?? "";
     }
 
     const document = buildBookDocument({
@@ -653,6 +808,108 @@ export class BookService {
   }
 
   // -------------------------------------------------------------------------
+  // カーリル
+  // -------------------------------------------------------------------------
+
+  /**
+   * カーリルの結果を「本の状態」として保存する。
+   * 要約は frontmatter（同期される）、館の詳細は Vault 内のJSONに置く。
+   */
+  async saveCalilState(
+    path: string,
+    isbn: string,
+    summary: CalilSummary,
+    branches: CalilBranch[]
+  ): Promise<void> {
+    await this.properties.update(path, {
+      calil_checked: summary.checkedAt === "" ? null : summary.checkedAt,
+      calil_hits: summary.hits,
+      calil_library: summary.library === "" ? null : summary.library,
+      calil_state: summary.state,
+      calil_total: summary.total,
+    });
+
+    const folder = "Seiton/System/Calil";
+    await this.ensureFolder(folder);
+    const target = normalizePath(`${folder}/${isbn}.json`);
+    const payload = `${JSON.stringify({ ...summary, branches }, null, 2)}\n`;
+    const existing = this.app.vault.getAbstractFileByPath(target);
+    if (existing instanceof TFile) {
+      await this.app.vault.modify(existing, payload);
+    } else {
+      await this.app.vault.create(target, payload);
+    }
+    this.index?.invalidate();
+  }
+
+  /** 保存済みの館の詳細を読む。無ければ null。 */
+  async readCalilDetail(isbn: string): Promise<CalilBranch[] | null> {
+    const target = normalizePath(`Seiton/System/Calil/${isbn}.json`);
+    const file = this.app.vault.getAbstractFileByPath(target);
+    if (!(file instanceof TFile)) {
+      return null;
+    }
+    try {
+      const parsed = JSON.parse(await this.app.vault.read(file)) as {
+        branches?: unknown;
+      };
+      return Array.isArray(parsed.branches)
+        ? (parsed.branches as CalilBranch[])
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** 表紙が無い本に仮表紙を割り当てる。成功したら true。 */
+  async applyPlaceholderCover(record: NoteRecord): Promise<boolean> {
+    const isbn = record.book.book_isbn ?? "";
+    if (isbn === "") {
+      return false;
+    }
+    const path = await this.writePlaceholderCover(
+      isbn,
+      record.title,
+      record.book.book_author ?? ""
+    );
+    if (path === "") {
+      return false;
+    }
+    await this.updateBook(record.path, { cover: path });
+    return true;
+  }
+
+  /** 仮表紙を描いて保存し、そのパスを返す。描けなければ空文字。 */
+  private async writePlaceholderCover(
+    isbn: string,
+    title: string,
+    author: string
+  ): Promise<string> {
+    if (!this.renderPlaceholderCover) {
+      return "";
+    }
+    try {
+      const bytes = await this.renderPlaceholderCover({ author, title });
+      if (bytes === null) {
+        return "";
+      }
+      const path = bookCoverPath(isbn);
+      await this.ensureFolder(BOOK_COVERS_FOLDER);
+      const target = normalizePath(path);
+      const existing = this.app.vault.getAbstractFileByPath(target);
+      if (existing instanceof TFile) {
+        await this.app.vault.modifyBinary(existing, bytes);
+      } else {
+        await this.app.vault.createBinary(target, bytes);
+      }
+      return path;
+    } catch (error) {
+      this.logError?.("book.placeholderCover", error);
+      return "";
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // 表紙
   // -------------------------------------------------------------------------
 
@@ -679,6 +936,10 @@ export class BookService {
 
   /**
    * 表紙を `Seiton/System/Assets/Covers/{ISBN}.jpg` へ保存する。
+   *
+   * 取得元は openBD の cover、Google Books API、Open Library の3つだけ。
+   * 国立国会図書館などの外部サイトから直接取得しない（利用条件が不明確で、
+   * 依存先を増やしたくないため）。
    * 5MB上限・画像Content-Typeのみ。失敗は例外にせず結果で返す。
    */
   async fetchCover(
@@ -717,7 +978,7 @@ export class BookService {
         return {
           bytes: 0,
           downloaded: false,
-          error: `表紙を取得できませんでした（HTTP ${response.status}）。`,
+          error: `表紙を取得できませんでした。${httpStatusHint(response.status)}。`,
           path,
         };
       }
@@ -767,6 +1028,26 @@ export class BookService {
           bytes,
           downloaded: false,
           error: "表紙画像が見つかりませんでした。",
+          path,
+        };
+      }
+
+      // 提供元の「表紙なし」画像を表紙として保存しない。
+      const buffer = response.arrayBuffer;
+      if (isPlaceholderHash(await sha256Hex(buffer))) {
+        return {
+          bytes,
+          downloaded: false,
+          error: COVER_PLACEHOLDER_ERROR,
+          path,
+        };
+      }
+      const stats = await measureImageStats(buffer);
+      if (stats && isLikelyPlaceholder(stats)) {
+        return {
+          bytes,
+          downloaded: false,
+          error: COVER_PLACEHOLDER_ERROR,
           path,
         };
       }
@@ -874,7 +1155,7 @@ export class BookService {
       if (response.status !== 200) {
         throw new BookError(
           "BOOK_IO",
-          `カーリルの検索に失敗しました（HTTP ${response.status}）。`
+          `カーリルの検索に失敗しました。${httpStatusHint(response.status)}。`
         );
       }
       payload = parseCalilPayload(response.text);

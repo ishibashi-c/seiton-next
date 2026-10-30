@@ -26,7 +26,9 @@ import {
   READING_STATUSES,
   type ReadingStatus,
   replaceBookBody,
+  stripCoverEmbed,
   trimBookBody,
+  withCoverEmbed,
 } from "../domain/book";
 import {
   type CalilBranch,
@@ -35,6 +37,13 @@ import {
   calilLibraryPageUrl,
   calilMapUrl,
 } from "../domain/calil";
+import {
+  type CalilSummary,
+  calilBadgeText,
+  calilCheckedLabel,
+  calilSummaryFromFrontmatter,
+  summarizeCalil,
+} from "../domain/calilStatus";
 import { userMessageOf } from "../domain/errors";
 import { bodyAfterFrontmatter } from "../domain/frontmatter";
 import { isAllowedRemoteUrl } from "../domain/network";
@@ -296,7 +305,12 @@ export class AddBookModal extends Modal {
       }
       this.coverUrl = candidate.coverUrl;
 
-      const source = candidate.source === "openbd" ? "openBD" : "Open Library";
+      const source =
+        candidate.source === "openbd"
+          ? "openBD"
+          : candidate.source === "googlebooks"
+            ? "Google Books"
+            : "Open Library";
       this.setStatus(
         `書誌を取得しました（${source}）。内容を確認して保存してください。`
       );
@@ -377,6 +391,13 @@ export class BookDetailModal extends Modal {
   private statusEl: HTMLElement | null = null;
   private coverEl: HTMLElement | null = null;
   private calilEl: HTMLElement | null = null;
+  private calilSummary: CalilSummary = {
+    checkedAt: "",
+    hits: 0,
+    library: "",
+    state: "unknown",
+    total: 0,
+  };
   private memoInput: TextAreaComponent | null = null;
   private saveButton: ButtonComponent | null = null;
   private coverButton: ButtonComponent | null = null;
@@ -425,6 +446,8 @@ export class BookDetailModal extends Modal {
     this.renderFields();
     this.renderActions();
     this.calilEl = this.contentEl.createDiv({ cls: "seiton-book-calil" });
+    this.calilSummary = calilSummaryFromFrontmatter(this.record.frontmatter);
+    this.renderCalilSaved();
     this.statusEl = this.contentEl.createDiv({
       cls: "seiton-book-modal-status",
     });
@@ -626,6 +649,9 @@ export class BookDetailModal extends Modal {
       .onClick(() => {
         void this.searchCalil();
       });
+    new ButtonComponent(actions).setButtonText("ノートを開く").onClick(() => {
+      void this.app.workspace.openLinkText(this.record.path, "", false);
+    });
   }
 
   private renderFooter(): void {
@@ -674,7 +700,10 @@ export class BookDetailModal extends Modal {
       if (!this.openState) {
         return;
       }
-      const body = trimBookBody(bodyAfterFrontmatter(content));
+      const body = stripCoverEmbed(
+        trimBookBody(bodyAfterFrontmatter(content)),
+        this.coverPath
+      );
       const edited = this.memo !== this.initialMemo;
       this.initialMemo = body;
       if (!edited) {
@@ -744,13 +773,92 @@ export class BookDetailModal extends Modal {
     try {
       const result = await this.bookService.searchCalil(this.isbn);
       this.renderCalilResult(result);
-      this.setStatus(`カーリルを照会しました（${result.fetchedAt} 時点）`);
+      this.calilSummary = summarizeCalil({
+        branches: result.branches,
+        checkedAt: result.fetchedAt,
+        library: result.configuredLibrary,
+      });
+      if (this.isbn !== "") {
+        await this.bookService.saveCalilState(
+          this.record.path,
+          this.isbn,
+          this.calilSummary,
+          result.branches
+        );
+      }
+      this.setStatus(
+        `カーリルを照会し、本棚に反映しました（${result.fetchedAt} 時点）`
+      );
     } catch (error) {
       const message = userMessageOf(error);
       this.renderCalilMessage(message, true);
       this.setStatus(message, true);
     } finally {
       this.setBusy(false);
+    }
+  }
+
+  /** frontmatter に保存されている「前回の結果」と、保存済みの館を出す。 */
+  private renderCalilSaved(): void {
+    const container = this.calilEl;
+    if (!container) {
+      return;
+    }
+    container.empty();
+    const top = container.createDiv({ cls: "seiton-book-calil-top" });
+    top.createDiv({ cls: "seiton-book-calil-title", text: "蔵書を調べる" });
+
+    const line = container.createDiv({ cls: "seiton-calil-saved" });
+    line.createSpan({
+      cls: `seiton-calil-badge is-${this.calilSummary.state}`,
+      text: calilBadgeText(this.calilSummary, new Date()),
+    });
+    if (this.calilSummary.checkedAt === "") {
+      line.createSpan({
+        cls: "seiton-calil-saved-note",
+        text: " まだ調べていません。「カーリル照会」で確認できます",
+      });
+      return;
+    }
+    line.createSpan({
+      cls: "seiton-calil-saved-note",
+      text: ` ${this.calilSummary.hits}館が貸出可 / 調べた${this.calilSummary.total}館 · 最終確認 ${calilCheckedLabel(this.calilSummary.checkedAt)}`,
+    });
+    void this.renderCalilBranches();
+  }
+
+  /** 保存済みの館を、貸出可の順に数件だけ出す。 */
+  private async renderCalilBranches(): Promise<void> {
+    if (this.isbn === "") {
+      return;
+    }
+    const branches = await this.bookService.readCalilDetail(this.isbn);
+    const container = this.calilEl;
+    if (!branches || branches.length === 0 || !container) {
+      return;
+    }
+    const available = branches.filter((branch) =>
+      branch.state.includes("貸出可")
+    );
+    const shown = (available.length > 0 ? available : branches).slice(0, 3);
+    const list = container.createDiv({ cls: "seiton-calil-branches" });
+    for (const branch of shown) {
+      const row = list.createDiv({ cls: "seiton-calil-branch" });
+      row.createSpan({
+        cls: "seiton-calil-branch-name",
+        text: branch.formal || branch.systemname || branch.systemid,
+      });
+      row.createSpan({
+        cls: "seiton-calil-branch-state",
+        text: branch.state,
+      });
+    }
+    const rest = branches.length - shown.length;
+    if (rest > 0) {
+      list.createDiv({
+        cls: "seiton-calil-saved-note",
+        text: `ほか${rest}館（カーリルで見る）`,
+      });
     }
   }
 
@@ -938,7 +1046,7 @@ export class BookDetailModal extends Modal {
       throw new Error(`本のノートがありません: ${this.record.path}`);
     }
     await this.app.vault.process(file, (data) =>
-      replaceBookBody(data, this.memo)
+      replaceBookBody(data, withCoverEmbed(this.memo, this.coverPath))
     );
     this.initialMemo = this.memo;
   }

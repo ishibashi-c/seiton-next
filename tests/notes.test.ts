@@ -75,3 +75,15 @@ describe("昇格ノートの生成", () => {
     expect(isPromotableKind("memo-log")).toBe(false);
   });
 });
+
+describe("sanitizeNoteTitle と絵文字", () => {
+  it("Dropboxが拒否する絵文字をファイル名から除く", () => {
+    expect(sanitizeNoteTitle("ito✖️駄菓子")).toBe("ito駄菓子");
+    expect(sanitizeNoteTitle("🎉パーティー🍣")).toBe("パーティー");
+    expect(sanitizeNoteTitle("a🍣b")).toBe("ab");
+  });
+
+  it("絵文字を除いた結果が空なら既定名にする", () => {
+    expect(sanitizeNoteTitle("🍣")).toBe("一言メモ");
+  });
+});

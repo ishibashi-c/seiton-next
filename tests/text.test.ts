@@ -10,3 +10,14 @@ describe("decodeHtmlEntities", () => {
     expect(decodeHtmlEntities("A & B")).toBe("A & B");
   });
 });
+
+describe("httpStatusHint", () => {
+  it("代表的なステータスを日本語の理由に変える", async () => {
+    const { httpStatusHint } = await import("../src/domain/errors");
+    expect(httpStatusHint(401)).toContain("APIキー");
+    expect(httpStatusHint(404)).toBe("見つかりませんでした");
+    expect(httpStatusHint(429)).toContain("回数制限");
+    expect(httpStatusHint(503)).toContain("時間をおいて");
+    expect(httpStatusHint(418)).toBe("通信できませんでした");
+  });
+});

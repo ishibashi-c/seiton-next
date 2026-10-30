@@ -78,10 +78,22 @@ export function titleFromMemoBody(body: string): string {
 }
 
 /** Obsidian のファイル名・内部リンクで問題になる文字を避ける。 */
+/**
+ * Dropbox は絵文字を含むファイル名を拒否する（"Dropbox does not support emoji
+ * in file / folder names"）。同期が止まるため、ファイル名からは取り除く。
+ */
+const FILENAME_EMOJI =
+  /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{20E3}]/gu;
+
+/** 絵文字の連結に使われるゼロ幅接合子。文字クラスには入れられない。 */
+const FILENAME_JOINER = /\u200D/gu;
+
 export function sanitizeNoteTitle(value: string): string {
   let title = normalizeNewlines(value)
     .replace(/[\\/:*?"<>|#^[\]]/gu, "-")
     .replace(/[\u0000-\u001f\u007f]/gu, "")
+    .replace(FILENAME_EMOJI, "")
+    .replace(FILENAME_JOINER, "")
     .replace(/\s+/gu, " ")
     .trim()
     .replace(/^[.\s]+|[.\s]+$/gu, "");
