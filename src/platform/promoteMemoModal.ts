@@ -4,14 +4,7 @@
  */
 
 import type { App } from "obsidian";
-import {
-  ButtonComponent,
-  Component,
-  MarkdownRenderer,
-  Modal,
-  Setting,
-  type TextComponent,
-} from "obsidian";
+import { Component, MarkdownRenderer, Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { titleFromMemoBody } from "../domain/notes";
 import type {
@@ -19,6 +12,8 @@ import type {
   MemoService,
   PromoteMemoResult,
 } from "../services/memoService";
+import { markSeitonModal } from "./ui/modal";
+import { ButtonComponent, Setting, type TextComponent } from "./ui/setting";
 
 const KIND_OPTIONS: Record<string, string> = {
   class: "授業",
@@ -53,6 +48,7 @@ export class PromoteMemoModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-promote-modal");
     this.setTitle("ノート化");
 

@@ -1,3 +1,4 @@
+import { showToast } from "../ui/toast";
 /**
  * ホームのショートカット一覧。
  * 保存先は設定ではなく Vault 内のノート1枚（`Seiton/System/Links.md`）で、
@@ -5,7 +6,7 @@
  */
 
 import type { App } from "obsidian";
-import { Notice, normalizePath, setIcon, TFile } from "obsidian";
+import { normalizePath, setIcon, TFile } from "obsidian";
 import type { LinkEditStatus, LinkEntry } from "../../domain/linkList";
 import {
   addGroup,
@@ -435,7 +436,7 @@ export class HomeShortcuts {
       moveLinkToGroup(content, source, name)
     );
     if (edit.status === "updated") {
-      new Notice(`「${name}」へ移しました。`);
+      showToast(`「${name}」へ移しました。`);
       await this.reload();
     }
   }
@@ -471,7 +472,7 @@ export class HomeShortcuts {
   private notify(status: LinkEditStatus, label: string): void {
     const message = statusMessage(status, label);
     if (message) {
-      new Notice(message);
+      showToast(message);
     }
   }
 

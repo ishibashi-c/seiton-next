@@ -1,0 +1,555 @@
+/* --------------------------------------------------------------------------
+   Seiton UI components
+   Modal shell,
+fields,
+select,
+switch,
+check,
+buttons and toasts.
+   Every value comes from the --st-* tokens; no new colours.
+   -------------------------------------------------------------------------- */
+
+.st-modal.st-modal{
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 18%);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-interface);
+  max-height: min(84vh, 900px);
+  padding: 0;
+  width: min(640px, 92vw);
+}.st-modal.is-wide{
+  width: min(820px, 94vw);
+}/* Shell modals draw their own header; the rest keep Obsidian's and restyle it. */
+.st-modal .modal-content{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}.st-modal-shell .modal-header{
+  display: none;
+}.st-modal-shell .modal-content{
+  padding: 0;
+}.st-modal:not(.st-modal-shell) .modal-header{
+  border-bottom: none;
+  padding: 22px 26px 0;
+}.st-modal:not(.st-modal-shell) .modal-title{
+  font-size: 18px;
+  font-weight: 620;
+  letter-spacing: -0.012em;
+  line-height: 1.3;
+}.st-modal:not(.st-modal-shell) .modal-content{
+  padding: 14px 26px 22px;
+}.st-modal .modal-close-button{
+  color: var(--st-muted);
+  right: 14px;
+  top: 14px;
+}.st-modal .modal-close-button:hover{
+  color: var(--st-ink);
+}.st-modal-body.st-modal-body{
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  padding: 26px 26px 0;
+}.st-modal-head.st-modal-head{
+  margin-bottom: 22px;
+  padding-right: 32px;
+}.st-modal-title.st-modal-title{
+  color: var(--st-ink);
+  font-size: 18px;
+  font-weight: 620;
+  letter-spacing: -0.012em;
+  line-height: 1.3;
+  margin: 0;
+}.st-modal-desc.st-modal-desc{
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.6;
+  margin: 6px 0 0;
+}.st-modal-foot.st-modal-foot{
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 18px 26px 22px;
+}.st-modal-foot .st-btn{
+  height: 34px;
+}.st-modal-foot .st-btn.is-start{
+  margin-right: auto;
+}/* Fields ----------------------------------------------------------------- */
+
+.st-field.st-field{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}.st-field:last-child{
+  margin-bottom: 0;
+}.st-field-head.st-field-head{
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}.st-field-label.st-field-label{
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 560;
+  line-height: 1.4;
+}.st-field-desc.st-field-desc{
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: 1.55;
+}.st-field.is-inline{
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 16px;
+}.st-field.is-inline .st-field-head{
+  min-width: 0;
+}.st-input.st-input,
+.st-textarea.st-textarea,
+.st-select-trigger.st-select-trigger{
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  box-sizing: border-box;
+  color: var(--st-ink);
+  font-family: var(--font-text);
+  font-size: var(--st-text-base);
+  line-height: 1.4;
+  width: 100%;
+}.st-input.st-input,
+.st-select-trigger.st-select-trigger{
+  height: 36px;
+  padding: 0 11px;
+}.st-textarea.st-textarea{
+  line-height: 1.7;
+  min-height: 92px;
+  padding: 9px 11px;
+  resize: vertical;
+}.st-input::placeholder,
+.st-textarea::placeholder{
+  color: var(--st-faint);
+}.st-input:hover,
+.st-textarea:hover,
+.st-select-trigger:hover{
+  border-color: var(--background-modifier-border-hover);
+}.st-input:focus,
+.st-textarea:focus,
+.st-select-trigger:focus-visible{
+  border-color: var(--st-ink);
+  box-shadow: none;
+  outline: none;
+}.st-input:focus-visible,
+.st-textarea:focus-visible{
+  outline: 2px solid var(--st-ink);
+  outline-offset: 1px;
+}.st-input:disabled,
+.st-textarea:disabled{
+  color: var(--st-faint);
+  cursor: not-allowed;
+}/* Control column of a field (the shim renders one per row). */
+
+.st-field-control.st-field-control{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}.st-field-control > .st-input,
+.st-field-control > .st-textarea,
+.st-field-control > .st-select{
+  width: 100%;
+}.st-field.is-inline .st-field-control{
+  align-items: flex-end;
+  flex-direction: row;
+  flex: none;
+}.st-field.is-inline .st-field-head{
+  padding-right: 16px;
+}/* Footer built by the old markup still gets the new buttons. */
+
+.st-modal .seiton-modal-footer{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 6px 0 0;
+}.st-modal .seiton-modal-status{
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 16px;
+  padding-top: 10px;
+}.st-modal .seiton-modal-status.is-error{
+  color: var(--text-error);
+}/* Section label,
+for the long forms in the book and migration modals. */
+
+.st-section.st-section{
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 560;
+  letter-spacing: 0;
+  margin: 24px 0 11px;
+}.st-modal-head + .st-section,
+.st-section:first-child{
+  margin-top: 0;
+}/* Select ----------------------------------------------------------------- */
+
+.st-select.st-select{
+  position: relative;
+}.st-select-trigger.st-select-trigger{
+  align-items: center;
+  box-shadow: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  text-align: left;
+}.st-select-trigger[aria-expanded="true"]{
+  border-color: var(--st-ink);
+}.st-select-value.st-select-value{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}.st-select-value.is-empty{
+  color: var(--st-faint);
+}.st-select-caret.st-select-caret{
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: none;
+  margin-left: 8px;
+}.st-select.is-quiet .st-select-trigger{
+  background: transparent;
+  border-color: transparent;
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  height: 30px;
+  padding: 0 18px 0 0;
+}.st-select.is-quiet .st-select-trigger:hover,
+.st-select.is-quiet .st-select-trigger[aria-expanded="true"]{
+  border-color: transparent;
+  color: var(--st-ink);
+}.st-select.is-quiet .st-select-caret{
+  margin-left: 2px;
+}.st-select-caret svg{
+  height: 14px;
+  width: 14px;
+}.st-select-pop.st-select-pop{
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 16%);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 280px;
+  min-width: 180px;
+  overflow: auto;
+  padding: 5px;
+  position: fixed;
+  z-index: 1200;
+}.st-select-item.st-select-item{
+  align-items: center;
+  background: none;
+  border: 0;
+  border-radius: 5px;
+  color: var(--st-ink);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  gap: 8px;
+  height: 32px;
+  justify-content: space-between;
+  padding: 0 9px;
+  text-align: left;
+  width: 100%;
+}.st-select-item:hover,
+.st-select-item.is-active{
+  background: var(--st-hover);
+}.st-select-item[aria-selected="true"]{
+  font-weight: 600;
+}.st-select-item svg{
+  color: var(--st-ink);
+  height: 14px;
+  width: 14px;
+}/* Switch ----------------------------------------------------------------- */
+
+.st-switch.st-switch{
+  align-items: center;
+  background: var(--background-modifier-border-hover);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  height: 20px;
+  padding: 2px;
+  transition: background var(--st-transition);
+  width: 34px;
+}.st-switch::after{
+  background: var(--background-primary);
+  border-radius: 50%;
+  content: "";
+  display: block;
+  height: 16px;
+  transition: transform var(--st-transition);
+  width: 16px;
+}.st-switch[aria-checked="true"]{
+  background: var(--st-ink);
+}.st-switch[aria-checked="true"]::after{
+  transform: translateX(14px);
+}.st-switch:focus-visible{
+  outline: 2px solid var(--st-ink);
+  outline-offset: 2px;
+}/* Check ------------------------------------------------------------------ */
+
+.st-check.st-check{
+  align-items: flex-start;
+  background: none;
+  border: 0;
+  color: var(--st-ink);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  gap: 10px;
+  padding: 0;
+  text-align: left;
+}.st-check-box.st-check-box{
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border-hover);
+  border-radius: 4px;
+  display: inline-flex;
+  flex: none;
+  height: 18px;
+  justify-content: center;
+  margin-top: 1px;
+  transition: background var(--st-transition), border-color var(--st-transition);
+  width: 18px;
+}.st-check-box svg{
+  color: var(--background-primary);
+  height: 12px;
+  opacity: 0;
+  width: 12px;
+}.st-check[aria-checked="true"] .st-check-box{
+  background: var(--st-ink);
+  border-color: var(--st-ink);
+}.st-check[aria-checked="true"] .st-check-box svg{
+  opacity: 1;
+}.st-check:focus-visible{
+  outline: 2px solid var(--st-ink);
+  outline-offset: 3px;
+}/* Buttons ---------------------------------------------------------------- */
+
+.st-btn.st-btn{
+  align-items: center;
+  border: 1px solid transparent;
+  box-shadow: none;
+  line-height: 1;
+  min-height: 0;
+  border-radius: var(--st-radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  font-weight: 560;
+  gap: 6px;
+  height: 32px;
+  justify-content: center;
+  padding: 0 14px;
+  transition: background var(--st-transition), border-color var(--st-transition),
+    opacity var(--st-transition);
+  white-space: nowrap;
+}.st-btn svg{
+  height: 14px;
+  width: 14px;
+}.st-btn.is-primary{
+  background: var(--st-ink);
+  color: var(--background-primary);
+}.st-btn.is-primary:hover{
+  opacity: 0.86;
+}.st-btn.is-secondary{
+  background: transparent;
+  border-color: var(--st-hairline);
+  color: var(--st-ink);
+}.st-btn.is-secondary:hover{
+  background: var(--st-hover);
+  border-color: var(--background-modifier-border-hover);
+}.st-btn.is-ghost{
+  background: none;
+  color: var(--st-muted);
+  padding: 0 8px;
+}.st-btn.is-ghost:hover{
+  color: var(--st-ink);
+}.st-btn.is-danger{
+  background: none;
+  border-color: transparent;
+  color: var(--text-error);
+}.st-btn.is-danger-solid{
+  background: var(--text-error);
+  color: var(--background-primary);
+}.st-btn.is-danger-solid:hover{
+  opacity: 0.88;
+}.st-btn.is-danger:hover{
+  background: var(--text-error);
+  color: var(--background-primary);
+}.st-btn:disabled{
+  cursor: not-allowed;
+  opacity: 0.45;
+}.st-btn:focus-visible{
+  outline: 2px solid var(--st-ink);
+  outline-offset: 2px;
+}/* Status line under a form,
+and the two-choice list. */
+
+.st-status.st-status{
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 16px;
+  padding: 10px 0 0;
+}.st-status.is-error{
+  color: var(--text-error);
+}.st-choice.st-choice{
+  align-items: flex-start;
+  background: var(--background-secondary);
+  border: 1px solid transparent;
+  border-radius: var(--st-radius-md);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-interface);
+  gap: 2px;
+  margin-bottom: 8px;
+  padding: 13px 14px;
+  text-align: left;
+  transition: background var(--st-transition), border-color var(--st-transition);
+  width: 100%;
+}.st-choice:hover{
+  background: var(--st-hover);
+  border-color: var(--background-modifier-border-hover);
+}.st-choice:focus-visible{
+  outline: 2px solid var(--st-ink);
+  outline-offset: 2px;
+}.st-choice-title.st-choice-title{
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 560;
+}.st-choice-desc.st-choice-desc{
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: 1.5;
+}/* Toast ------------------------------------------------------------------ */
+
+.st-toasts.st-toasts{
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  left: 20px;
+  pointer-events: none;
+  position: fixed;
+  z-index: 1100;
+}.st-toast.st-toast{
+  background: var(--st-ink);
+  border-radius: var(--st-radius-md);
+  box-shadow: 0 10px 26px rgb(0 0 0 / 20%);
+  color: var(--background-primary);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  line-height: 1.5;
+  max-width: min(360px, 84vw);
+  padding: 9px 13px;
+  pointer-events: auto;
+}.st-toast.is-entering{
+  animation: st-toast-in 160ms cubic-bezier(0.2, 0, 0, 1);
+}.st-toast.is-leaving{
+  opacity: 0;
+  transition: opacity 140ms ease;
+}@keyframes st-toast-in{
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}@media (prefers-reduced-motion: reduce){
+  .st-toast.is-entering {
+    animation: none;
+  }
+
+  .st-switch,
+  .st-switch::after,
+  .st-btn,
+  .st-check-box.st-check-box {
+    transition: none;
+  }
+}/* Phone ------------------------------------------------------------------ */
+
+@media (max-width: 640px){
+  .st-modal.st-modal {
+    border-radius: 12px;
+    width: min(100%, 560px);
+  }
+
+  .st-modal-body.st-modal-body {
+    padding: 20px 18px 0;
+  }
+
+  .st-modal-head.st-modal-head {
+    margin-bottom: 18px;
+    padding-right: 28px;
+  }
+
+  .st-modal-foot.st-modal-foot {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 18px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .st-modal-foot .st-btn {
+    height: 42px;
+    width: 100%;
+  }
+
+  .st-modal-foot .st-btn.is-start {
+    margin-right: 0;
+  }
+
+  .st-input.st-input,
+  .st-textarea.st-textarea,
+  .st-select-trigger.st-select-trigger {
+    font-size: var(--st-text-md);
+    height: 42px;
+  }
+
+  .st-textarea.st-textarea {
+    height: auto;
+  }
+
+  .st-toasts.st-toasts {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: 12px;
+    right: 12px;
+  }
+
+  .st-toast.st-toast {
+    max-width: none;
+  }
+
+  /* A select on a phone opens as a sheet, not a small popup. */
+  .st-select-pop.is-sheet {
+    border-radius: 14px 14px 0 0;
+    bottom: 0;
+    left: 0;
+    max-height: 60vh;
+    padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
+    right: 0;
+  }
+
+  .st-select-pop.is-sheet .st-select-item {
+    height: 44px;
+  }
+}

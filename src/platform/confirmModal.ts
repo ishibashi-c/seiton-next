@@ -1,6 +1,10 @@
 import type { App } from "obsidian";
-import { Modal, Notice } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
+import { button } from "./ui/field";
+import { buildSeitonModal } from "./ui/modal";
+
+import { showToast } from "./ui/toast";
 
 interface ConfirmModalOptions {
   confirmingLabel?: string;
@@ -13,6 +17,7 @@ interface ConfirmModalOptions {
 export class ConfirmModal extends Modal {
   private readonly options: ConfirmModalOptions;
   private busy = false;
+  private confirmEl: HTMLButtonElement | null = null;
 
   constructor(app: App, options: ConfirmModalOptions) {
     super(app);
@@ -20,45 +25,45 @@ export class ConfirmModal extends Modal {
   }
 
   override onOpen(): void {
-    this.modalEl.addClass("seiton-confirm-modal");
-    this.setTitle(this.options.title);
-    this.contentEl.createEl("p", {
-      cls: "seiton-confirm-message",
-      text: this.options.message,
+    const { footer } = buildSeitonModal(this, {
+      description: this.options.message,
+      title: this.options.title,
     });
-
-    const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
-    const cancel = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
     });
-    cancel.addEventListener("click", () => this.close());
-    const confirm = footer.createEl("button", {
-      attr: { type: "button" },
-      cls: "mod-warning",
-      text: this.options.confirmingLabel ?? "実行",
-    });
-    confirm.addEventListener("click", () => {
-      void this.submit(confirm);
+    this.confirmEl = button(footer, {
+      label: this.options.confirmingLabel ?? "実行",
+      onClick: () => {
+        void this.submit();
+      },
+      tone: "danger-solid",
     });
   }
 
   override onClose(): void {
     this.contentEl.empty();
+    this.confirmEl = null;
   }
 
-  private async submit(button: HTMLButtonElement): Promise<void> {
+  private async submit(): Promise<void> {
     if (this.busy) {
       return;
     }
     this.busy = true;
-    button.disabled = true;
+    if (this.confirmEl) {
+      this.confirmEl.disabled = true;
+    }
     try {
       await this.options.onConfirm();
       this.close();
     } catch (error) {
-      new Notice(userMessageOf(error));
-      button.disabled = false;
+      showToast(userMessageOf(error));
+      if (this.confirmEl) {
+        this.confirmEl.disabled = false;
+      }
       this.busy = false;
     }
   }

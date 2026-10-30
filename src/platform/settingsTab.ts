@@ -1,14 +1,10 @@
 import type { App, Plugin } from "obsidian";
-import {
-  Notice,
-  PluginSettingTab,
-  Setting,
-  type TextComponent,
-} from "obsidian";
+import { PluginSettingTab } from "obsidian";
 import { LINK_BOOKMARKLET } from "../domain/linkList";
 import { WEB_CLIP_BOOKMARKLET } from "../domain/webclip";
 import type { SeitonSettings } from "../services/settings";
-
+import { Setting, type TextComponent } from "./ui/setting";
+import { showToast } from "./ui/toast";
 export interface SettingsHost {
   openLinkList(): Promise<void>;
   saveSettings(patch: Partial<SeitonSettings>): Promise<void>;
@@ -26,6 +22,7 @@ export class SeitonSettingTab extends PluginSettingTab {
   override display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    containerEl.addClass("st-ui");
     containerEl.createEl("h2", { text: "Seiton" });
     containerEl.createEl("p", {
       cls: "setting-item-description",
@@ -107,11 +104,9 @@ export class SeitonSettingTab extends PluginSettingTab {
         button.setButtonText("コードをコピー").onClick(async () => {
           try {
             await navigator.clipboard.writeText(WEB_CLIP_BOOKMARKLET);
-            new Notice("ブックマークレットをコピーしました。");
+            showToast("ブックマークレットをコピーしました。");
           } catch {
-            new Notice(
-              "コピーできませんでした。下のコードを選択してください。"
-            );
+            showToast("コピーできませんでした。下のコードを選択してください。");
           }
         });
       });
@@ -162,11 +157,9 @@ export class SeitonSettingTab extends PluginSettingTab {
         button.setButtonText("コードをコピー").onClick(async () => {
           try {
             await navigator.clipboard.writeText(LINK_BOOKMARKLET);
-            new Notice("ブックマークレットをコピーしました。");
+            showToast("ブックマークレットをコピーしました。");
           } catch {
-            new Notice(
-              "コピーできませんでした。下のコードを選択してください。"
-            );
+            showToast("コピーできませんでした。下のコードを選択してください。");
           }
         });
       });

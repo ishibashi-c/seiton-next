@@ -1,9 +1,12 @@
 import type { App } from "obsidian";
-import { Modal, Notice } from "obsidian";
+import { Modal } from "obsidian";
 import type { BookCandidate } from "../domain/book";
 import { mapWithConcurrency, sleep } from "../domain/concurrency";
 import { parseIsbnList } from "../domain/isbnBatch";
 import type { BookService } from "../services/bookService";
+import { markSeitonModal } from "./ui/modal";
+
+import { showToast } from "./ui/toast";
 
 type RowStatus = "duplicate" | "error" | "loading" | "new";
 
@@ -40,6 +43,7 @@ export class BulkIsbnModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-bulk-modal");
     this.setTitle("ISBNをまとめて追加");
     this.contentEl.createEl("p", {
@@ -304,7 +308,7 @@ export class BulkIsbnModal extends Modal {
       failed > 0
     );
     if (added > 0) {
-      new Notice(`${added}冊を追加しました。`);
+      showToast(`${added}冊を追加しました。`);
       this.onDone?.();
     }
     this.updateAddButton();

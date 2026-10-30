@@ -1,12 +1,15 @@
+import { showToast } from "./ui/toast";
 /**
  * 一言メモ入力モーダル。ホーム・コマンド・モバイルクイックアクションの共通入口。
  * 保存に失敗した場合は入力を保持し、その場で再試行できる。
  */
 
 import type { App } from "obsidian";
-import { ButtonComponent, Modal, Notice, TextAreaComponent } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import type { AddMemoResult, MemoService } from "../services/memoService";
+import { markSeitonModal } from "./ui/modal";
+import { ButtonComponent, TextAreaComponent } from "./ui/setting";
 
 const DEFAULT_DRAFT_KEY = "seiton-next:memo-draft";
 
@@ -44,6 +47,7 @@ export class MemoCaptureModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.openState = true;
     this.modalEl.addClass("seiton-capture-modal");
     this.setTitle("メモ");
@@ -161,7 +165,7 @@ export class MemoCaptureModal extends Modal {
     } catch (error) {
       console.error("[Seiton] onSaved callback failed", error);
     }
-    new Notice("メモを保存しました（この端末）");
+    showToast("メモを保存しました（この端末）");
     if (this.openState) {
       this.close();
     }

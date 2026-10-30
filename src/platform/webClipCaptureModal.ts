@@ -1,12 +1,5 @@
 import type { App } from "obsidian";
-import {
-  Modal,
-  Notice,
-  Setting,
-  type TextAreaComponent,
-  type TextComponent,
-  TFile,
-} from "obsidian";
+import { Modal, TFile } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { domainOf, normalizeSourceUrl } from "../domain/network";
 import type {
@@ -14,7 +7,14 @@ import type {
   WebClipDuplicate,
   WebClipService,
 } from "../services/webClipService";
+import { markSeitonModal } from "./ui/modal";
+import {
+  Setting,
+  type TextAreaComponent,
+  type TextComponent,
+} from "./ui/setting";
 
+import { showToast } from "./ui/toast";
 export interface WebClipCaptureInput {
   capture?: string;
   note?: string;
@@ -60,6 +60,7 @@ export class WebClipCaptureModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-webclip-capture-modal");
     this.setTitle("Webクリップ");
     const url = normalizeSourceUrl(this.input.url);
@@ -282,11 +283,11 @@ export class WebClipCaptureModal extends Modal {
         tags: ["webクリップ", domainOf(url)],
         title: this.titleValue || this.capture?.title || domainOf(url),
       });
-      new Notice("Webクリップを保存しました。");
+      showToast("Webクリップを保存しました。");
       this.onSaved(path);
       this.close();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
       this.setStatus("保存できませんでした。");
       this.setBusy(false);
     }

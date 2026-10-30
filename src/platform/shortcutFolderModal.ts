@@ -1,5 +1,7 @@
 import type { App } from "obsidian";
-import { Modal, Setting } from "obsidian";
+import { Modal } from "obsidian";
+import { button, textField } from "./ui/field";
+import { buildSeitonModal } from "./ui/modal";
 
 interface ShortcutFolderModalOptions {
   initialName?: string;
@@ -19,38 +21,36 @@ export class ShortcutFolderModal extends Modal {
   }
 
   override onOpen(): void {
-    this.setTitle(
-      this.options.initialName ? "グループの名前を変更" : "グループを作成"
-    );
-    this.contentEl.createEl("p", {
-      cls: "seiton-shortcut-hint",
-      text: "グループはノートの見出し1つです。削除すると中のショートカットはグループなしに戻ります。",
+    const { body, footer } = buildSeitonModal(this, {
+      description:
+        "グループはノートの見出し1つです。削除すると中のショートカットはグループなしに戻ります。",
+      title: this.options.initialName
+        ? "グループの名前を変更"
+        : "グループを作成",
     });
 
-    new Setting(this.contentEl).setName("名前").addText((text) => {
-      text.setValue(this.name).onChange((value) => {
+    const input = textField(body, {
+      label: "名前",
+      onChange: (value) => {
         this.name = value;
-      });
-      window.setTimeout(() => text.inputEl.focus(), 50);
+      },
+      value: this.name,
+    });
+    window.setTimeout(() => input.focus(), 50);
+
+    this.statusEl = body.createDiv({ cls: "st-status" });
+
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
+    });
+    button(footer, {
+      label: "保存",
+      onClick: () => this.submit(),
+      tone: "primary",
     });
 
-    this.statusEl = this.contentEl.createDiv({
-      cls: "seiton-shortcut-modal-status",
-    });
-    this.statusEl.setAttribute("aria-live", "polite");
-
-    const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
-    const cancel = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
-    });
-    cancel.addEventListener("click", () => this.close());
-    const save = footer.createEl("button", {
-      attr: { type: "button" },
-      cls: "mod-cta",
-      text: "保存",
-    });
-    save.addEventListener("click", () => this.submit());
     this.scope.register([], "Enter", (event) => {
       event.preventDefault();
       this.submit();

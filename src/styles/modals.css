@@ -51,17 +51,13 @@
 .modal.seiton-promote-modal .mod-cta,
 .modal.seiton-book-modal .mod-cta,
 .modal.seiton-migration-modal .mod-cta,
-.modal.seiton-new-note-modal .mod-cta,
-.modal.seiton-webclip-modal .mod-cta,
-.modal.seiton-organize-modal .mod-cta {
+.modal.seiton-webclip-modal .mod-cta {
   background: var(--st-primary);
   color: var(--st-on-primary);
 }
 
 .seiton-class-fields {
-  border-top: 1px solid var(--st-hairline);
-  margin-top: 8px;
-  padding-top: 4px;
+  margin-top: 4px;
 }
 
 .seiton-class-candidates {

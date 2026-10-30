@@ -383,26 +383,6 @@
 }
 
 @media (max-width: 640px) {
-  .seiton-new-note-modal .setting-item {
-    align-items: stretch;
-    display: block;
-  }
-
-  .seiton-new-note-modal .setting-item-info {
-    margin-bottom: 6px;
-  }
-
-  .seiton-new-note-modal .setting-item-control {
-    width: 100%;
-  }
-
-  .seiton-new-note-modal .setting-item-control input[type="text"],
-  .seiton-new-note-modal .setting-item-control input[type="date"],
-  .seiton-new-note-modal .setting-item-control select {
-    max-width: none;
-    width: 100%;
-  }
-
   .seiton-class-candidate {
     align-items: stretch;
     display: block;

@@ -1,18 +1,11 @@
+import { showToast } from "./ui/toast";
 /**
  * 本棚（BOOK）のUI。Obsidian標準の Modal / Setting / ButtonComponent だけを使う。
  * 見た目は `seiton-book-*` クラスを付けるのみで、styles.css は変更しない。
  */
 
 import type { App } from "obsidian";
-import {
-  ButtonComponent,
-  Modal,
-  Notice,
-  Setting,
-  type TextAreaComponent,
-  type TextComponent,
-  TFile,
-} from "obsidian";
+import { Modal, TFile } from "obsidian";
 import {
   BOOK_OWNERSHIP_LABELS,
   BOOK_OWNERSHIPS,
@@ -54,6 +47,13 @@ import type {
   CreateBookResult,
 } from "../services/bookService";
 import type { NoteRecord } from "../services/vaultIndex";
+import { markSeitonModal } from "./ui/modal";
+import {
+  ButtonComponent,
+  Setting,
+  type TextAreaComponent,
+  type TextComponent,
+} from "./ui/setting";
 
 const RATING_NONE = "";
 
@@ -107,6 +107,7 @@ export class AddBookModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-book-modal");
     this.modalEl.addClass("seiton-book-add-modal");
     this.setTitle("本を追加");
@@ -353,7 +354,7 @@ export class AddBookModal extends Modal {
         result.coverError === null
           ? `本を追加しました: ${result.title}`
           : `本を追加しました（表紙は未保存: ${result.coverError}）`;
-      new Notice(message);
+      showToast(message);
       this.close();
     } catch (error) {
       this.setBusy(false);
@@ -430,6 +431,7 @@ export class BookDetailModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.openState = true;
     this.modalEl.addClass("seiton-book-modal");
     this.modalEl.addClass("seiton-book-detail-modal");
@@ -1032,7 +1034,7 @@ export class BookDetailModal extends Modal {
       } catch (error) {
         console.error("[Seiton] book saved callback failed", error);
       }
-      new Notice("本を更新しました。");
+      showToast("本を更新しました。");
       this.close();
     } catch (error) {
       this.setBusy(false);
@@ -1085,6 +1087,7 @@ export class BookBulkEditModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-book-modal");
     this.modalEl.addClass("seiton-book-bulk-modal");
     this.setTitle("表示中の本を一括編集");
@@ -1229,13 +1232,13 @@ export class BookBulkEditModal extends Modal {
           .join(" / ")}`,
         true
       );
-      new Notice(
+      showToast(
         `一括変更: ${updated}冊を更新、${failures.length}冊は失敗しました。`
       );
       return;
     }
 
-    new Notice(`${updated}冊を一括変更しました。`);
+    showToast(`${updated}冊を一括変更しました。`);
     this.close();
   }
 }

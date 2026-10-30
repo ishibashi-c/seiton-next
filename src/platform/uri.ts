@@ -1,10 +1,11 @@
+import { showToast } from "./ui/toast";
 /**
  * `obsidian://seiton-next?...` の処理。
  * main.ts から呼ばれ、画面やサービスを直接触らないようホスト経由で操作する。
  */
 
 import type { App } from "obsidian";
-import { Notice } from "obsidian";
+
 import { VIEW_TYPE_LIBRARY } from "../config";
 import type { MemoService } from "../services/memoService";
 import type { NoteRecord, VaultIndexService } from "../services/vaultIndex";
@@ -44,7 +45,7 @@ export async function handleSeitonUri(
     "";
   if (action === "link" || action === "shortcut") {
     if (webClipUrl === "") {
-      new Notice("url がありません。");
+      showToast("url がありません。");
       return;
     }
     await host.addShortcutLink(webClipUrl, (params.title ?? "").trim());
@@ -59,7 +60,7 @@ export async function handleSeitonUri(
     webClipUrl !== ""
   ) {
     if (webClipUrl === "") {
-      new Notice("url がありません。");
+      showToast("url がありません。");
       return;
     }
     host.openWebClipCapture({
@@ -73,15 +74,15 @@ export async function handleSeitonUri(
 
   if (action === "memo" || (action === "" && text !== "")) {
     if (text === "") {
-      new Notice("text がありません。");
+      showToast("text がありません。");
       return;
     }
     try {
       await host.memoService.addMemo(text);
-      new Notice("メモを保存しました。");
+      showToast("メモを保存しました。");
       host.refreshHomeViews();
     } catch (error) {
-      new Notice(
+      showToast(
         error instanceof Error ? error.message : "メモを保存できませんでした。"
       );
     }
@@ -124,7 +125,7 @@ export async function handleSeitonUri(
   if (action === "book") {
     const isbn = (params.isbn ?? "").replace(/[^0-9Xx]/gu, "");
     if (isbn === "") {
-      new Notice("isbn がありません。");
+      showToast("isbn がありません。");
       return;
     }
     const index = await host.indexService.get();
@@ -141,7 +142,7 @@ export async function handleSeitonUri(
     return;
   }
 
-  new Notice(
+  showToast(
     `未対応の操作です（v${host.version} / action="${action}" / keys=${
       Object.keys(params).join(",") || "なし"
     }）`

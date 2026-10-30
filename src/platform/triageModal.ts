@@ -1,9 +1,12 @@
 import type { App } from "obsidian";
-import { Modal, Notice } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import type { PropertyValue } from "../services/propertyService";
 import type { TriageService } from "../services/triageService";
 import type { NoteRecord } from "../services/vaultIndex";
+import { markSeitonModal } from "./ui/modal";
+
+import { showToast } from "./ui/toast";
 
 const KIND_CHOICES = [
   { key: "1", kind: "note", label: "ノート" },
@@ -29,6 +32,7 @@ export class TriageModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-triage-modal");
     this.setTitle("未整理を1件ずつ");
     this.bodyEl = this.contentEl.createDiv({ cls: "seiton-triage-body" });
@@ -232,7 +236,7 @@ export class TriageModal extends Modal {
       this.position += 1;
       this.render();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
       this.setStatus("保存できませんでした。");
     } finally {
       this.busy = false;
@@ -260,7 +264,7 @@ export class TriageModal extends Modal {
         await this.reload(path);
       }
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     } finally {
       this.busy = false;
       this.render();

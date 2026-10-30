@@ -1,5 +1,5 @@
 import type { App, EventRef, TAbstractFile, WorkspaceLeaf } from "obsidian";
-import { ItemView, MarkdownView, Notice, TFile } from "obsidian";
+import { ItemView, MarkdownView, TFile } from "obsidian";
 import { VIEW_TYPE_LIBRARY } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { buildVocabulary } from "../domain/vocabulary";
@@ -38,6 +38,7 @@ import { type QuickSearchItem, QuickSearchModal } from "./quickSearchModal";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
 import { TriageModal } from "./triageModal";
 
+import { showToast } from "./ui/toast";
 export interface LibraryHost {
   addBook(): void;
   openBook(record: NoteRecord): void;
@@ -336,7 +337,7 @@ export class SeitonLibraryView extends ItemView {
         );
       }
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     } finally {
       this.refreshing = false;
       this.contentEl.removeClass("is-refreshing");
@@ -562,7 +563,7 @@ export class SeitonLibraryView extends ItemView {
   private confirmDelete(note: NoteRecord): void {
     const file = this.appRef.vault.getAbstractFileByPath(note.path);
     if (!(file instanceof TFile)) {
-      new Notice("ファイルが見つかりません。");
+      showToast("ファイルが見つかりません。");
       return;
     }
     new ConfirmModal(this.appRef, {
@@ -572,7 +573,7 @@ export class SeitonLibraryView extends ItemView {
         await this.appRef.fileManager.trashFile(file);
         this.indexService.invalidate();
         this.invalidateAndRefresh();
-        new Notice("ゴミ箱へ移動しました。");
+        showToast("ゴミ箱へ移動しました。");
       },
       title: "削除",
     }).open();
@@ -626,7 +627,7 @@ export class SeitonLibraryView extends ItemView {
         title: "ライブラリを検索",
       }).open();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 
@@ -635,14 +636,14 @@ export class SeitonLibraryView extends ItemView {
       await this.properties.update(note.path, { pinned: !note.pinned });
       this.invalidateAndRefresh();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 
   async openPath(path: string, line?: number): Promise<void> {
     const file = this.appRef.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) {
-      new Notice("ファイルが見つかりません。");
+      showToast("ファイルが見つかりません。");
       return;
     }
     const leaf = this.appRef.workspace.getLeaf(false);

@@ -1,6 +1,6 @@
-import { Notice } from "obsidian";
 import type { PropertyService } from "../../services/propertyService";
 
+import { showToast } from "../ui/toast";
 export class LibrarySelection {
   mode = false;
   readonly selected = new Set<string>();
@@ -119,9 +119,9 @@ export class LibrarySelection {
     this.update();
     this.refresh();
     if (failed > 0) {
-      new Notice(`${updated}件を更新、${failed}件は更新できませんでした。`);
+      showToast(`${updated}件を更新、${failed}件は更新できませんでした。`);
     } else {
-      new Notice(`${updated}件を更新しました。`);
+      showToast(`${updated}件を更新しました。`);
     }
   }
 }

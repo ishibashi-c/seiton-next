@@ -1,16 +1,13 @@
 import type { App } from "obsidian";
-import {
-  ButtonComponent,
-  Modal,
-  Notice,
-  Setting,
-  type TextComponent,
-} from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { isAllowedRemoteUrl } from "../domain/network";
 import type { WebClipMetadata } from "../domain/webclip";
 import type { WebClipNote, WebClipService } from "../services/webClipService";
+import { markSeitonModal } from "./ui/modal";
+import { ButtonComponent, Setting, type TextComponent } from "./ui/setting";
 
+import { showToast } from "./ui/toast";
 export interface WebClipPreviewOptions {
   initialUrl?: string;
   notePath?: string;
@@ -40,6 +37,7 @@ export class WebClipPreviewModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-webclip-modal");
     this.setTitle(
       this.options.notePath
@@ -124,11 +122,11 @@ export class WebClipPreviewModal extends Modal {
           this.preview
         );
         this.options.onChanged?.(this.options.notePath);
-        new Notice("WebクリップのPropertiesを更新しました。");
+        showToast("WebクリップのPropertiesを更新しました。");
       } else {
         const path = await this.service.createClip(this.preview);
         this.options.onChanged?.(path);
-        new Notice("Webクリップを作成しました。");
+        showToast("Webクリップを作成しました。");
       }
       this.close();
     } catch (error) {

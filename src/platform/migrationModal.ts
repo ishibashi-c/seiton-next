@@ -1,3 +1,4 @@
+import { showToast } from "./ui/toast";
 /**
  * 旧Seitonデータの移行モーダル。
  *
@@ -7,7 +8,7 @@
  */
 
 import type { App } from "obsidian";
-import { ButtonComponent, Modal, Notice } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import type {
   MigrationCategory,
@@ -21,6 +22,8 @@ import type {
   MigrationService,
 } from "../services/migrationService";
 import { ObsidianVaultPort } from "./obsidianVaultPort";
+import { markSeitonModal } from "./ui/modal";
+import { ButtonComponent } from "./ui/setting";
 
 const STATUS_LABELS: Record<MigrationResultStatus, string> = {
   converted: "変換済み",
@@ -84,6 +87,7 @@ export class MigrationModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.openState = true;
     this.modalEl.addClass("seiton-migration-modal");
     this.setTitle("旧Seitonデータの移行");
@@ -545,7 +549,7 @@ export class MigrationModal extends Modal {
     } catch (error) {
       console.error("[Seiton] migration callback failed", error);
     }
-    new Notice(
+    showToast(
       `移行: 変換 ${report.summary.converted}件 / スキップ ${report.summary.skipped}件 / 失敗 ${report.summary.failed}件`
     );
 

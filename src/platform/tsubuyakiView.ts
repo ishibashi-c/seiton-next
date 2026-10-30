@@ -1,10 +1,11 @@
+import { showToast } from "./ui/toast";
 /**
  * つぶやきページ。全期間の一言メモを時刻順に読み、その場で書き足す。
  * 保存形式は従来の週次Markdown（kind: memo-log）のまま変えない。
  */
 
 import type { TAbstractFile, WorkspaceLeaf } from "obsidian";
-import { ItemView, MarkdownRenderer, Notice, setIcon, TFile } from "obsidian";
+import { ItemView, MarkdownRenderer, setIcon, TFile } from "obsidian";
 import { MEMOS_FOLDER, VIEW_TYPE_TSUBUYAKI } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { clockOf } from "../domain/time";
@@ -606,7 +607,7 @@ export class SeitonTsubuyakiView extends ItemView {
         "このつぶやきを削除します。週ファイルには削除済みとして残ります。",
       onConfirm: async () => {
         await this.memoService.setMemoDeleted(item.week, item.entry.id, true);
-        new Notice("削除しました。");
+        showToast("削除しました。");
         await this.refresh();
       },
       title: "つぶやきを削除",
@@ -616,19 +617,19 @@ export class SeitonTsubuyakiView extends ItemView {
   private async restore(item: MemoListItem): Promise<void> {
     try {
       await this.memoService.setMemoDeleted(item.week, item.entry.id, false);
-      new Notice("復元しました。");
+      showToast("復元しました。");
       await this.refresh();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 
   private async copyBody(item: MemoListItem): Promise<void> {
     try {
       await navigator.clipboard.writeText(item.entry.body);
-      new Notice("本文をコピーしました。");
+      showToast("本文をコピーしました。");
     } catch {
-      new Notice("コピーできませんでした。");
+      showToast("コピーできませんでした。");
     }
   }
 
@@ -638,7 +639,7 @@ export class SeitonTsubuyakiView extends ItemView {
       await this.app.workspace.getLeaf(false).openFile(file);
       return;
     }
-    new Notice("ファイルが見つかりません。");
+    showToast("ファイルが見つかりません。");
   }
 
   private scrollToToday(): void {

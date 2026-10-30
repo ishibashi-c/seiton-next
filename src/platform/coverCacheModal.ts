@@ -1,11 +1,13 @@
 import type { App } from "obsidian";
-import { Modal, Notice } from "obsidian";
+import { Modal } from "obsidian";
 import { mapWithConcurrency, sleep } from "../domain/concurrency";
 import { type CoverCacheAnalysis, formatBytes } from "../domain/coverCache";
 import type { BookService } from "../services/bookService";
 import type { CoverStore } from "../services/coverStore";
 import type { NoteRecord } from "../services/vaultIndex";
+import { markSeitonModal } from "./ui/modal";
 
+import { showToast } from "./ui/toast";
 /** 表紙キャッシュの統計・削除・再取得。 */
 export class CoverCacheModal extends Modal {
   private readonly store: CoverStore;
@@ -36,6 +38,7 @@ export class CoverCacheModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-cover-modal");
     this.setTitle("表紙キャッシュ管理");
     this.contentEl.createEl("p", {
@@ -196,7 +199,7 @@ export class CoverCacheModal extends Modal {
     this.setStatus("削除中…");
     try {
       const removed = await this.store.removeOrphans();
-      new Notice(`${removed}枚の未使用の表紙を削除しました。`);
+      showToast(`${removed}枚の未使用の表紙を削除しました。`);
       this.onDone();
       await this.load();
       this.setStatus(`${removed}枚を削除しました。`);
@@ -210,7 +213,7 @@ export class CoverCacheModal extends Modal {
     this.setStatus("削除中…");
     try {
       const removed = await this.store.removeAll();
-      new Notice(`${removed}枚の表紙を削除しました。`);
+      showToast(`${removed}枚の表紙を削除しました。`);
       this.onDone();
       await this.load();
       this.setStatus(`${removed}枚を削除しました。表紙は仮表紙になります。`);

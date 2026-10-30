@@ -1,9 +1,11 @@
 import type { App } from "obsidian";
-import { ButtonComponent, Modal, Setting, type TextComponent } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { wikiLink } from "../domain/links";
 import type { VocabularyEntry } from "../domain/vocabulary";
 import type { PropertyService } from "../services/propertyService";
+import { button, fieldRow, textField, toggleField } from "./ui/field";
+import { buildSeitonModal } from "./ui/modal";
 import {
   appendVocabularyValue,
   renderVocabularyChips,
@@ -65,125 +67,114 @@ export class OrganizeModal extends Modal {
   }
 
   override onOpen(): void {
-    this.modalEl.addClass("seiton-organize-modal");
-    this.setTitle("整理");
-    this.contentEl.createEl("p", {
-      cls: "seiton-prompt-hint",
-      text: `${this.target.title} のPropertiesだけを変更します。ファイルは移動しません。`,
+    const { body, footer } = buildSeitonModal(this, {
+      description: `${this.target.title} のPropertiesだけを変更します。ファイルは移動しません。`,
+      title: "整理",
     });
 
-    new Setting(this.contentEl)
-      .setName("種類")
-      .addText((text: TextComponent) => {
-        text.setValue(this.kind).onChange((value) => {
-          this.kind = value;
-        });
-      });
-    let tagsText: TextComponent | null = null;
-    new Setting(this.contentEl)
-      .setName("タグ")
-      .addText((text: TextComponent) => {
-        tagsText = text;
-        text
-          .setPlaceholder("例: 認知科学, 読書")
-          .setValue(this.tags)
-          .onChange((value) => {
-            this.tags = value;
-          });
-      });
-    this.renderVocabRow(
+    textField(body, {
+      label: "種類",
+      onChange: (value) => {
+        this.kind = value;
+      },
+      value: this.kind,
+    });
+
+    this.vocabularyField(
+      body,
       "タグ",
-      this.vocabulary.tags,
+      "例: 認知科学, 読書",
       () => this.tags,
+      this.vocabulary.tags,
       (value) => {
         this.tags = value;
-        tagsText?.setValue(value);
       }
     );
-    let listsText: TextComponent | null = null;
-    new Setting(this.contentEl)
-      .setName("リスト")
-      .addText((text: TextComponent) => {
-        listsText = text;
-        text
-          .setPlaceholder("例: あとで読む")
-          .setValue(this.lists)
-          .onChange((value) => {
-            this.lists = value;
-          });
-      });
-    this.renderVocabRow(
+    this.vocabularyField(
+      body,
       "リスト",
-      this.vocabulary.lists,
+      "例: あとで読む",
       () => this.lists,
+      this.vocabulary.lists,
       (value) => {
         this.lists = value;
-        listsText?.setValue(value);
       }
     );
-    let projectsText: TextComponent | null = null;
-    new Setting(this.contentEl)
-      .setName("プロジェクト")
-      .setDesc("プロジェクト名をカンマ区切りで入力します。")
-      .addText((text: TextComponent) => {
-        projectsText = text;
-        text.setValue(this.projects).onChange((value) => {
-          this.projects = value;
-        });
-      });
-    this.renderVocabRow(
+    this.vocabularyField(
+      body,
       "プロジェクト",
-      this.vocabulary.projects,
+      "プロジェクト名をカンマ区切りで入力します。",
       () => this.projects,
+      this.vocabulary.projects,
       (value) => {
         this.projects = value;
-        projectsText?.setValue(value);
       }
     );
-    new Setting(this.contentEl).setName("ピン留め").addToggle((toggle) => {
-      toggle.setValue(this.pinned).onChange((value) => {
-        this.pinned = value;
-      });
-    });
-    new Setting(this.contentEl).setName("アーカイブ").addToggle((toggle) => {
-      toggle.setValue(this.archived).onChange((value) => {
-        this.archived = value;
-      });
-    });
-    new Setting(this.contentEl)
-      .setName("整理トレイ")
-      .setDesc("あとで整理したい独立ノートだけオンにします。")
-      .addToggle((toggle) => {
-        toggle.setValue(this.review).onChange((value) => {
-          this.review = value;
-        });
-      });
 
-    this.statusEl = this.contentEl.createDiv({ cls: "seiton-modal-status" });
-    const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
-    new ButtonComponent(footer)
-      .setButtonText("キャンセル")
-      .onClick(() => this.close());
-    new ButtonComponent(footer)
-      .setButtonText("保存")
-      .setCta()
-      .onClick(() => {
+    toggleField(body, {
+      label: "ピン留め",
+      onChange: (value) => {
+        this.pinned = value;
+      },
+      value: this.pinned,
+    });
+    toggleField(body, {
+      label: "アーカイブ",
+      onChange: (value) => {
+        this.archived = value;
+      },
+      value: this.archived,
+    });
+    toggleField(body, {
+      description: "あとで整理したい独立ノートだけオンにします。",
+      label: "整理トレイ",
+      onChange: (value) => {
+        this.review = value;
+      },
+      value: this.review,
+    });
+
+    this.statusEl = body.createDiv({ cls: "st-status" });
+
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
+    });
+    button(footer, {
+      label: "保存",
+      onClick: () => {
         void this.submit();
-      });
+      },
+      tone: "primary",
+    });
   }
 
-  private renderVocabRow(
+  private vocabularyField(
+    parent: HTMLElement,
     label: string,
-    entries: VocabularyEntry[],
+    placeholder: string,
     current: () => string,
+    entries: VocabularyEntry[],
     apply: (value: string) => void
-  ): void {
-    const row = this.contentEl.createDiv({ cls: "seiton-vocab-row" });
-    renderVocabularyChips(row, entries, {
+  ): HTMLInputElement {
+    const row = fieldRow(parent, { label });
+    const input = row.createEl("input", { cls: "st-input", type: "text" });
+    input.placeholder = placeholder;
+    input.value = current();
+    input.addEventListener("input", () => apply(input.value));
+
+    const chips = row.createDiv({ cls: "seiton-vocab-row" });
+    renderVocabularyChips(chips, entries, {
       current: current().split(","),
       label: `既存の${label}`,
-      onPick: (value) => apply(appendVocabularyValue(current(), value)),
+      onPick: (value) => {
+        const next = appendVocabularyValue(current(), value);
+        apply(next);
+        input.value = next;
+      },
     });
+    return input;
   }
 
   private async submit(): Promise<void> {

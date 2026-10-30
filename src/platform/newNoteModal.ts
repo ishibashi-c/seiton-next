@@ -1,10 +1,13 @@
 import type { App } from "obsidian";
-import { ButtonComponent, Modal, Setting, type TextComponent } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { NOTE_TEMPLATES, type NoteTemplateId } from "../domain/noteTemplates";
 import { buildVocabulary } from "../domain/vocabulary";
 import type { ClassCandidate, NoteService } from "../services/noteService";
 import type { VaultIndexService } from "../services/vaultIndex";
+import { button, fieldRow, selectField, textField } from "./ui/field";
+import { buildSeitonModal } from "./ui/modal";
+import type { SelectControl } from "./ui/select";
 import { renderVocabularyChips } from "./vocabularyChips";
 
 function todayKey(): string {
@@ -25,9 +28,9 @@ export class NewNoteModal extends Modal {
   private title = "";
   private project: string;
   private course = "";
-  private courseSelect: HTMLSelectElement | null = null;
+  private courseControl: SelectControl | null = null;
   private newCourseInput: HTMLInputElement | null = null;
-  private newCourseSetting: HTMLElement | null = null;
+  private newCourseRow: HTMLElement | null = null;
   private lectureDate = todayKey();
   private statusEl: HTMLElement | null = null;
   private candidatesEl: HTMLElement | null = null;
@@ -50,127 +53,142 @@ export class NewNoteModal extends Modal {
   }
 
   override onOpen(): void {
-    this.modalEl.addClass("seiton-new-note-modal");
-    this.setTitle("新しいノート");
-    this.contentEl.createEl("p", {
-      cls: "seiton-prompt-hint",
-      text: "本文はObsidian標準エディターで編集します。タイトルとテンプレートだけ選びます。",
+    const { body, footer } = buildSeitonModal(this, {
+      description:
+        "本文はObsidian標準エディターで編集します。タイトルとテンプレートだけ選びます。",
+      title: "新しいノート",
     });
 
-    new Setting(this.contentEl)
-      .setName("テンプレート")
-      .addDropdown((dropdown) => {
-        for (const template of NOTE_TEMPLATES) {
-          dropdown.addOption(template.id, template.label);
-        }
-        dropdown.setValue(this.template).onChange((value) => {
-          this.template = value as NoteTemplateId;
-          this.updateClassFields();
-        });
-      });
-    new Setting(this.contentEl)
-      .setName("タイトル")
-      .setDesc(
-        "空欄なら授業は「講義日 科目名」、それ以外は「無題」になります。"
-      )
-      .addText((text: TextComponent) => {
-        text.setPlaceholder("例: 認知科学の授業メモ").onChange((value) => {
-          this.title = value;
-        });
-        window.setTimeout(() => text.inputEl.focus(), 50);
-      });
-    let projectText: TextComponent | null = null;
-    new Setting(this.contentEl)
-      .setName("プロジェクト")
-      .setDesc("任意。空欄なら関連付けません。")
-      .addText((text: TextComponent) => {
-        projectText = text;
-        text.setValue(this.project).onChange((value) => {
-          this.project = value;
-        });
-      });
+    selectField(body, {
+      choices: NOTE_TEMPLATES.map((template) => ({
+        label: template.label,
+        value: template.id,
+      })),
+      label: "テンプレート",
+      onChange: (value) => {
+        this.template = value as NoteTemplateId;
+        this.updateClassFields();
+      },
+      value: this.template,
+    });
+
+    const titleInput = textField(body, {
+      description:
+        "空欄なら授業は「講義日 科目名」、それ以外は「無題」になります。",
+      label: "タイトル",
+      onChange: (value) => {
+        this.title = value;
+      },
+      placeholder: "例: 認知科学の授業メモ",
+    });
+    window.setTimeout(() => titleInput.focus(), 50);
+
+    const projectRow = fieldRow(body, {
+      description: "任意。空欄なら関連付けません。",
+      label: "プロジェクト",
+    });
+    const projectInput = projectRow.createEl("input", {
+      cls: "st-input",
+      type: "text",
+    });
+    projectInput.value = this.project;
+    projectInput.addEventListener("input", () => {
+      this.project = projectInput.value;
+    });
+
     const cached = this.indexService.getCached();
     if (cached) {
-      const row = this.contentEl.createDiv({ cls: "seiton-vocab-row" });
+      const chips = projectRow.createDiv({ cls: "seiton-vocab-row" });
       renderVocabularyChips(
-        row,
+        chips,
         buildVocabulary(cached.notes.map((note) => note.projects)),
         {
           current: this.project ? [this.project] : [],
           label: "既存",
           onPick: (value) => {
             this.project = value;
-            projectText?.setValue(value);
+            projectInput.value = value;
           },
         }
       );
     }
 
-    this.classFields = this.contentEl.createDiv({
-      cls: "seiton-class-fields",
-    });
-    const courseSetting = new Setting(this.classFields)
-      .setName("授業科目")
-      .setDesc("既存の科目から選ぶか、新しい科目を入力します。");
-    this.courseSelect = courseSetting.controlEl.createEl("select", {
-      attr: { "aria-label": "授業科目" },
-      cls: "dropdown seiton-course-select",
-    });
-    this.courseSelect.addEventListener("change", () => {
-      const value = this.courseSelect?.value ?? "";
-      if (value === "__new") {
-        this.course = this.newCourseInput?.value.trim() ?? "";
-        this.showNewCourse(true);
-      } else {
+    this.classFields = body.createDiv({ cls: "seiton-class-fields" });
+    this.courseControl = selectField(this.classFields, {
+      choices: [{ label: "既存の科目から選択", value: "" }],
+      description: "既存の科目から選ぶか、新しい科目を入力します。",
+      label: "授業科目",
+      onChange: (value) => {
+        if (value === "__new") {
+          this.course = this.newCourseInput?.value.trim() ?? "";
+          this.showNewCourse(true);
+          return;
+        }
         this.course = value;
         this.showNewCourse(false);
-      }
+      },
+      value: "",
     });
-    const newCourseSetting = new Setting(this.classFields)
-      .setName("新しい科目名")
-      .setDesc(
-        "前後の空白は除きます。既存と同じ名前なら同じ科目として扱います。"
-      );
-    this.newCourseInput = newCourseSetting.controlEl.createEl("input", {
-      attr: { placeholder: "例: 社会デザイン概論", type: "text" },
-      cls: "seiton-new-course-input",
+
+    this.newCourseRow = fieldRow(this.classFields, {
+      description:
+        "前後の空白は除きます。既存と同じ名前なら同じ科目として扱います。",
+      label: "新しい科目名",
     });
-    this.newCourseInput.addEventListener("input", () => {
-      this.course = this.newCourseInput?.value.trim() ?? "";
+    const newCourseInput = this.newCourseRow.createEl("input", {
+      cls: "st-input",
+      type: "text",
     });
-    this.newCourseSetting = newCourseSetting.settingEl;
+    newCourseInput.placeholder = "例: 社会デザイン概論";
+    newCourseInput.addEventListener("input", () => {
+      this.course = newCourseInput.value.trim();
+    });
+    this.newCourseInput = newCourseInput;
+
+    textField(this.classFields, {
+      description: "授業テンプレートのとき必須です。",
+      label: "講義日",
+      onChange: (value) => {
+        this.lectureDate = value;
+      },
+      type: "date",
+      value: this.lectureDate,
+    });
+
     this.showNewCourse(false);
-    new Setting(this.classFields)
-      .setName("講義日")
-      .setDesc("授業テンプレートのとき必須です。")
-      .addText((text: TextComponent) => {
-        text.inputEl.type = "date";
-        text.setValue(this.lectureDate).onChange((value) => {
-          this.lectureDate = value;
-        });
-      });
     this.updateClassFields();
     void this.loadCourses();
 
-    this.candidatesEl = this.contentEl.createDiv({
-      cls: "seiton-class-candidates",
+    this.candidatesEl = body.createDiv({ cls: "seiton-class-candidates" });
+    this.statusEl = body.createDiv({ cls: "st-status" });
+
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
     });
-    this.statusEl = this.contentEl.createDiv({ cls: "seiton-modal-status" });
-    const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
-    new ButtonComponent(footer)
-      .setButtonText("キャンセル")
-      .onClick(() => this.close());
-    new ButtonComponent(footer)
-      .setButtonText("作成")
-      .setCta()
-      .onClick(() => {
+    button(footer, {
+      label: "作成",
+      onClick: () => {
         void this.submit();
-      });
+      },
+      tone: "primary",
+    });
+  }
+
+  override onClose(): void {
+    this.contentEl.empty();
+    this.statusEl = null;
+    this.candidatesEl = null;
+    this.classFields = null;
+    this.courseControl = null;
+    this.newCourseInput = null;
+    this.newCourseRow = null;
   }
 
   private showNewCourse(show: boolean): void {
-    if (this.newCourseSetting) {
-      this.newCourseSetting.style.display = show ? "" : "none";
+    if (this.newCourseRow) {
+      this.newCourseRow.style.display = show ? "" : "none";
     }
     if (show) {
       this.newCourseInput?.focus();
@@ -178,7 +196,8 @@ export class NewNoteModal extends Modal {
   }
 
   private async loadCourses(): Promise<void> {
-    if (!this.courseSelect) {
+    const control = this.courseControl;
+    if (!control) {
       return;
     }
     const index = await this.indexService.get();
@@ -192,23 +211,16 @@ export class NewNoteModal extends Modal {
     const courses = [...counts.keys()].sort((left, right) =>
       left.localeCompare(right, "ja")
     );
-    this.courseSelect.empty();
-    this.courseSelect.createEl("option", {
-      text: "既存の科目から選択",
-      value: "",
-    });
-    for (const course of courses) {
-      this.courseSelect.createEl("option", {
-        text: `${course}（${counts.get(course) ?? 0}）`,
+    control.setChoices([
+      { label: "既存の科目から選択", value: "" },
+      ...courses.map((course) => ({
+        label: `${course}（${counts.get(course) ?? 0}）`,
         value: course,
-      });
-    }
-    this.courseSelect.createEl("option", {
-      text: "＋ 新しい科目を入力",
-      value: "__new",
-    });
+      })),
+      { label: "＋ 新しい科目を入力", value: "__new" },
+    ]);
     if (courses.length === 0) {
-      this.courseSelect.value = "__new";
+      control.setValue("__new");
       this.showNewCourse(true);
     }
   }

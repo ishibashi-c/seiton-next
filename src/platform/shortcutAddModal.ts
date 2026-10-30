@@ -1,12 +1,14 @@
 import type { App } from "obsidian";
 import { Modal } from "obsidian";
+import { button } from "./ui/field";
+import { buildSeitonModal } from "./ui/modal";
 
 interface ShortcutAddModalOptions {
   onFolder: () => void;
   onShortcut: () => void;
 }
 
-/** 「追加」から、ショートカットかフォルダかを選ぶ。 */
+/** 「追加」から、ショートカットかグループかを選ぶ。 */
 export class ShortcutAddModal extends Modal {
   private readonly options: ShortcutAddModalOptions;
 
@@ -16,19 +18,18 @@ export class ShortcutAddModal extends Modal {
   }
 
   override onOpen(): void {
-    this.setTitle("追加");
-    const list = this.contentEl.createDiv({ cls: "seiton-add-choice" });
+    const { body, footer } = buildSeitonModal(this, {
+      description: "リンクを1つ足すか、見出しでまとめるかを選びます。",
+      title: "追加",
+    });
 
-    const shortcut = list.createEl("button", {
-      attr: { type: "button" },
-      cls: "seiton-add-choice-item",
+    const shortcut = body.createEl("button", {
+      cls: "st-choice",
+      type: "button",
     });
+    shortcut.createDiv({ cls: "st-choice-title", text: "ショートカット" });
     shortcut.createDiv({
-      cls: "seiton-add-choice-title",
-      text: "ショートカット",
-    });
-    shortcut.createDiv({
-      cls: "seiton-add-choice-desc",
+      cls: "st-choice-desc",
       text: "URLまたはノートへのリンクを1つ追加します。",
     });
     shortcut.addEventListener("click", () => {
@@ -36,13 +37,13 @@ export class ShortcutAddModal extends Modal {
       this.options.onShortcut();
     });
 
-    const folder = list.createEl("button", {
-      attr: { type: "button" },
-      cls: "seiton-add-choice-item",
+    const folder = body.createEl("button", {
+      cls: "st-choice",
+      type: "button",
     });
-    folder.createDiv({ cls: "seiton-add-choice-title", text: "グループ" });
+    folder.createDiv({ cls: "st-choice-title", text: "グループ" });
     folder.createDiv({
-      cls: "seiton-add-choice-desc",
+      cls: "st-choice-desc",
       text: "ショートカットを見出しでまとめます。",
     });
     folder.addEventListener("click", () => {
@@ -50,12 +51,11 @@ export class ShortcutAddModal extends Modal {
       this.options.onFolder();
     });
 
-    const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
-    const cancel = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
     });
-    cancel.addEventListener("click", () => this.close());
   }
 
   override onClose(): void {

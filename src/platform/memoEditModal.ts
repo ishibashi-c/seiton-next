@@ -3,9 +3,11 @@
  */
 
 import type { App } from "obsidian";
-import { ButtonComponent, Modal, TextAreaComponent } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import type { MemoListItem, MemoService } from "../services/memoService";
+import { markSeitonModal } from "./ui/modal";
+import { ButtonComponent, TextAreaComponent } from "./ui/setting";
 
 export class MemoEditModal extends Modal {
   private readonly memoService: MemoService;
@@ -31,6 +33,7 @@ export class MemoEditModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-edit-modal");
     this.setTitle("メモを編集");
 

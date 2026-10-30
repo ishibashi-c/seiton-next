@@ -1,6 +1,8 @@
 import type { App, Component } from "obsidian";
-import { ButtonComponent, MarkdownRenderer, Modal, Setting } from "obsidian";
+import { MarkdownRenderer, Modal } from "obsidian";
 import type { PromptSessionSummary } from "../../services/promptService";
+import { markSeitonModal } from "../ui/modal";
+import { ButtonComponent, Setting } from "../ui/setting";
 
 interface PromptEntry {
   at: string;
@@ -39,6 +41,7 @@ class PromptHandoffModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.setTitle(`${this.heading} の引き継ぎ`);
     this.contentEl.createEl("p", {
       cls: "seiton-prompt-hint",

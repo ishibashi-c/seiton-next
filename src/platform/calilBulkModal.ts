@@ -1,5 +1,5 @@
 import type { App } from "obsidian";
-import { Modal, Notice } from "obsidian";
+import { Modal } from "obsidian";
 import {
   type CalilBranch,
   calilAvailableCount,
@@ -14,6 +14,10 @@ import { isAllowedRemoteUrl } from "../domain/network";
 import type { BookService, CalilSearchResult } from "../services/bookService";
 import type { CalilLastResult, SeitonSettings } from "../services/settings";
 import type { NoteRecord } from "../services/vaultIndex";
+import { markSeitonModal } from "./ui/modal";
+import { createSelect, type SelectControl } from "./ui/select";
+
+import { showToast } from "./ui/toast";
 
 type RowStatus = "cached" | "done" | "error" | "idle" | "running";
 type Filter = "all" | "available" | "error" | "held" | "idle" | "unavailable";
@@ -45,7 +49,7 @@ export class CalilBulkModal extends Modal {
     patch: Partial<SeitonSettings>
   ) => Promise<void>;
   private sort: Sort = "configured";
-  private sortEl: HTMLSelectElement | null = null;
+  private sortEl: SelectControl | null = null;
   private statusEl: HTMLElement | null = null;
   private summaryEl: HTMLElement | null = null;
   private busy = false;
@@ -83,6 +87,7 @@ export class CalilBulkModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-calil-modal");
     this.setTitle("カーリルで一括検索");
     this.contentEl.createEl("p", {
@@ -160,29 +165,26 @@ export class CalilBulkModal extends Modal {
 
     const sortRow = this.contentEl.createDiv({ cls: "seiton-calil-sort" });
     sortRow.createSpan({ cls: "seiton-calil-sort-label", text: "並び順" });
-    this.sortEl = sortRow.createEl("select", {
-      attr: { "aria-label": "一括検索結果の並び順" },
-      cls: "dropdown",
+    this.sortEl = createSelect({
+      choices: [
+        { label: "設定した図書館順", value: "configured" },
+        { label: "貸出可が多い順", value: "available" },
+        { label: "書名順", value: "title" },
+      ],
+      onChange: (value) => {
+        this.sort =
+          value === "title"
+            ? "title"
+            : value === "available"
+              ? "available"
+              : "configured";
+        this.renderRows();
+      },
+      value: this.sort,
     });
-    this.sortEl.createEl("option", {
-      text: "設定した図書館順",
-      value: "configured",
-    });
-    this.sortEl.createEl("option", {
-      text: "貸出可が多い順",
-      value: "available",
-    });
-    this.sortEl.createEl("option", { text: "書名順", value: "title" });
-    this.sortEl.value = this.sort;
-    this.sortEl.addEventListener("change", () => {
-      this.sort =
-        this.sortEl?.value === "title"
-          ? "title"
-          : this.sortEl?.value === "available"
-            ? "available"
-            : "configured";
-      this.renderRows();
-    });
+    this.sortEl.element.addClass("seiton-calil-sort-select");
+    this.sortEl.element.addClass("is-quiet");
+    sortRow.append(this.sortEl.element);
 
     this.listEl = this.contentEl.createDiv({ cls: "seiton-calil-list" });
     this.renderRows();
@@ -555,7 +557,7 @@ export class CalilBulkModal extends Modal {
       return;
     }
     if ((this.getSettings().calilApiKey ?? "").trim() === "") {
-      new Notice("カーリルのAPIキーが未設定です。");
+      showToast("カーリルのAPIキーが未設定です。");
       return;
     }
     const targets = this.rows.filter((row) => row.selected);
@@ -625,7 +627,7 @@ export class CalilBulkModal extends Modal {
     }
     const summary = `今回の検索: 対象 ${targets.length}冊 / 貸出可 ${hits}冊 / 失敗 ${failures}冊`;
     this.setProgress(summary);
-    new Notice(summary);
+    showToast(summary);
   }
 
   private setProgress(message: string): void {

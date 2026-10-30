@@ -1,3 +1,4 @@
+import { showToast } from "./platform/ui/toast";
 /**
  * Seiton Next (plugin id: seiton-next)
  * 個人用の記録・整理・再発見プラグイン。
@@ -5,7 +6,7 @@
  */
 
 import type { EventRef, Menu } from "obsidian";
-import { Notice, Plugin, TFile } from "obsidian";
+import { Plugin, TFile } from "obsidian";
 import {
   LINKS_FILE,
   VIEW_TYPE_BOOKSHELF,
@@ -170,7 +171,7 @@ export default class SeitonNextPlugin extends Plugin {
           addBook: () => this.openAddBook(),
           bulkEdit: (records) => {
             if (records.length === 0) {
-              new Notice("本がありません。");
+              showToast("本がありません。");
               return;
             }
             new BookBulkEditModal(this.app, this.books, records, {
@@ -375,7 +376,7 @@ export default class SeitonNextPlugin extends Plugin {
         (note.book.book_isbn ?? "").trim() !== ""
     );
     if (targets.length === 0) {
-      new Notice("表紙が無い本はありません。");
+      showToast("表紙が無い本はありません。");
       return;
     }
     new ConfirmModal(this.app, {
@@ -389,7 +390,7 @@ export default class SeitonNextPlugin extends Plugin {
             done += 1;
           }
         }
-        new Notice(`${done}冊に仮表紙を作りました。`);
+        showToast(`${done}冊に仮表紙を作りました。`);
         this.indexService.invalidate();
       },
       title: "仮表紙を作る",
@@ -415,7 +416,7 @@ export default class SeitonNextPlugin extends Plugin {
       }
     }
     if (targets.length === 0) {
-      new Notice("表紙はすべて埋め込み済みです。");
+      showToast("表紙はすべて埋め込み済みです。");
       return;
     }
     new ConfirmModal(this.app, {
@@ -429,7 +430,7 @@ export default class SeitonNextPlugin extends Plugin {
           );
           done += 1;
         }
-        new Notice(`${done}冊に表紙を埋め込みました。`);
+        showToast(`${done}冊に表紙を埋め込みました。`);
         this.indexService.invalidate();
       },
       title: "表紙をノートに埋め込む",
@@ -456,15 +457,15 @@ export default class SeitonNextPlugin extends Plugin {
         addLink(content, { group: null, label, target: url })
       );
       if (edit.status === "added") {
-        new Notice(`「${label}」を追加しました。`);
+        showToast(`「${label}」を追加しました。`);
       } else if (edit.status === "duplicate") {
-        new Notice("同じリンクがすでにあります。");
+        showToast("同じリンクがすでにあります。");
       } else {
-        new Notice("追加できませんでした。");
+        showToast("追加できませんでした。");
       }
       this.refreshHomeViews();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 
@@ -475,7 +476,7 @@ export default class SeitonNextPlugin extends Plugin {
       target: shortcut.target,
     }));
     if (items.length === 0) {
-      new Notice("移すショートカットはありません。");
+      showToast("移すショートカットはありません。");
       return;
     }
     let added = 0;
@@ -489,10 +490,10 @@ export default class SeitonNextPlugin extends Plugin {
         };
       });
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
       return;
     }
-    new Notice(`${added}件をノートへ移しました。`);
+    showToast(`${added}件をノートへ移しました。`);
     this.refreshHomeViews();
   }
 
@@ -500,7 +501,7 @@ export default class SeitonNextPlugin extends Plugin {
     try {
       await this.links.ensure();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
       return;
     }
     await this.app.workspace.openLinkText(LINKS_FILE, "", false);
@@ -514,7 +515,7 @@ export default class SeitonNextPlugin extends Plugin {
 
   private openCalilBulk(records: NoteRecord[]): void {
     if (records.length === 0) {
-      new Notice("本がありません。");
+      showToast("本がありません。");
       return;
     }
     new CalilBulkModal(
@@ -584,10 +585,10 @@ export default class SeitonNextPlugin extends Plugin {
         await openBasesView(this.app, first);
       }
       if (result.created.length > 0) {
-        new Notice("Basesビューを作成しました。");
+        showToast("Basesビューを作成しました。");
       }
     } catch (error) {
-      new Notice(error instanceof Error ? error.message : String(error));
+      showToast(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -613,14 +614,14 @@ export default class SeitonNextPlugin extends Plugin {
     try {
       const records = await this.books.listBooks();
       if (records.length === 0) {
-        new Notice("本棚に書籍がありません。");
+        showToast("本棚に書籍がありません。");
         return;
       }
       new BookBulkEditModal(this.app, this.books, records, {
         onApplied: () => this.indexService.invalidate(),
       }).open();
     } catch (error) {
-      new Notice(error instanceof Error ? error.message : String(error));
+      showToast(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -628,9 +629,7 @@ export default class SeitonNextPlugin extends Plugin {
     new MigrationModal(this.app, this.migration, {
       onConverted: () => {
         this.indexService.invalidate();
-        new Notice(
-          "移行結果を確認してください。元ファイルは変更していません。"
-        );
+        showToast("移行結果を確認してください。元ファイルは変更していません。");
       },
     }).open();
   }
@@ -646,7 +645,7 @@ export default class SeitonNextPlugin extends Plugin {
   private openActiveWebClipPreview(): void {
     const file = this.app.workspace.getActiveFile();
     if (!file) {
-      new Notice("Webクリップのノートを開いてください。");
+      showToast("Webクリップのノートを開いてください。");
       return;
     }
     const frontmatter =
@@ -654,7 +653,7 @@ export default class SeitonNextPlugin extends Plugin {
         | Record<string, unknown>
         | undefined) ?? {};
     if (frontmatter.kind !== "webclip") {
-      new Notice("現在のノートはWebクリップではありません。");
+      showToast("現在のノートはWebクリップではありません。");
       return;
     }
     const source =
@@ -665,7 +664,7 @@ export default class SeitonNextPlugin extends Plugin {
   private async openFile(path: string): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) {
-      new Notice("ファイルが見つかりません。");
+      showToast("ファイルが見つかりません。");
       return;
     }
     await this.app.workspace.getLeaf(false).openFile(file);
@@ -673,7 +672,7 @@ export default class SeitonNextPlugin extends Plugin {
 
   private openMemoCapture(): void {
     if (this.captureOpen) {
-      new Notice("一言メモの入力画面は既に開いています。");
+      showToast("一言メモの入力画面は既に開いています。");
       return;
     }
     this.captureOpen = true;
@@ -697,9 +696,7 @@ export default class SeitonNextPlugin extends Plugin {
     const path = this.memoService.currentWeekPath();
     const file = this.app.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) {
-      new Notice(
-        "今週の一言メモはまだありません。一言メモを追加してください。"
-      );
+      showToast("今週の一言メモはまだありません。一言メモを追加してください。");
       return;
     }
     await this.app.workspace.openLinkText(path, "", true);

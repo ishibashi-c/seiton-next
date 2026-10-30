@@ -20,6 +20,10 @@ import { renderBookCoverFallback, resolveCover } from "./bookCover";
 import { makeCardClickable } from "./cardClick";
 import { QuickSearchModal } from "./quickSearchModal";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
+import {
+  createSelect as createUiSelect,
+  type SelectControl,
+} from "./ui/select";
 
 export interface BookshelfHost {
   addBook(): void;
@@ -63,7 +67,7 @@ export class SeitonBookshelfView extends ItemView {
   private gridEl: HTMLElement | null = null;
   private countEl: HTMLElement | null = null;
   private searchInput: HTMLInputElement | null = null;
-  private categorySelect: HTMLSelectElement | null = null;
+  private categorySelect: SelectControl | null = null;
   private eventRefs: EventRef[] = [];
   private refreshTimer: number | null = null;
   private refreshing = false;
@@ -233,18 +237,18 @@ export class SeitonBookshelfView extends ItemView {
     label: string,
     options: Array<{ label: string; value: string }>,
     onChange: (value: string) => void
-  ): HTMLSelectElement {
+  ): SelectControl {
     const wrap = parent.createEl("label", { cls: "seiton-bookshelf-filter" });
     wrap.createSpan({ cls: "seiton-bookshelf-filter-label", text: label });
-    const select = wrap.createEl("select", {
-      attr: { "aria-label": label },
-      cls: "dropdown seiton-library-select",
+    const control = createUiSelect({
+      choices: options,
+      onChange,
+      value: options[0]?.value ?? "",
     });
-    for (const option of options) {
-      select.createEl("option", { text: option.label, value: option.value });
-    }
-    select.addEventListener("change", () => onChange(select.value));
-    return select;
+    control.element.addClass("seiton-library-select");
+    control.element.addClass("is-quiet");
+    wrap.append(control.element);
+    return control;
   }
 
   private async refresh(): Promise<void> {
@@ -277,21 +281,14 @@ export class SeitonBookshelfView extends ItemView {
     }
     const categories = bookCategories(this.records.map(toItem));
     const current = this.filters.category;
-    this.categorySelect.empty();
-    this.categorySelect.createEl("option", {
-      text: "すべて",
-      value: "all",
-    });
-    for (const category of categories) {
-      this.categorySelect.createEl("option", {
-        text: category,
-        value: category,
-      });
-    }
+    this.categorySelect.setChoices([
+      { label: "すべて", value: "all" },
+      ...categories.map((category) => ({ label: category, value: category })),
+    ]);
     if (current !== "all" && !categories.includes(current)) {
       this.filters.category = "all";
     }
-    this.categorySelect.value = this.filters.category;
+    this.categorySelect.setValue(this.filters.category);
   }
 
   private render(): void {

@@ -1,5 +1,7 @@
 import type { App } from "obsidian";
-import { Modal, Setting, type TextComponent } from "obsidian";
+import { Modal } from "obsidian";
+import { button, selectField, textField } from "./ui/field";
+import { buildSeitonModal } from "./ui/modal";
 
 export interface ShortcutInput {
   group: string | null;
@@ -31,64 +33,62 @@ export class ShortcutModal extends Modal {
   }
 
   override onOpen(): void {
-    this.setTitle(
-      this.options.initial ? "ショートカットを編集" : "ショートカットを追加"
-    );
-    this.contentEl.createEl("p", {
-      cls: "seiton-shortcut-hint",
-      text: "URLは既定のブラウザで、ノートはObsidianで開きます。保存先は Seiton/System/Links.md です。",
+    const { body, footer } = buildSeitonModal(this, {
+      description:
+        "URLは既定のブラウザで、ノートはObsidianで開きます。保存先は Seiton/System/Links.md です。",
+      title: this.options.initial
+        ? "ショートカットを編集"
+        : "ショートカットを追加",
     });
 
     if (this.options.groups.length > 0) {
-      new Setting(this.contentEl)
-        .setName("グループ")
-        .addDropdown((dropdown) => {
-          dropdown.addOption("", "なし");
-          for (const group of this.options.groups) {
-            dropdown.addOption(group, group);
-          }
-          dropdown.setValue(this.group ?? "").onChange((value) => {
-            this.group = value === "" ? null : value;
-          });
-        });
+      selectField(body, {
+        choices: [
+          { label: "なし", value: "" },
+          ...this.options.groups.map((group) => ({
+            label: group,
+            value: group,
+          })),
+        ],
+        label: "グループ",
+        onChange: (value) => {
+          this.group = value === "" ? null : value;
+        },
+        value: this.group ?? "",
+      });
     }
 
-    new Setting(this.contentEl).setName("ラベル").addText((text) => {
-      text.setValue(this.label).onChange((value) => {
+    const labelInput = textField(body, {
+      label: "ラベル",
+      onChange: (value) => {
         this.label = value;
-      });
-      window.setTimeout(() => text.inputEl.focus(), 50);
+      },
+      value: this.label,
+    });
+    textField(body, {
+      description: "https://… または [[ノート]] / Vault内のパス",
+      label: "リンク",
+      onChange: (value) => {
+        this.target = value;
+      },
+      placeholder: "https://example.com または [[ノート]]",
+      value: this.target,
+    });
+    window.setTimeout(() => labelInput.focus(), 50);
+
+    this.statusEl = body.createDiv({ cls: "st-status" });
+
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
+    });
+    button(footer, {
+      label: "保存",
+      onClick: () => this.submit(),
+      tone: "primary",
     });
 
-    new Setting(this.contentEl)
-      .setName("リンク")
-      .setDesc("https://… または [[ノート]] / Vault内のパス")
-      .addText((text: TextComponent) => {
-        text
-          .setPlaceholder("https://example.com または [[ノート]]")
-          .setValue(this.target)
-          .onChange((value) => {
-            this.target = value;
-          });
-      });
-
-    this.statusEl = this.contentEl.createDiv({
-      cls: "seiton-shortcut-modal-status",
-    });
-    this.statusEl.setAttribute("aria-live", "polite");
-
-    const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
-    const cancel = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
-    });
-    cancel.addEventListener("click", () => this.close());
-    const save = footer.createEl("button", {
-      attr: { type: "button" },
-      cls: "mod-cta",
-      text: "保存",
-    });
-    save.addEventListener("click", () => this.submit());
     this.scope.register([], "Enter", (event) => {
       event.preventDefault();
       this.submit();

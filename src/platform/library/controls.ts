@@ -1,5 +1,6 @@
 import type { VaultIndex } from "../../services/vaultIndex";
 import { allCourses, allLists, allTags } from "../../services/vaultIndex";
+import { createSelect, type SelectControl } from "../ui/select";
 import type { LibrarySort } from "./query";
 import type { LibrarySelection } from "./selection";
 
@@ -21,29 +22,28 @@ export interface LibraryControlsOptions {
 }
 
 function fillSelect(
-  select: HTMLSelectElement | null,
+  control: SelectControl | null,
   emptyLabel: string,
   values: string[],
   current: string
 ): void {
-  if (!select) {
+  if (!control) {
     return;
   }
-  select.empty();
-  select.createEl("option", { text: emptyLabel, value: "" });
-  for (const value of values) {
-    select.createEl("option", { text: value, value });
-  }
-  select.value = current;
+  control.setChoices([
+    { label: emptyLabel, value: "" },
+    ...values.map((value) => ({ label: value, value })),
+  ]);
+  control.setValue(current);
 }
 
 export class LibraryControls {
   private readonly options: LibraryControlsOptions;
-  private courseSelect: HTMLSelectElement | null = null;
-  private listSelect: HTMLSelectElement | null = null;
-  private projectSelect: HTMLSelectElement | null = null;
-  private sortSelect: HTMLSelectElement | null = null;
-  private tagSelect: HTMLSelectElement | null = null;
+  private courseSelect: SelectControl | null = null;
+  private listSelect: SelectControl | null = null;
+  private projectSelect: SelectControl | null = null;
+  private sortSelect: SelectControl | null = null;
+  private tagSelect: SelectControl | null = null;
 
   constructor(options: LibraryControlsOptions) {
     this.options = options;
@@ -52,32 +52,31 @@ export class LibraryControls {
   mount(parent: HTMLElement): void {
     const controls = parent.createDiv({ cls: "seiton-library-controls" });
 
-    this.courseSelect = controls.createEl("select", {
-      attr: { "aria-label": "科目で絞り込む" },
-      cls: "dropdown seiton-library-select seiton-course-select",
+    this.courseSelect = createSelect({
+      choices: [],
+      onChange: (value) => this.options.onCourseChange(value),
+      value: this.options.getCourse(),
     });
-    this.courseSelect.addEventListener("change", () => {
-      this.options.onCourseChange(this.courseSelect?.value ?? "");
-    });
+    this.courseSelect.element.addClass("seiton-library-select");
+    this.courseSelect.element.addClass("is-quiet");
+    this.courseSelect.element.addClass("seiton-course-select");
+    controls.append(this.courseSelect.element);
 
-    const sort = controls.createEl("select", {
-      attr: { "aria-label": "並び順" },
-      cls: "dropdown seiton-library-select",
+    this.sortSelect = createSelect({
+      choices: [
+        { label: "更新順", value: "updated" },
+        { label: "作成順", value: "created" },
+        { label: "講義日順", value: "lecture" },
+      ],
+      onChange: (value) =>
+        this.options.onSortChange(
+          value === "created" || value === "lecture" ? value : "updated"
+        ),
+      value: this.options.getSort(),
     });
-    this.sortSelect = sort;
-    sort.createEl("option", { text: "更新順", value: "updated" });
-    sort.createEl("option", { text: "作成順", value: "created" });
-    sort.createEl("option", { text: "講義日順", value: "lecture" });
-    sort.value = this.options.getSort();
-    sort.addEventListener("change", () => {
-      this.options.onSortChange(
-        sort.value === "created"
-          ? "created"
-          : sort.value === "lecture"
-            ? "lecture"
-            : "updated"
-      );
-    });
+    this.sortSelect.element.addClass("seiton-library-select");
+    this.sortSelect.element.addClass("is-quiet");
+    controls.append(this.sortSelect.element);
 
     const layout = controls.createDiv({
       attr: { "aria-label": "表示", role: "group" },
@@ -123,27 +122,30 @@ export class LibraryControls {
     });
     more.createEl("summary", { text: "タグ・リスト・プロジェクトで絞り込む" });
     const selects = more.createDiv({ cls: "seiton-library-selects" });
-    this.tagSelect = selects.createEl("select", {
-      attr: { "aria-label": "タグで絞り込む" },
-      cls: "dropdown",
+    this.tagSelect = createSelect({
+      choices: [],
+      onChange: (value) => this.options.onTagChange(value),
+      value: this.options.getTag(),
     });
-    this.tagSelect.addEventListener("change", () => {
-      this.options.onTagChange(this.tagSelect?.value ?? "");
+    this.tagSelect.element.addClass("seiton-library-select");
+    this.tagSelect.element.addClass("is-quiet");
+    selects.append(this.tagSelect.element);
+    this.listSelect = createSelect({
+      choices: [],
+      onChange: (value) => this.options.onListChange(value),
+      value: this.options.getList(),
     });
-    this.listSelect = selects.createEl("select", {
-      attr: { "aria-label": "リストで絞り込む" },
-      cls: "dropdown",
+    this.listSelect.element.addClass("seiton-library-select");
+    this.listSelect.element.addClass("is-quiet");
+    selects.append(this.listSelect.element);
+    this.projectSelect = createSelect({
+      choices: [],
+      onChange: (value) => this.options.onProjectChange(value),
+      value: this.options.getProject(),
     });
-    this.listSelect.addEventListener("change", () => {
-      this.options.onListChange(this.listSelect?.value ?? "");
-    });
-    this.projectSelect = selects.createEl("select", {
-      attr: { "aria-label": "プロジェクトで絞り込む" },
-      cls: "dropdown",
-    });
-    this.projectSelect.addEventListener("change", () => {
-      this.options.onProjectChange(this.projectSelect?.value ?? "");
-    });
+    this.projectSelect.element.addClass("seiton-library-select");
+    this.projectSelect.element.addClass("is-quiet");
+    selects.append(this.projectSelect.element);
   }
 
   refreshOptions(index: VaultIndex): void {
@@ -184,9 +186,9 @@ export class LibraryControls {
     if (!this.sortSelect) {
       return;
     }
-    this.sortSelect.value = sort;
-    this.sortSelect.disabled = searching;
-    this.sortSelect.title = searching
+    this.sortSelect.setValue(sort);
+    this.sortSelect.element.toggleClass("is-disabled", searching);
+    this.sortSelect.element.title = searching
       ? "検索中は関連度順で表示します"
       : "並び順";
   }

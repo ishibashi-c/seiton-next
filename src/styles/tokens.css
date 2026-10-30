@@ -7,7 +7,11 @@
 .seiton-edit-modal,
 .seiton-promote-modal,
 .seiton-book-modal,
-.seiton-migration-modal {
+.seiton-migration-modal,
+.st-modal,
+.st-toasts,
+.st-select-pop,
+.st-ui {
   --st-max-home: 1060px;
   --st-max-library: 1120px;
   --st-max-projects: 1060px;
@@ -53,7 +57,11 @@
 .theme-dark .seiton-edit-modal,
 .theme-dark .seiton-promote-modal,
 .theme-dark .seiton-book-modal,
-.theme-dark .seiton-migration-modal {
+.theme-dark .seiton-migration-modal,
+.theme-dark .st-modal,
+.theme-dark .st-toasts,
+.theme-dark .st-select-pop,
+.theme-dark .st-ui {
   --st-data: #7aa7ff;
 }
 

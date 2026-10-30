@@ -1,5 +1,6 @@
-import type { Editor, Plugin } from "obsidian";
-import { type Menu, Notice } from "obsidian";
+import type { Editor, Menu, Plugin } from "obsidian";
+
+import { showToast } from "./ui/toast";
 
 function wrapSelection(editor: Editor, before: string, after: string): void {
   const selected = editor.getSelection();
@@ -83,11 +84,11 @@ export function registerFormatting(plugin: Plugin): void {
           .onClick(() => {
             const selected = editor.getSelection();
             if (selected === "") {
-              new Notice("選択範囲がありません。");
+              showToast("選択範囲がありません。");
               return;
             }
             void navigator.clipboard.writeText(selected).catch(() => {
-              new Notice("コピーに失敗しました。");
+              showToast("コピーに失敗しました。");
             });
           });
       });

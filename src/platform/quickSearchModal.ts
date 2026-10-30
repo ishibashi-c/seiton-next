@@ -5,6 +5,7 @@
 
 import type { App } from "obsidian";
 import { Modal } from "obsidian";
+import { markSeitonModal } from "./ui/modal";
 
 export interface QuickSearchItem {
   action: () => void;
@@ -36,6 +37,7 @@ export class QuickSearchModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.modalEl.addClass("seiton-quick-search-modal");
     this.setTitle(this.options.title);
 

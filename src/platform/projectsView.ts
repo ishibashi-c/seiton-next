@@ -1,12 +1,5 @@
 import type { App, EventRef, TAbstractFile, WorkspaceLeaf } from "obsidian";
-import {
-  ItemView,
-  Modal,
-  Notice,
-  Setting,
-  type TextComponent,
-  TFile,
-} from "obsidian";
+import { ItemView, Modal, TFile } from "obsidian";
 import { VIEW_TYPE_PROJECTS } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { normalizeLink, wikiLink } from "../domain/links";
@@ -17,7 +10,10 @@ import type { NoteRecord, VaultIndex } from "../services/vaultIndex";
 import { allProjects, type VaultIndexService } from "../services/vaultIndex";
 import { ProjectsRenderer } from "./projects/view";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
+import { markSeitonModal } from "./ui/modal";
+import { Setting, type TextComponent } from "./ui/setting";
 
+import { showToast } from "./ui/toast";
 export interface ProjectsHost {
   openPrompt(path: string): void;
 }
@@ -149,7 +145,7 @@ export class SeitonProjectsView extends ItemView {
       }
       await this.renderer.renderList(this.bodyEl, index, projects);
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     } finally {
       this.refreshing = false;
       if (this.refreshAgain) {
@@ -181,7 +177,7 @@ export class SeitonProjectsView extends ItemView {
       this.host.openPrompt(session.path);
       this.invalidateAndRefresh();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 
@@ -192,7 +188,7 @@ export class SeitonProjectsView extends ItemView {
       });
       this.invalidateAndRefresh();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 
@@ -205,14 +201,14 @@ export class SeitonProjectsView extends ItemView {
       );
       this.invalidateAndRefresh();
     } catch (error) {
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 
   private async openPath(path: string): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) {
-      new Notice("ファイルが見つかりません。");
+      showToast("ファイルが見つかりません。");
       return;
     }
     await this.app.workspace.getLeaf(false).openFile(file);
@@ -263,6 +259,7 @@ class NewProjectModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.setTitle("新しいプロジェクト");
     this.contentEl.createEl("p", {
       cls: "seiton-prompt-hint",
@@ -342,6 +339,7 @@ class LinkNoteModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.setTitle(`「${this.project.title}」に関連付ける`);
     const search = this.contentEl.createEl("input", {
       attr: { placeholder: "ノートを検索", type: "search" },
@@ -402,7 +400,7 @@ class LinkNoteModal extends Modal {
       this.onLinked();
     } catch (error) {
       button.disabled = false;
-      new Notice(userMessageOf(error));
+      showToast(userMessageOf(error));
     }
   }
 }

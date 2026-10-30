@@ -4,14 +4,7 @@
  */
 
 import type { App, WorkspaceLeaf } from "obsidian";
-import {
-  ButtonComponent,
-  ItemView,
-  Menu,
-  Modal,
-  Setting,
-  type TextComponent,
-} from "obsidian";
+import { ItemView, Menu, Modal } from "obsidian";
 import { VIEW_TYPE_PROMPT } from "../config";
 import { userMessageOf } from "../domain/errors";
 import type {
@@ -21,6 +14,8 @@ import type {
 import { PromptComposer } from "./prompt/composer";
 import { PromptHistory } from "./prompt/history";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
+import { markSeitonModal } from "./ui/modal";
+import { ButtonComponent, Setting, type TextComponent } from "./ui/setting";
 
 /** クリップボードへコピーする。成功した場合だけ true。 */
 export async function copyToClipboard(text: string): Promise<boolean> {
@@ -70,6 +65,7 @@ class NewPromptSessionModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.setTitle("新しいプロンプトセッション");
     this.contentEl.createEl("p", {
       cls: "seiton-prompt-hint",
@@ -153,6 +149,7 @@ class PromptSessionPickerModal extends Modal {
   }
 
   override onOpen(): void {
+    markSeitonModal(this);
     this.setTitle("プロンプトセッション");
     const body = this.contentEl.createDiv({ cls: "seiton-session-picker" });
     body.setText("読み込み中…");
