@@ -23,7 +23,7 @@ describe("countSessionsByProject", () => {
       session("サンプル企画", "b.md"),
       session(null, "c.md"),
     ]);
-    expect(counts.get("村田tv")).toBe(2);
+    expect(counts.get("サンプル企画")).toBe(2);
   });
 
   it("リンク表記を正規化して同じプロジェクトに寄せる", () => {
@@ -31,6 +31,6 @@ describe("countSessionsByProject", () => {
       session("[[サンプル企画]]", "a.md"),
       session("サンプル企画", "b.md"),
     ]);
-    expect(counts.get("村田tv")).toBe(2);
+    expect(counts.get("サンプル企画")).toBe(2);
   });
 });

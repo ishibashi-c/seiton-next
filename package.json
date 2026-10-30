@@ -14,7 +14,8 @@
     "lint": "biome check src tests scripts",
     "lint:fix": "biome check --write src tests scripts",
     "styles:build": "node scripts/build-styles.mjs",
-    "styles:check": "node scripts/build-styles.mjs --check"
+    "styles:check": "node scripts/build-styles.mjs --check",
+    "publish:public": "node scripts/publish-public.mjs"
   },
   "keywords": [
     "obsidian",
@@ -22,6 +23,8 @@
     "capture",
     "memo"
   ],
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "author": "IshibashiCustomize",
   "devDependencies": {
     "@biomejs/biome": "^2.5.9",
     "@types/node": "^22.10.0",
@@ -33,7 +36,5 @@
   },
   "dependencies": {
     "defuddle": "^0.19.6"
-  },
-  "author": "IshibashiCustomize",
-  "license": "PolyForm-Noncommercial-1.0.0"
+  }
 }
