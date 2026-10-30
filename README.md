@@ -135,4 +135,4 @@ Required Notice: Copyright IshibashiCustomize (2026)
 全文は [LICENSE](LICENSE) にあります。
 
 - OSI承認のオープンソースライセンスではありません（source-available）
-- 商用利用の許諾は行いません。法人・個人事業での業務利用も商用に含まれます
+- 商用利用の許諾は行いません。営利企業の業務利用も商用に含まれます（非営利組織の利用は許可されます）
