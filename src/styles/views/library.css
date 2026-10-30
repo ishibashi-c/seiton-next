@@ -298,6 +298,24 @@
   width: 52px;
 }
 
+/* 動画は横長。カードでは上部に16:9で置き、リストでは小さく横長にする。 */
+.seiton-item-banner {
+  margin-bottom: 10px;
+}
+
+.seiton-video-cover {
+  aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.seiton-item-cover.is-video {
+  height: auto;
+  width: 72px;
+}
+
 .seiton-book-spine {
   align-items: center;
   border-left: 2px solid var(--st-hairline);

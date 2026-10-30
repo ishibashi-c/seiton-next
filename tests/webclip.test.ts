@@ -60,3 +60,29 @@ describe("WebクリップのHTML解析", () => {
     );
   });
 });
+
+describe("YouTubeのサムネイル", () => {
+  it("URLから動画IDを取り出す", async () => {
+    const { youtubeIdFromUrl } = await import("../src/domain/video");
+    expect(
+      youtubeIdFromUrl("https://www.youtube.com/watch?v=e933OBnx1xk&si=x")
+    ).toBe("e933OBnx1xk");
+    expect(youtubeIdFromUrl("https://youtu.be/e933OBnx1xk")).toBe(
+      "e933OBnx1xk"
+    );
+    expect(youtubeIdFromUrl("https://www.youtube.com/shorts/e933OBnx1xk")).toBe(
+      "e933OBnx1xk"
+    );
+    expect(
+      youtubeIdFromUrl("https://example.com/watch?v=e933OBnx1xk")
+    ).toBeNull();
+  });
+
+  it("本文から最初のYouTubeサムネイルを返す", async () => {
+    const { findYoutubeThumbnail } = await import("../src/domain/video");
+    expect(
+      findYoutubeThumbnail("https://example.com\nhttps://youtu.be/e933OBnx1xk")
+    ).toBe("https://i.ytimg.com/vi/e933OBnx1xk/mqdefault.jpg");
+    expect(findYoutubeThumbnail("https://example.com")).toBeNull();
+  });
+});

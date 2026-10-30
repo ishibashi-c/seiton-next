@@ -9,6 +9,8 @@ export interface ItemAction {
 
 export interface ItemCardOptions {
   actions: ItemAction[];
+  /** カード上部に置く画像（動画サムネイルなど）。 */
+  banner?: HTMLElement;
   date: string;
   kind: string;
   kindLabel: string;
@@ -28,6 +30,10 @@ export function renderItemCard(options: ItemCardOptions): HTMLElement {
   article.className = "seiton-item";
   article.dataset.kind = options.kind;
 
+  if (options.banner) {
+    const banner = article.createDiv({ cls: "seiton-item-banner" });
+    banner.appendChild(options.banner);
+  }
   const head = article.createDiv({ cls: "seiton-item-head" });
   if (options.selectable) {
     const select = document.createElement("button");

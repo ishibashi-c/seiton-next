@@ -1,6 +1,7 @@
 import type { App } from "obsidian";
 import { normalizeLink } from "../../domain/links";
 import { isAllowedRemoteUrl } from "../../domain/network";
+import { findYoutubeThumbnail } from "../../domain/video";
 import { webClipDuplicateKey } from "../../domain/webclip";
 import type {
   IndexItem,
@@ -239,16 +240,35 @@ export class LibraryList {
     const cover = resolveCover(this.options.app, note.cover);
     const coverUrl =
       clip?.image && isAllowedRemoteUrl(clip.image) ? clip.image : null;
+    // 表紙が無いYouTubeクリップは、動画IDからサムネイルを引く。
+    const youtubeThumb =
+      cover === null && coverUrl === null
+        ? findYoutubeThumbnail(`${note.source}\n${note.searchText}`)
+        : null;
+    const remoteCover = coverUrl ?? youtubeThumb;
+    const isVideo = youtubeThumb !== null;
+    const cardLayout = this.options.getLayout() === "cards";
 
     let media: HTMLElement | null = null;
-    if (cover || coverUrl) {
+    let banner: HTMLElement | null = null;
+    if (cover || remoteCover) {
       const image = document.createElement("img");
-      image.className = "seiton-item-cover";
-      image.src = cover ?? (coverUrl as string);
+      image.className = isVideo ? "seiton-video-cover" : "seiton-item-cover";
+      image.src = cover ?? (remoteCover as string);
       image.alt = "";
       image.loading = "lazy";
-      image.addEventListener("error", () => image.remove());
-      media = image;
+      image.addEventListener("error", () => {
+        image.remove();
+        banner?.remove();
+      });
+      if (isVideo && cardLayout) {
+        banner = image;
+      } else {
+        if (isVideo) {
+          image.className = "seiton-item-cover is-video";
+        }
+        media = image;
+      }
     } else if (note.kind === "book") {
       const spine = document.createElement("div");
       spine.className = "seiton-book-spine";
@@ -326,6 +346,7 @@ export class LibraryList {
 
     return renderItemCard({
       actions,
+      banner: banner ?? undefined,
       date: shortDate(note.mtime),
       kind: note.kind,
       kindLabel: KIND_LABELS[note.kind] ?? note.kind,
