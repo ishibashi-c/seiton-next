@@ -15,6 +15,7 @@ import {
 } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { weekIdOf } from "../domain/isoWeek";
+import type { LinkListService } from "../services/linkListService";
 import type { MemoService } from "../services/memoService";
 import type { NoteService } from "../services/noteService";
 import type { PromptService } from "../services/promptService";
@@ -60,7 +61,7 @@ export class SeitonHomeView extends ItemView {
     promptService: PromptService,
     notes: NoteService,
     getSettings: () => SeitonSettings,
-    saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>
+    links: LinkListService
   ) {
     super(leaf);
     this.memoService = memoService;
@@ -69,11 +70,11 @@ export class SeitonHomeView extends ItemView {
     this.notes = notes;
     this.shortcuts = new HomeShortcuts({
       app: this.app,
-      getSettings,
+      favicons: () => getSettings().shortcutFavicons,
+      links,
       openPath: (path) => {
         void this.openPath(path);
       },
-      saveSettings,
     });
     this.sections = new HomeSections({
       app: this.app,
@@ -214,6 +215,7 @@ export class SeitonHomeView extends ItemView {
             .length === 0;
         this.starterEl.style.display = isEmpty ? "" : "none";
       }
+      void this.shortcuts.reload();
       this.sections.renderResume(index, sessionList.sessions);
       this.sections.renderFavorites(index);
       this.sections.renderRecent(index);

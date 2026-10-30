@@ -6,7 +6,7 @@ interface ShortcutFolderModalOptions {
   onSubmit: (name: string) => void;
 }
 
-/** ショートカットのフォルダを作成・改名する。 */
+/** ショートカットのグループを作成・改名する。 */
 export class ShortcutFolderModal extends Modal {
   private readonly options: ShortcutFolderModalOptions;
   private name: string;
@@ -20,11 +20,11 @@ export class ShortcutFolderModal extends Modal {
 
   override onOpen(): void {
     this.setTitle(
-      this.options.initialName ? "フォルダの名前を変更" : "フォルダを作成"
+      this.options.initialName ? "グループの名前を変更" : "グループを作成"
     );
     this.contentEl.createEl("p", {
       cls: "seiton-shortcut-hint",
-      text: "フォルダは1階層だけです。中のショートカットはフォルダを削除するとルートへ戻ります。",
+      text: "グループはノートの見出し1つです。削除すると中のショートカットはグループなしに戻ります。",
     });
 
     new Setting(this.contentEl).setName("名前").addText((text) => {

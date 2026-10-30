@@ -5,10 +5,12 @@ import {
   Setting,
   type TextComponent,
 } from "obsidian";
+import { LINK_BOOKMARKLET } from "../domain/linkList";
 import { WEB_CLIP_BOOKMARKLET } from "../domain/webclip";
 import type { SeitonSettings } from "../services/settings";
 
 export interface SettingsHost {
+  openLinkList(): Promise<void>;
   saveSettings(patch: Partial<SeitonSettings>): Promise<void>;
   settings: SeitonSettings;
 }
@@ -141,6 +143,37 @@ export class SeitonSettingTab extends PluginSettingTab {
       });
 
     containerEl.createEl("h3", { text: "ホーム" });
+    new Setting(containerEl)
+      .setName("ショートカットの保存先")
+      .setDesc(
+        "Seiton/System/Links.md。Vault内のノートなので、同期とバックアップの対象になります。"
+      )
+      .addButton((button) => {
+        button.setButtonText("ノートを開く").onClick(() => {
+          void this.host.openLinkList();
+        });
+      });
+    new Setting(containerEl)
+      .setName("PCでリンクを追加")
+      .setDesc(
+        "ブックマークレットを登録すると、開いているページをショートカットに1行足せます。"
+      )
+      .addButton((button) => {
+        button.setButtonText("コードをコピー").onClick(async () => {
+          try {
+            await navigator.clipboard.writeText(LINK_BOOKMARKLET);
+            new Notice("ブックマークレットをコピーしました。");
+          } catch {
+            new Notice(
+              "コピーできませんでした。下のコードを選択してください。"
+            );
+          }
+        });
+      });
+    const linkCode = containerEl.createEl("pre", {
+      cls: "seiton-bookmarklet",
+    });
+    linkCode.createEl("code", { text: LINK_BOOKMARKLET });
     new Setting(containerEl)
       .setName("ショートカットにfaviconを表示")
       .setDesc(

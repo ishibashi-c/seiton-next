@@ -198,3 +198,73 @@
   margin-top: 2px;
 }
 
+
+/* Drag and drop */
+
+.seiton-shortcut.is-dragging {
+  opacity: 0.35;
+}
+
+.seiton-shortcut.is-drop-target .seiton-shortcut-icon {
+  outline: 2px solid var(--text-normal);
+  outline-offset: 2px;
+}
+
+.seiton-shortcut.is-drop-target .seiton-shortcut-label {
+  color: var(--text-normal);
+}
+
+.seiton-shortcut.is-drop-before::before,
+.seiton-shortcut.is-drop-after::before {
+  background: var(--text-normal);
+  border-radius: 1px;
+  content: "";
+  height: 44px;
+  position: absolute;
+  top: 0;
+  width: 2px;
+}
+
+.seiton-shortcut.is-drop-before::before {
+  left: -10px;
+}
+
+.seiton-shortcut.is-drop-after::before {
+  right: -10px;
+}
+
+/* Dragging with a pointer (touch and mouse) */
+
+.seiton-shortcut {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.seiton-dragging {
+  user-select: none;
+}
+
+.seiton-shortcut-ghost {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  left: 0;
+  opacity: 0.92;
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 76px;
+  z-index: 100;
+}
+
+.seiton-shortcut-ghost .seiton-shortcut-icon {
+  background: var(--background-primary);
+}
+
+@media (max-width: 760px) {
+  .seiton-shortcut-ghost {
+    width: 62px;
+  }
+}

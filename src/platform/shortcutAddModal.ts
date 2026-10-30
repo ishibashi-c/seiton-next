@@ -40,10 +40,10 @@ export class ShortcutAddModal extends Modal {
       attr: { type: "button" },
       cls: "seiton-add-choice-item",
     });
-    folder.createDiv({ cls: "seiton-add-choice-title", text: "フォルダ" });
+    folder.createDiv({ cls: "seiton-add-choice-title", text: "グループ" });
     folder.createDiv({
       cls: "seiton-add-choice-desc",
-      text: "ショートカットをまとめる入れ物を作ります（1階層）。",
+      text: "ショートカットを見出しでまとめます。",
     });
     folder.addEventListener("click", () => {
       this.close();

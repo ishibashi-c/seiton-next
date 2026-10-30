@@ -4,7 +4,12 @@
  */
 
 import type { App, TFile } from "obsidian";
-import { ARCHIVE_FOLDER, MIGRATION_FOLDER, TEMPLATES_FOLDER } from "../config";
+import {
+  ARCHIVE_FOLDER,
+  LINKS_FILE,
+  MIGRATION_FOLDER,
+  TEMPLATES_FOLDER,
+} from "../config";
 import {
   bodyAfterFrontmatter,
   frontmatterList,
@@ -507,6 +512,7 @@ export class VaultIndexService {
       .getMarkdownFiles()
       .filter(
         (file) =>
+          file.path !== LINKS_FILE &&
           !file.path.startsWith(`${TEMPLATES_FOLDER}/`) &&
           !file.path.startsWith(`${ARCHIVE_FOLDER}/`) &&
           !file.path.startsWith(`${MIGRATION_FOLDER}/`)

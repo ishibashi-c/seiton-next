@@ -1,24 +1,23 @@
 import type { App } from "obsidian";
 import { Modal, Setting, type TextComponent } from "obsidian";
-import type { SeitonShortcutFolder } from "../services/settings";
 
 export interface ShortcutInput {
-  folderId: string | null;
+  group: string | null;
   label: string;
   target: string;
 }
 
 interface ShortcutModalOptions {
-  folders: SeitonShortcutFolder[];
+  groups: string[];
   initial?: ShortcutInput;
-  initialFolderId: string | null;
+  initialGroup: string | null;
   onSubmit: (input: ShortcutInput) => void;
 }
 
-/** ホームのショートカットを追加・編集する。 */
+/** ショートカット（リンク集の1行）を追加・編集する。 */
 export class ShortcutModal extends Modal {
   private readonly options: ShortcutModalOptions;
-  private folderId: string | null;
+  private group: string | null;
   private label: string;
   private target: string;
   private statusEl: HTMLElement | null = null;
@@ -26,8 +25,7 @@ export class ShortcutModal extends Modal {
   constructor(app: App, options: ShortcutModalOptions) {
     super(app);
     this.options = options;
-    this.folderId =
-      options.initial?.folderId ?? options.initialFolderId ?? null;
+    this.group = options.initial?.group ?? options.initialGroup ?? null;
     this.label = options.initial?.label ?? "";
     this.target = options.initial?.target ?? "";
   }
@@ -38,18 +36,22 @@ export class ShortcutModal extends Modal {
     );
     this.contentEl.createEl("p", {
       cls: "seiton-shortcut-hint",
-      text: "URLは既定のブラウザで、ノートはObsidianで開きます。",
+      text: "URLは既定のブラウザで、ノートはObsidianで開きます。保存先は Seiton/System/Links.md です。",
     });
 
-    new Setting(this.contentEl).setName("フォルダ").addDropdown((dropdown) => {
-      dropdown.addOption("", "ルート");
-      for (const folder of this.options.folders) {
-        dropdown.addOption(folder.id, folder.name);
-      }
-      dropdown.setValue(this.folderId ?? "").onChange((value) => {
-        this.folderId = value === "" ? null : value;
-      });
-    });
+    if (this.options.groups.length > 0) {
+      new Setting(this.contentEl)
+        .setName("グループ")
+        .addDropdown((dropdown) => {
+          dropdown.addOption("", "なし");
+          for (const group of this.options.groups) {
+            dropdown.addOption(group, group);
+          }
+          dropdown.setValue(this.group ?? "").onChange((value) => {
+            this.group = value === "" ? null : value;
+          });
+        });
+    }
 
     new Setting(this.contentEl).setName("ラベル").addText((text) => {
       text.setValue(this.label).onChange((value) => {
@@ -113,7 +115,7 @@ export class ShortcutModal extends Modal {
       this.setStatus("http/httpsのURLだけを登録できます。");
       return;
     }
-    this.options.onSubmit({ folderId: this.folderId, label, target });
+    this.options.onSubmit({ group: this.group, label, target });
     this.close();
   }
 

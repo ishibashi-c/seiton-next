@@ -1,3 +1,7 @@
+/**
+ * 旧形式のショートカット。いまは `Seiton/System/Links.md` が正本で、
+ * ここは移行コマンド用に読むだけ。
+ */
 export interface SeitonShortcut {
   folderId: string | null;
   id: string;
@@ -26,7 +30,9 @@ export interface SeitonSettings {
   googleBooksApiKey: string;
   maxSearchResults: number;
   shortcutFavicons: boolean;
+  /** @deprecated 移行コマンド専用。書き込みはしない。 */
   shortcutFolders: SeitonShortcutFolder[];
+  /** @deprecated 移行コマンド専用。書き込みはしない。 */
   shortcuts: SeitonShortcut[];
 }
 

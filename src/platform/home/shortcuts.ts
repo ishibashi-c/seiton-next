@@ -1,25 +1,36 @@
 /**
- * ホームのショートカット一覧。設定の読み書きと、タイル・フォルダの表示を担当する。
+ * ホームのショートカット一覧。
+ * 保存先は設定ではなく Vault 内のノート1枚（`Seiton/System/Links.md`）で、
+ * ここは表示と操作だけを持つ。
  */
 
 import type { App } from "obsidian";
-import { normalizePath, setIcon, TFile } from "obsidian";
-import { createId } from "../../domain/ids";
-import type {
-  SeitonSettings,
-  SeitonShortcut,
-  SeitonShortcutFolder,
-} from "../../services/settings";
+import { Notice, normalizePath, setIcon, TFile } from "obsidian";
+import type { LinkEditStatus, LinkEntry } from "../../domain/linkList";
+import {
+  addGroup,
+  addLink,
+  moveLink,
+  moveLinkAfter,
+  moveLinkBefore,
+  moveLinkToGroup,
+  removeGroup,
+  removeLink,
+  renameGroup,
+  updateLink,
+} from "../../domain/linkList";
+import type { LinkListService } from "../../services/linkListService";
 import { showCardMenu } from "../cardMenu";
 import { ShortcutAddModal } from "../shortcutAddModal";
 import { ShortcutFolderModal } from "../shortcutFolderModal";
-import { ShortcutModal } from "../shortcutModal";
+import { type ShortcutInput, ShortcutModal } from "../shortcutModal";
+import { ShortcutDrag } from "./dragSort";
 
 export interface HomeShortcutsOptions {
   app: App;
-  getSettings: () => SeitonSettings;
+  favicons: () => boolean;
+  links: LinkListService;
   openPath: (path: string) => void;
-  saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>;
 }
 
 function shortcutHost(target: string): string | null {
@@ -33,26 +44,58 @@ function shortcutHost(target: string): string | null {
   }
 }
 
+function statusMessage(status: LinkEditStatus, label: string): string | null {
+  if (status === "added") {
+    return `「${label}」を追加しました。`;
+  }
+  if (status === "duplicate") {
+    return "同じリンクがすでにあります。";
+  }
+  if (status === "exists") {
+    return "同じ名前のグループがあります。";
+  }
+  if (status === "missing") {
+    return "見つかりませんでした。ノートを開いて確認してください。";
+  }
+  if (status === "removed") {
+    return `「${label}」を削除しました。`;
+  }
+  return null;
+}
+
 export class HomeShortcuts {
   private readonly app: App;
-  private readonly getSettings: () => SeitonSettings;
+  private readonly favicons: () => boolean;
+  private readonly links: LinkListService;
   private readonly openPath: (path: string) => void;
-  private readonly saveSettings: (
-    patch: Partial<SeitonSettings>
-  ) => Promise<void>;
+  private drag: ShortcutDrag | null = null;
   private hostEl: HTMLElement | null = null;
-  private openFolderId: string | null = null;
+  private openGroup: string | null = null;
+  private sections: Array<{
+    items: LinkEntry[];
+    name: string | null;
+  }> = [];
 
   constructor(options: HomeShortcutsOptions) {
     this.app = options.app;
-    this.getSettings = options.getSettings;
+    this.favicons = options.favicons;
+    this.links = options.links;
     this.openPath = options.openPath;
-    this.saveSettings = options.saveSettings;
   }
 
   render(host: HTMLElement): void {
     this.hostEl = host;
-    this.renderShortcuts();
+    this.drag?.destroy();
+    this.drag = new ShortcutDrag(host, {
+      onGroup: (source, group) => {
+        void this.dropToGroup(source, group);
+      },
+      onItem: (source, target, before) => {
+        void this.dropOnItem(source, target, before);
+      },
+    });
+    this.renderList();
+    void this.reload();
   }
 
   clear(): void {
@@ -60,205 +103,215 @@ export class HomeShortcuts {
   }
 
   reset(): void {
+    this.drag?.destroy();
+    this.drag = null;
     this.hostEl = null;
-    this.openFolderId = null;
+    this.openGroup = null;
   }
 
-  private renderShortcuts(): void {
+  async reload(): Promise<void> {
+    try {
+      const list = await this.links.load();
+      this.sections = list.sections.map((section) => ({
+        items: section.items,
+        name: section.name,
+      }));
+    } catch {
+      this.sections = [];
+    }
+    this.renderList();
+  }
+
+  private groupNames(): string[] {
+    return this.sections
+      .map((section) => section.name)
+      .filter((name): name is string => name !== null);
+  }
+
+  private itemsOf(group: string | null): LinkEntry[] {
+    const section = this.sections.find((entry) => entry.name === group);
+    return section?.items ?? [];
+  }
+
+  private groupOf(entry: LinkEntry): string | null {
+    const section = this.sections.find((item) =>
+      item.items.some((link) => link.target === entry.target)
+    );
+    return section?.name ?? null;
+  }
+
+  private renderList(): void {
     const host = this.hostEl;
     if (!host) {
       return;
     }
     host.empty();
-    const settings = this.getSettings();
-    const folder = this.openFolderId
-      ? settings.shortcutFolders.find((item) => item.id === this.openFolderId)
-      : undefined;
-    if (this.openFolderId && !folder) {
-      this.openFolderId = null;
+    const groups = this.groupNames();
+    if (this.openGroup !== null && !groups.includes(this.openGroup)) {
+      this.openGroup = null;
     }
-
-    if (folder) {
-      this.renderFolderHeader(host, folder);
-      const items = settings.shortcuts.filter(
-        (item) => item.folderId === folder.id
-      );
+    if (this.openGroup !== null) {
+      this.renderGroupHeader(host, this.openGroup);
+      const items = this.itemsOf(this.openGroup);
       if (items.length === 0) {
         host.createDiv({
           cls: "seiton-shortcuts-empty",
-          text: "このフォルダは空です。",
+          text: "このグループは空です。",
         });
       }
       for (const item of items) {
-        host.appendChild(this.renderShortcutTile(item));
+        host.appendChild(this.renderItemTile(item));
       }
-      host.appendChild(this.renderShortcutAddTile(folder.id));
+      host.appendChild(this.renderAddTile(this.openGroup));
       return;
     }
 
-    if (
-      settings.shortcuts.length === 0 &&
-      settings.shortcutFolders.length === 0
-    ) {
+    if (groups.length === 0 && this.itemsOf(null).length === 0) {
       host.createDiv({
         cls: "seiton-shortcuts-empty",
         text: "よく開くサイトやノートを追加できます。",
       });
     }
-    for (const item of settings.shortcutFolders) {
-      host.appendChild(this.renderShortcutFolderTile(item));
+    for (const name of groups) {
+      host.appendChild(this.renderGroupTile(name));
     }
-    for (const item of settings.shortcuts.filter(
-      (entry) => entry.folderId === null
-    )) {
-      host.appendChild(this.renderShortcutTile(item));
+    for (const item of this.itemsOf(null)) {
+      host.appendChild(this.renderItemTile(item));
     }
-    host.appendChild(this.renderShortcutAddTile(null));
+    host.appendChild(this.renderAddTile(null));
   }
 
-  private renderFolderHeader(
-    host: HTMLElement,
-    folder: SeitonShortcutFolder
-  ): void {
+  private renderGroupHeader(host: HTMLElement, name: string): void {
     const head = host.createDiv({ cls: "seiton-shortcuts-folder-head" });
     const back = head.createEl("button", {
-      attr: {
-        "aria-label": "ショートカット一覧に戻る",
-        type: "button",
-      },
+      attr: { "aria-label": "ショートカット一覧に戻る", type: "button" },
       cls: "seiton-shortcuts-back",
     });
     setIcon(back, "arrow-left");
     back.createSpan({ text: "戻る" });
     back.addEventListener("click", () => {
-      this.openFolderId = null;
-      this.renderShortcuts();
+      this.openGroup = null;
+      this.renderList();
     });
-    head.createSpan({
-      cls: "seiton-shortcuts-folder-title",
-      text: folder.name,
-    });
+    head.createSpan({ cls: "seiton-shortcuts-folder-title", text: name });
   }
 
-  private renderShortcutFolderTile(folder: SeitonShortcutFolder): HTMLElement {
+  private renderGroupTile(name: string): HTMLElement {
     const tile = document.createElement("div");
     tile.className = "seiton-shortcut";
 
     const main = tile.createEl("button", {
-      attr: { "aria-label": `${folder.name} を開く`, type: "button" },
+      attr: { "aria-label": `${name} を開く`, type: "button" },
       cls: "seiton-shortcut-main",
     });
     const icon = main.createSpan({ cls: "seiton-shortcut-icon" });
     setIcon(icon, "folder");
-    main.createSpan({ cls: "seiton-shortcut-label", text: folder.name });
+    main.createSpan({ cls: "seiton-shortcut-label", text: name });
     main.addEventListener("click", () => {
-      this.openFolderId = folder.id;
-      this.renderShortcuts();
+      this.openGroup = name;
+      this.renderList();
     });
 
     const more = tile.createEl("button", {
-      attr: { "aria-label": `${folder.name} の操作`, type: "button" },
+      attr: { "aria-label": `${name} の操作`, type: "button" },
       cls: "seiton-shortcut-more",
       text: "⋯",
     });
     more.addEventListener("click", (event) => {
       event.stopPropagation();
-      this.openFolderMenu(more, folder);
+      this.openGroupMenu(more, name);
     });
     tile.addEventListener("contextmenu", (event) => {
       event.preventDefault();
-      this.openFolderMenu(tile, folder);
+      this.openGroupMenu(tile, name);
     });
+    tile.dataset.groupName = name;
     return tile;
   }
 
-  private openFolderMenu(
-    anchor: HTMLElement,
-    folder: SeitonShortcutFolder
-  ): void {
+  private openGroupMenu(anchor: HTMLElement, name: string): void {
     showCardMenu(anchor, [
       {
         label: "名前を変更",
-        run: () => this.openFolderEditor(folder),
+        run: () => this.openGroupEditor(name),
       },
       {
         label: "削除",
         run: () => {
-          void this.removeFolder(folder);
+          void this.deleteGroup(name);
         },
       },
     ]);
   }
 
-  private openFolderEditor(initial?: SeitonShortcutFolder): void {
+  private openGroupEditor(initialName?: string): void {
     new ShortcutFolderModal(this.app, {
-      initialName: initial?.name ?? "",
+      initialName: initialName ?? "",
       onSubmit: (name) => {
-        void this.saveFolder(initial?.id ?? createId("f"), name);
+        void this.saveGroup(initialName, name);
       },
     }).open();
   }
 
-  private async saveFolder(id: string, name: string): Promise<void> {
-    const folders = [...this.getSettings().shortcutFolders];
-    const index = folders.findIndex((item) => item.id === id);
-    if (index >= 0) {
-      folders[index] = { id, name };
-    } else {
-      folders.push({ id, name });
+  private async saveGroup(
+    initialName: string | undefined,
+    name: string
+  ): Promise<void> {
+    if (initialName === name) {
+      return;
     }
-    await this.saveSettings({ shortcutFolders: folders });
-    this.renderShortcuts();
+    const edit = await this.links.edit((content) =>
+      initialName
+        ? renameGroup(content, initialName, name)
+        : addGroup(content, name)
+    );
+    if (initialName && this.openGroup === initialName) {
+      this.openGroup = null;
+    }
+    this.notify(edit.status, name);
+    await this.reload();
   }
 
-  private async removeFolder(folder: SeitonShortcutFolder): Promise<void> {
-    const settings = this.getSettings();
-    const folders = settings.shortcutFolders.filter(
-      (item) => item.id !== folder.id
-    );
-    const shortcuts = settings.shortcuts.map((item) =>
-      item.folderId === folder.id ? { ...item, folderId: null } : item
-    );
-    if (this.openFolderId === folder.id) {
-      this.openFolderId = null;
+  private async deleteGroup(name: string): Promise<void> {
+    const edit = await this.links.edit((content) => removeGroup(content, name));
+    if (this.openGroup === name) {
+      this.openGroup = null;
     }
-    await this.saveSettings({ shortcutFolders: folders, shortcuts });
-    this.renderShortcuts();
+    this.notify(edit.status, name);
+    await this.reload();
   }
 
-  private renderShortcutTile(shortcut: SeitonShortcut): HTMLElement {
+  private renderItemTile(entry: LinkEntry): HTMLElement {
     const tile = document.createElement("div");
     tile.className = "seiton-shortcut";
 
     const main = tile.createEl("button", {
-      attr: { "aria-label": `${shortcut.label} を開く`, type: "button" },
+      attr: { "aria-label": `${entry.label} を開く`, type: "button" },
       cls: "seiton-shortcut-main",
     });
     const icon = main.createSpan({ cls: "seiton-shortcut-icon" });
-    this.renderShortcutIcon(icon, shortcut);
-    main.createSpan({ cls: "seiton-shortcut-label", text: shortcut.label });
-    main.addEventListener("click", () => this.openShortcut(shortcut));
+    this.renderIcon(icon, entry);
+    main.createSpan({ cls: "seiton-shortcut-label", text: entry.label });
+    main.addEventListener("click", () => this.openEntry(entry));
 
     const more = tile.createEl("button", {
-      attr: {
-        "aria-label": `${shortcut.label} の操作`,
-        type: "button",
-      },
+      attr: { "aria-label": `${entry.label} の操作`, type: "button" },
       cls: "seiton-shortcut-more",
       text: "⋯",
     });
     more.addEventListener("click", (event) => {
       event.stopPropagation();
-      this.openShortcutMenu(more, shortcut);
+      this.openItemMenu(more, entry);
     });
     tile.addEventListener("contextmenu", (event) => {
       event.preventDefault();
-      this.openShortcutMenu(tile, shortcut);
+      this.openItemMenu(tile, entry);
     });
+    tile.dataset.linkTarget = entry.target;
     return tile;
   }
 
-  private renderShortcutAddTile(folderId: string | null): HTMLElement {
+  private renderAddTile(group: string | null): HTMLElement {
     const tile = document.createElement("div");
     tile.className = "seiton-shortcut";
     const main = tile.createEl("button", {
@@ -270,31 +323,28 @@ export class HomeShortcuts {
     main.createSpan({ cls: "seiton-shortcut-label", text: "追加" });
     main.addEventListener("click", (event) => {
       event.stopPropagation();
-      if (folderId) {
-        this.openShortcutEditor(undefined, folderId);
+      if (group !== null) {
+        this.openItemEditor(undefined, group);
         return;
       }
       new ShortcutAddModal(this.app, {
-        onFolder: () => this.openFolderEditor(),
-        onShortcut: () => this.openShortcutEditor(undefined, null),
+        onFolder: () => this.openGroupEditor(),
+        onShortcut: () => this.openItemEditor(undefined, null),
       }).open();
     });
     return tile;
   }
 
-  private renderShortcutIcon(
-    parent: HTMLElement,
-    shortcut: SeitonShortcut
-  ): void {
+  private renderIcon(parent: HTMLElement, entry: LinkEntry): void {
     const showLetter = (): void => {
       parent.empty();
       parent.createSpan({
         cls: "seiton-shortcut-letter",
-        text: [...shortcut.label][0] ?? "?",
+        text: [...entry.label][0] ?? "?",
       });
     };
-    const host = shortcutHost(shortcut.target);
-    if (host && this.getSettings().shortcutFavicons) {
+    const host = shortcutHost(entry.target);
+    if (host && this.favicons()) {
       const image = parent.createEl("img", {
         attr: { alt: "" },
         cls: "seiton-shortcut-favicon",
@@ -306,114 +356,127 @@ export class HomeShortcuts {
     showLetter();
   }
 
-  private openShortcutMenu(
-    anchor: HTMLElement,
-    shortcut: SeitonShortcut
-  ): void {
+  private openItemMenu(anchor: HTMLElement, entry: LinkEntry): void {
     showCardMenu(anchor, [
       {
         label: "編集",
-        run: () => this.openShortcutEditor(shortcut),
+        run: () => this.openItemEditor(entry),
       },
       {
         label: "左へ移動",
         run: () => {
-          void this.moveShortcut(shortcut, -1);
+          void this.moveItem(entry, -1);
         },
       },
       {
         label: "右へ移動",
         run: () => {
-          void this.moveShortcut(shortcut, 1);
+          void this.moveItem(entry, 1);
         },
       },
       {
         label: "削除",
         run: () => {
-          void this.removeShortcut(shortcut.id);
+          void this.deleteItem(entry);
         },
       },
     ]);
   }
 
-  private openShortcutEditor(
-    initial?: SeitonShortcut,
-    folderId: string | null = null
-  ): void {
-    const settings = this.getSettings();
+  private openItemEditor(initial?: LinkEntry, group?: string | null): void {
     new ShortcutModal(this.app, {
-      folders: settings.shortcutFolders,
+      groups: this.groupNames(),
       initial: initial
         ? {
-            folderId: initial.folderId,
+            group: this.groupOf(initial),
             label: initial.label,
             target: initial.target,
           }
         : undefined,
-      initialFolderId: initial?.folderId ?? folderId,
+      initialGroup: group ?? null,
       onSubmit: (input) => {
-        void this.saveShortcut(initial?.id ?? createId("s"), input);
+        void this.saveItem(initial, input);
       },
     }).open();
   }
 
-  private async saveShortcut(
-    id: string,
-    input: { folderId: string | null; label: string; target: string }
+  private async saveItem(
+    initial: LinkEntry | undefined,
+    input: ShortcutInput
   ): Promise<void> {
-    const shortcuts = [...this.getSettings().shortcuts];
-    const index = shortcuts.findIndex((item) => item.id === id);
-    const next = {
-      folderId: input.folderId,
-      id,
-      label: input.label,
-      target: input.target,
-    };
-    if (index >= 0) {
-      shortcuts[index] = next;
-    } else {
-      shortcuts.push(next);
-    }
-    await this.saveSettings({ shortcuts });
-    this.renderShortcuts();
-  }
-
-  private async removeShortcut(id: string): Promise<void> {
-    const shortcuts = this.getSettings().shortcuts.filter(
-      (item) => item.id !== id
-    );
-    await this.saveSettings({ shortcuts });
-    this.renderShortcuts();
-  }
-
-  private async moveShortcut(
-    shortcut: SeitonShortcut,
-    delta: number
-  ): Promise<void> {
-    const shortcuts = [...this.getSettings().shortcuts];
-    const siblings = shortcuts.filter(
-      (item) => item.folderId === shortcut.folderId
-    );
-    const current = siblings.findIndex((item) => item.id === shortcut.id);
-    const target = siblings[current + delta];
-    if (!target) {
+    if (
+      initial &&
+      initial.label === input.label.trim() &&
+      initial.target === input.target.trim() &&
+      this.groupOf(initial) === input.group
+    ) {
       return;
     }
-    const from = shortcuts.findIndex((item) => item.id === shortcut.id);
-    const to = shortcuts.findIndex((item) => item.id === target.id);
-    const fromItem = shortcuts[from];
-    const toItem = shortcuts[to];
-    if (!(fromItem && toItem)) {
-      return;
-    }
-    shortcuts[from] = toItem;
-    shortcuts[to] = fromItem;
-    await this.saveSettings({ shortcuts });
-    this.renderShortcuts();
+    const edit = await this.links.edit((content) =>
+      initial
+        ? updateLink(content, initial.target, input)
+        : addLink(content, input)
+    );
+    this.notify(edit.status, input.label.trim());
+    await this.reload();
   }
 
-  private openShortcut(shortcut: SeitonShortcut): void {
-    const target = shortcut.target.trim();
+  private async deleteItem(entry: LinkEntry): Promise<void> {
+    const edit = await this.links.edit((content) =>
+      removeLink(content, entry.target)
+    );
+    this.notify(edit.status, entry.label);
+    await this.reload();
+  }
+
+  /** グループのタイルへ落とすと、そのグループの末尾へ移す。 */
+  private async dropToGroup(source: string, name: string): Promise<void> {
+    const edit = await this.links.edit((content) =>
+      moveLinkToGroup(content, source, name)
+    );
+    if (edit.status === "updated") {
+      new Notice(`「${name}」へ移しました。`);
+      await this.reload();
+    }
+  }
+
+  /** タイルの左半分に落とすと前、右半分に落とすと後ろへ移す。 */
+  private async dropOnItem(
+    source: string,
+    target: string,
+    before: boolean
+  ): Promise<void> {
+    if (source === target) {
+      return;
+    }
+    const edit = await this.links.edit((content) =>
+      before
+        ? moveLinkBefore(content, source, target)
+        : moveLinkAfter(content, source, target)
+    );
+    if (edit.status === "updated") {
+      await this.reload();
+    }
+  }
+
+  private async moveItem(entry: LinkEntry, delta: number): Promise<void> {
+    const edit = await this.links.edit((content) =>
+      moveLink(content, entry.target, delta)
+    );
+    if (edit.status === "updated") {
+      await this.reload();
+    }
+  }
+
+  private notify(status: LinkEditStatus, label: string): void {
+    const message = statusMessage(status, label);
+    if (message) {
+      new Notice(message);
+    }
+  }
+
+  private openEntry(entry: LinkEntry): void {
+    const target = entry.target.trim();
     if (/^https?:\/\//iu.test(target)) {
       window.open(target, "_blank");
       return;

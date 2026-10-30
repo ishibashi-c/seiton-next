@@ -7,6 +7,7 @@
 import type { EventRef, Menu } from "obsidian";
 import { Notice, Plugin, TFile } from "obsidian";
 import {
+  LINKS_FILE,
   VIEW_TYPE_BOOKSHELF,
   VIEW_TYPE_HOME,
   VIEW_TYPE_LIBRARY,
@@ -15,7 +16,9 @@ import {
   VIEW_TYPE_TSUBUYAKI,
 } from "./config";
 import { embedCoverInDocument, hasCoverEmbed } from "./domain/book";
-import { isSeitonError } from "./domain/errors";
+import { isSeitonError, userMessageOf } from "./domain/errors";
+import { addLink, importLinks } from "./domain/linkList";
+import { domainOf } from "./domain/network";
 import { parseSharedWebText } from "./domain/webclip";
 import {
   AddBookModal,
@@ -55,6 +58,7 @@ import { ensureBasesViews, openBasesView } from "./services/basesService";
 import { BookService } from "./services/bookService";
 import { CoverStore } from "./services/coverStore";
 import { ObsidianHttpClient } from "./services/http";
+import { LinkListService } from "./services/linkListService";
 import { MemoService } from "./services/memoService";
 import { MigrationService } from "./services/migrationService";
 import { NoteService } from "./services/noteService";
@@ -79,6 +83,7 @@ export default class SeitonNextPlugin extends Plugin {
   private webClips!: WebClipService;
   private books!: BookService;
   private migration!: MigrationService;
+  private links!: LinkListService;
   private pendingMemoDraft = "";
   private captureOpen = false;
 
@@ -119,6 +124,7 @@ export default class SeitonNextPlugin extends Plugin {
       logError,
       port: createObsidianMigrationPort(this.app),
     });
+    this.links = new LinkListService(vault, LINKS_FILE);
 
     this.registerView(
       VIEW_TYPE_HOME,
@@ -130,7 +136,7 @@ export default class SeitonNextPlugin extends Plugin {
           this.promptService,
           this.notes,
           () => this.settings,
-          (patch) => this.saveSettings(patch)
+          this.links
         )
     );
     this.registerView(
@@ -201,6 +207,7 @@ export default class SeitonNextPlugin extends Plugin {
     this.registerObsidianProtocolHandler("seiton-next", (params) => {
       void handleSeitonUri(
         {
+          addShortcutLink: (url, title) => this.addShortcutLink(url, title),
           app: this.app,
           indexService: this.indexService,
           memoService: this.memoService,
@@ -245,6 +252,14 @@ export default class SeitonNextPlugin extends Plugin {
               });
             })
         );
+        menu.addItem((item) =>
+          item
+            .setTitle("ショートカットに追加")
+            .setIcon("plus-circle")
+            .onClick(() => {
+              void this.addShortcutLink(parsed.url, parsed.title);
+            })
+        );
       })
     );
     this.addRibbonIcon("book-open", "Seiton 本棚を開く", () => {
@@ -254,6 +269,7 @@ export default class SeitonNextPlugin extends Plugin {
     registerCommands(this, {
       bulkEditBooks: () => void this.bulkEditBooks(),
       embedBookCovers: () => void this.embedBookCovers(),
+      importShortcutSettings: () => this.importShortcutSettings(),
       makePlaceholderCovers: () => void this.makePlaceholderCovers(),
       newPromptSession: () => void this.newPromptSession(),
       openActiveWebClipPreview: () => this.openActiveWebClipPreview(),
@@ -265,6 +281,7 @@ export default class SeitonNextPlugin extends Plugin {
       openCurrentWeek: () => this.openCurrentWeek(),
       openHome: () => this.openHome(),
       openLibrary: () => this.openLibrary(),
+      openLinkList: () => this.openLinkList(),
       openMemoCapture: () => this.openMemoCapture(),
       openMigration: () => this.openMigration(),
       openNewNote: () => this.openNewNote(),
@@ -429,6 +446,64 @@ export default class SeitonNextPlugin extends Plugin {
       this.indexService.invalidate();
       this.refreshHomeViews();
     }).open();
+  }
+
+  /** スマホの共有シートやブックマークレットから、リンク集に1行足す。 */
+  private async addShortcutLink(url: string, title: string): Promise<void> {
+    const label = title.trim() || domainOf(url) || url;
+    try {
+      const edit = await this.links.edit((content) =>
+        addLink(content, { group: null, label, target: url })
+      );
+      if (edit.status === "added") {
+        new Notice(`「${label}」を追加しました。`);
+      } else if (edit.status === "duplicate") {
+        new Notice("同じリンクがすでにあります。");
+      } else {
+        new Notice("追加できませんでした。");
+      }
+      this.refreshHomeViews();
+    } catch (error) {
+      new Notice(userMessageOf(error));
+    }
+  }
+
+  /** 旧設定（data.json）のショートカットをノートへ移す。何度実行しても重複しない。 */
+  async importShortcutSettings(): Promise<void> {
+    const items = this.settings.shortcuts.map((shortcut) => ({
+      label: shortcut.label,
+      target: shortcut.target,
+    }));
+    if (items.length === 0) {
+      new Notice("移すショートカットはありません。");
+      return;
+    }
+    let added = 0;
+    try {
+      await this.links.edit((content) => {
+        const result = importLinks(content, items);
+        added = result.added;
+        return {
+          content: result.content,
+          status: result.added > 0 ? "added" : "duplicate",
+        };
+      });
+    } catch (error) {
+      new Notice(userMessageOf(error));
+      return;
+    }
+    new Notice(`${added}件をノートへ移しました。`);
+    this.refreshHomeViews();
+  }
+
+  async openLinkList(): Promise<void> {
+    try {
+      await this.links.ensure();
+    } catch (error) {
+      new Notice(userMessageOf(error));
+      return;
+    }
+    await this.app.workspace.openLinkText(LINKS_FILE, "", false);
   }
 
   private openBulkIsbn(): void {

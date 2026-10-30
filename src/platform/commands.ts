@@ -3,6 +3,7 @@ import type { Plugin } from "obsidian";
 export interface SeitonCommandsHost {
   bulkEditBooks: () => void;
   embedBookCovers: () => void;
+  importShortcutSettings: () => Promise<void>;
   makePlaceholderCovers: () => void;
   newPromptSession: () => void;
   openActiveWebClipPreview: () => void;
@@ -14,6 +15,7 @@ export interface SeitonCommandsHost {
   openCurrentWeek: () => Promise<void>;
   openHome: () => Promise<void>;
   openLibrary: () => Promise<void>;
+  openLinkList: () => Promise<void>;
   openMemoCapture: () => void;
   openMigration: () => void;
   openNewNote: () => void;
@@ -41,6 +43,16 @@ export function registerCommands(
     hotkeys: [{ key: "l", modifiers: ["Mod", "Shift"] }],
     id: "open-library",
     name: "ライブラリを開く",
+  });
+  plugin.addCommand({
+    callback: () => void host.openLinkList(),
+    id: "open-link-list",
+    name: "ショートカットのノートを開く",
+  });
+  plugin.addCommand({
+    callback: () => void host.importShortcutSettings(),
+    id: "import-shortcuts-to-note",
+    name: "設定のショートカットをノートへ移す",
   });
   plugin.addCommand({
     callback: () => void host.openBookshelf(),

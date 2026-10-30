@@ -3,6 +3,8 @@ export const SYSTEM_FOLDER = "Seiton/System";
 export const MEMOS_FOLDER = `${SYSTEM_FOLDER}/Logs/Memos`;
 export const PROMPTS_FOLDER = `${SYSTEM_FOLDER}/Logs/Prompts`;
 export const NOTES_FOLDER = "Seiton/Notes";
+/** ホームのショートカット。設定ではなくVault内のノートに置く。 */
+export const LINKS_FILE = `${SYSTEM_FOLDER}/Links.md`;
 export const ASSETS_FOLDER = `${SYSTEM_FOLDER}/Assets`;
 export const VIEWS_FOLDER = `${SYSTEM_FOLDER}/Views`;
 export const TEMPLATES_FOLDER = `${SYSTEM_FOLDER}/Templates`;

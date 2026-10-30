@@ -12,6 +12,7 @@ import { SeitonLibraryView } from "./libraryView";
 import type { WebClipCaptureInput } from "./webClipCaptureModal";
 
 export interface SeitonUriHost {
+  addShortcutLink: (url: string, title: string) => Promise<void> | void;
   app: App;
   indexService: VaultIndexService;
   memoService: MemoService;
@@ -41,6 +42,15 @@ export async function handleSeitonUri(
       .find((value) => /^https?:\/\//u.test(value))
       ?.trim() ||
     "";
+  if (action === "link" || action === "shortcut") {
+    if (webClipUrl === "") {
+      new Notice("url がありません。");
+      return;
+    }
+    await host.addShortcutLink(webClipUrl, (params.title ?? "").trim());
+    return;
+  }
+
   if (
     action === "webclip" ||
     action === "web-clip" ||
