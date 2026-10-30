@@ -34,5 +34,6 @@
   "dependencies": {
     "defuddle": "^0.19.6"
   },
-  "author": "IshibashiCustomize"
+  "author": "IshibashiCustomize",
+  "license": "PolyForm-Noncommercial-1.0.0"
 }
