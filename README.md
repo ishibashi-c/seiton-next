@@ -125,6 +125,15 @@ src/
 
 ## ライセンス
 
-MIT License. 全文は [LICENSE](LICENSE)。
+**PolyForm Noncommercial License 1.0.0**（[LICENSE](LICENSE)）
 
-商用利用、改変、再配布、販売を含めて自由に使えます。著作権表示とこの許諾文を残してください。
+- 個人利用・研究・教育・非営利組織での利用は自由
+- **商用利用は禁止**（営利企業の業務利用も含む）
+- 改変は自由。配布する場合は同じ条件と下記の通知を添えてください
+- OSI承認のオープンソースライセンスではありません（source-available）
+
+```
+Required Notice: Copyright IshibashiCustomize (2026)
+```
+
+> 上の箇条書きは要約です。法的な条件は [LICENSE](LICENSE) の全文が優先します。
