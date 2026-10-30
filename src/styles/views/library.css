@@ -1,0 +1,571 @@
+/* --------------------------------------------------------------------------
+   Library
+   -------------------------------------------------------------------------- */
+
+.seiton-library-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 5px 0;
+}
+
+.seiton-search {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+
+.seiton-search-icon {
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 14px;
+  width: 14px;
+}
+
+.seiton-search-icon svg {
+  height: 14px;
+  width: 14px;
+}
+
+.seiton-home input.seiton-library-search {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--st-ink);
+  flex: 1;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-md);
+  min-height: 30px;
+  padding: 2px 0;
+  width: 100%;
+}
+
+.seiton-home input.seiton-library-search::placeholder {
+  color: var(--st-muted);
+}
+
+.seiton-home input.seiton-library-search:focus {
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+.seiton-home select.seiton-library-select {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  height: 28px;
+  padding: 0 4px;
+}
+
+.seiton-index-top {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+}
+
+.seiton-home button.seiton-index-total.is-active .seiton-index-total-label {
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-home button.seiton-index-total {
+  align-items: baseline;
+  background: transparent;
+  color: var(--st-ink);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 7px;
+  min-height: 0;
+  padding: 0;
+}
+
+.seiton-index-total-number {
+  color: var(--st-data);
+  font-size: 27px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.seiton-index-total-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-index-labels {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  padding: 8px 0 0;
+}
+
+.seiton-home button.seiton-index-label {
+  background: transparent;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 24px;
+  padding: 2px 0;
+}
+
+.seiton-home button.seiton-index-label:hover {
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-index-label.is-active {
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-index-count {
+  color: var(--st-muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+.seiton-index-status {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 3px;
+}
+
+.seiton-home button.seiton-status-filter {
+  background: transparent;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 24px;
+  padding: 2px 0;
+}
+
+.seiton-home button.seiton-status-filter:hover {
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-status-filter.is-active {
+  color: var(--st-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.seiton-filter-more {
+  margin: 9px 0 0;
+}
+
+.seiton-filter-more > summary {
+  color: var(--st-muted);
+  cursor: pointer;
+  font-size: var(--st-text-xs);
+  list-style: none;
+  width: max-content;
+}
+
+.seiton-filter-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.seiton-filter-more > summary::after {
+  content: "  ▾";
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-filter-more[open] > summary::after {
+  content: "  ▴";
+}
+
+.seiton-library-selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0 2px;
+}
+
+.seiton-home .seiton-library-selects select {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--st-hairline);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  height: 28px;
+  max-width: 220px;
+  padding: 2px 20px 2px 2px;
+}
+
+.seiton-course-select {
+  max-width: 220px;
+}
+
+.seiton-active-filters {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.seiton-home button.seiton-active-filter {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--st-hairline);
+  border-radius: 4px;
+  color: var(--st-ink);
+  display: inline-flex;
+  font-size: var(--st-text-xs);
+  gap: 6px;
+  min-height: 28px;
+  padding: 3px 8px;
+}
+
+.seiton-home button.seiton-active-filter:hover {
+  background: var(--st-surface);
+}
+
+.seiton-active-filter-remove {
+  color: var(--st-muted);
+}
+
+.seiton-home button.seiton-active-filter-clear {
+  background: transparent;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 28px;
+  padding: 3px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.seiton-empty-clear {
+  background: transparent;
+  border: 0;
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  margin-top: 8px;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.seiton-problems {
+  margin-top: 6px;
+}
+
+.seiton-library-list {
+  margin-top: 10px;
+}
+
+.seiton-card-grid {
+  display: block;
+}
+
+.seiton-item {
+  align-items: start;
+  border-top: 1px solid var(--st-hairline);
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 72px minmax(0, 1fr) 180px;
+  min-width: 0;
+  padding: 15px 0 13px;
+  position: relative;
+}
+
+.seiton-item-type {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 500;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.seiton-item-cover {
+  border-radius: 4px;
+  display: block;
+  height: 70px;
+  object-fit: cover;
+  width: 52px;
+}
+
+.seiton-book-spine {
+  align-items: center;
+  border-left: 2px solid var(--st-hairline);
+  color: var(--st-muted);
+  display: flex;
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  height: 70px;
+  justify-content: center;
+  width: 52px;
+}
+
+.seiton-item-content {
+  max-width: 720px;
+  min-width: 0;
+  padding: 0;
+}
+
+.seiton-item-side {
+  align-items: flex-end;
+  color: var(--st-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-right: 20px;
+  text-align: right;
+}
+
+.seiton-item-updated {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-item-markers {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 3px;
+}
+
+.seiton-item-more {
+  color: var(--st-muted);
+  font-size: var(--st-text-base);
+  line-height: 1;
+  min-height: 24px;
+  opacity: 0.4;
+  padding: 2px 4px;
+  position: absolute;
+  right: 0;
+  top: 14px;
+}
+
+.seiton-item-more:hover {
+  opacity: 1;
+}
+
+.seiton-item.is-actions-open .seiton-item-actions {
+  opacity: 1;
+  transform: none;
+}
+
+.seiton-home button.seiton-item-title,
+.seiton-library button.seiton-item-title {
+  background: transparent;
+  color: var(--st-ink);
+  display: block;
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  height: auto;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  margin: 0;
+  min-height: 0;
+  overflow-wrap: anywhere;
+  padding: 0;
+  text-align: left;
+  white-space: normal;
+  width: 100%;
+  word-break: break-word;
+  word-break: auto-phrase;
+}
+
+.seiton-home button.seiton-item-title:hover,
+.seiton-library button.seiton-item-title:hover {
+  background: transparent;
+  color: var(--st-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.seiton-item-source {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.55;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-item-excerpt {
+  color: var(--st-muted);
+  display: -webkit-box;
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  line-height: 1.6;
+  margin-top: 4px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.seiton-item-meta,
+.seiton-li-title {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 4px;
+}
+
+.seiton-li-title {
+  color: var(--st-ink);
+  font-family: var(--font-text);
+  font-size: var(--st-text-base);
+  font-weight: 600;
+  line-height: 1.5;
+  margin-top: 0;
+}
+
+.seiton-li-excerpt {
+  color: var(--st-muted);
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  line-height: 1.6;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-home button.seiton-li-action,
+.seiton-projects button.seiton-li-action {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 24px;
+  padding: 2px 6px;
+}
+
+.seiton-item-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  justify-content: flex-end;
+  margin-top: 2px;
+  opacity: 0;
+  transform: translateY(-1px);
+  transition:
+    opacity var(--st-transition),
+    transform var(--st-transition);
+}
+
+.seiton-item:hover .seiton-item-actions,
+.seiton-item:focus-within .seiton-item-actions {
+  opacity: 1;
+  transform: none;
+}
+
+.seiton-home button.seiton-item-action,
+.seiton-library button.seiton-item-action {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 24px;
+  padding: 2px 6px;
+}
+
+.seiton-home button.seiton-item-action:hover,
+.seiton-library button.seiton-item-action:hover {
+  color: var(--st-ink);
+}
+
+.seiton-library-count {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  padding: 7px 0 0;
+  text-align: left;
+}
+
+.seiton-library-count:empty {
+  display: none;
+}
+
+/* Compact list mode: the same ledger, one step tighter. */
+
+.seiton-card-grid.is-list .seiton-item {
+  align-items: center;
+  gap: 14px;
+  grid-template-columns: 68px minmax(0, 1fr) 120px;
+  padding: 9px 0;
+}
+
+.seiton-card-grid.is-list .seiton-item-type {
+  font-size: var(--st-text-2xs);
+  white-space: nowrap;
+}
+
+.seiton-card-grid.is-list .seiton-item-cover,
+.seiton-card-grid.is-list .seiton-book-spine {
+  height: 42px;
+  width: 32px;
+}
+
+.seiton-card-grid.is-list .seiton-item-title {
+  font-size: var(--st-text-base);
+}
+
+.seiton-card-grid.is-list .seiton-item-source,
+.seiton-card-grid.is-list .seiton-item-excerpt {
+  font-size: var(--st-text-sm);
+  margin-top: 1px;
+  -webkit-line-clamp: 1;
+}
+
+.seiton-card-grid.is-list .seiton-item-side {
+  gap: 2px;
+  padding-right: 18px;
+}
+
+.seiton-card-grid.is-list .seiton-item-updated {
+  font-size: var(--st-text-2xs);
+}
+
+
+/* Separate object types from organizational states. */
+.seiton-index-labels {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.seiton-index-group {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+}
+
+.seiton-index-group-title {
+  color: var(--st-muted);
+  flex: 0 0 48px;
+  font-size: var(--st-text-xs);
+  white-space: nowrap;
+}
+
+.seiton-index-group-items {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+@media (max-width: 520px) {
+  .seiton-index-group {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .seiton-index-group-title {
+    flex-basis: auto;
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "seiton-next",
+  "name": "Seiton",
+  "version": "0.4.5",
+  "minAppVersion": "1.12.7",
+  "description": "個人用の記録・整理・再発見。一言メモは週次Markdown、プロンプトはセッションMarkdownに保存する。",
+  "author": "IshibashiCustomize",
+  "isDesktopOnly": false
+}

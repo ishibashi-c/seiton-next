@@ -1,0 +1,203 @@
+/* Triage */
+
+.seiton-triage-body {
+  min-height: 220px;
+}
+
+.seiton-triage-progress {
+  color: var(--text-faint);
+  display: flex;
+  font-size: var(--st-text-xs);
+  gap: 12px;
+}
+
+.seiton-triage-title {
+  color: var(--text-normal);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 10px;
+}
+
+.seiton-triage-excerpt {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.seiton-triage-meta {
+  color: var(--text-faint);
+  font-size: var(--st-text-xs);
+  margin-top: 8px;
+}
+
+.seiton-triage-kinds,
+.seiton-triage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.seiton-triage-kind {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+  padding: 6px 10px;
+}
+
+.seiton-triage-kind:hover {
+  border-color: var(--background-modifier-border-hover);
+  color: var(--text-normal);
+}
+
+.seiton-triage-decision {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-normal);
+  font-size: var(--st-text-sm);
+  padding: 7px 12px;
+}
+
+.seiton-triage-status {
+  color: var(--text-faint);
+  font-size: var(--st-text-xs);
+  margin-top: 14px;
+}
+
+.seiton-triage-done {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  padding: 24px 0;
+}
+
+/* Card action popover */
+
+.seiton-card-menu {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  padding: 4px;
+  position: fixed;
+  z-index: 1000;
+}
+
+.seiton-card-menu-item {
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  color: var(--text-normal);
+  font-size: var(--st-text-sm);
+  padding: 7px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.seiton-card-menu-item:hover,
+.seiton-card-menu-item:focus-visible {
+  background: var(--background-secondary);
+}
+
+/* Web clip capture */
+
+.seiton-bookmarklet {
+  background: var(--background-secondary);
+  border-radius: 8px;
+  font-size: var(--st-text-2xs);
+  line-height: 1.5;
+  max-height: 140px;
+  overflow: auto;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.seiton-webclip-status {
+  color: var(--seiton-meta);
+  font-size: var(--st-text-sm);
+  margin: 0 0 10px;
+}
+
+.seiton-webclip-error {
+  color: var(--text-error);
+  font-size: var(--st-text-sm);
+}
+
+.seiton-webclip-preview {
+  border-top: 1px solid var(--background-modifier-border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.seiton-webclip-description {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.6;
+}
+
+.seiton-webclip-meta {
+  color: var(--text-faint);
+  font-size: var(--st-text-xs);
+  margin-top: 6px;
+}
+
+.seiton-webclip-duplicate {
+  align-items: center;
+  background: var(--background-secondary);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--st-text-sm);
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.seiton-webclip-capture-modal button.mod-cta {
+  background: var(--text-normal);
+  border: 0;
+  color: var(--background-primary);
+  font-weight: 550;
+}
+
+.seiton-webclip-capture-modal button.mod-cta:hover {
+  opacity: 0.86;
+}
+
+.seiton-card-menu-item.is-danger {
+  color: var(--text-error);
+}
+
+.seiton-confirm-message {
+  color: var(--text-normal);
+  font-size: var(--st-text-sm);
+  line-height: 1.6;
+}
+
+.is-card-clickable {
+  cursor: pointer;
+}
+
+
+/* Settings: keep technical details out of the first read. */
+.seiton-settings-advanced {
+  border-top: 1px solid var(--background-modifier-border);
+  margin: 8px 0 16px;
+  padding-top: 8px;
+}
+
+.seiton-settings-advanced > summary {
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+}
+
+.seiton-settings-advanced > p {
+  margin: 6px 0 0;
+}

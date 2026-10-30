@@ -1,0 +1,383 @@
+/* --------------------------------------------------------------------------
+   Home
+   -------------------------------------------------------------------------- */
+
+.seiton-day-heading {
+  min-width: 0;
+}
+
+.seiton-home-content {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  min-width: 0;
+}
+
+.seiton-home-section {
+  border-top: 1px solid var(--st-hairline);
+  padding-top: 14px;
+}
+
+.seiton-home-section > h2 {
+  color: var(--st-ink);
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.seiton-home-section-body {
+  min-width: 0;
+}
+
+.seiton-home-memo-details {
+  border-top: 1px solid var(--st-hairline);
+  padding-top: 12px;
+}
+
+.seiton-home-memo-details > summary {
+  color: var(--st-muted);
+  cursor: pointer;
+  font-size: var(--st-text-sm);
+  list-style: none;
+  padding: 4px 0 10px;
+}
+
+.seiton-home-memo-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.seiton-home-memo-details > summary::after {
+  content: "  ▾";
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-home-memo-details[open] > summary::after {
+  content: "  ▴";
+}
+
+.seiton-home-memo-details > .seiton-section-head {
+  border-top: 0;
+}
+
+@media (max-width: 640px) {
+
+  .seiton-home-section {
+    padding-top: 12px;
+  }
+}
+.seiton-week-count {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.seiton-week-count {
+  color: var(--st-muted);
+}
+
+.seiton-capture {
+  border-bottom: 1px solid var(--st-hairline);
+  border-top: 1px solid var(--st-hairline);
+  margin-bottom: 34px;
+  padding: 16px 0 8px;
+  transition: border-color var(--st-transition);
+}
+
+.seiton-capture:focus-within {
+  border-bottom-color: var(--st-accent);
+}
+
+.seiton-capture-label {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.seiton-capture-hint {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-home-quick .seiton-capture {
+  margin-bottom: 0;
+}
+
+.seiton-home-quick .seiton-capture-textarea,
+.seiton-home-quick textarea.seiton-capture-textarea {
+  min-height: 64px;
+}
+
+.seiton-home .seiton-capture-textarea,
+.seiton-home textarea.seiton-capture-textarea {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--st-ink);
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  height: auto;
+  line-height: var(--st-leading-relaxed);
+  min-height: 108px;
+  padding: 5px 0;
+  resize: vertical;
+  width: 100%;
+}
+
+.seiton-home .seiton-capture-textarea::placeholder {
+  color: var(--st-muted);
+}
+
+.seiton-home .seiton-capture-textarea:focus {
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+.seiton-capture-footer {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  margin-top: 1px;
+}
+
+.seiton-capture-status {
+  color: var(--st-muted);
+  flex: 1;
+  font-size: var(--st-text-sm);
+  min-height: 1.4em;
+  overflow-wrap: anywhere;
+}
+
+.seiton-capture-status.is-success,
+.seiton-timeline-status.is-success {
+  color: var(--text-success);
+}
+
+.seiton-capture-status.is-error,
+.seiton-timeline-status.is-error {
+  color: var(--text-error);
+}
+
+.seiton-home button.seiton-save-button {
+  background: var(--st-primary);
+  color: var(--st-on-primary);
+  font-size: var(--st-text-sm);
+  font-weight: 620;
+  min-height: 30px;
+  padding: 5px 16px;
+}
+
+.seiton-home button.seiton-save-button:hover {
+  background: var(--st-primary);
+  color: var(--st-on-primary);
+  opacity: 0.86;
+}
+
+.seiton-timeline {
+  margin-top: 0;
+}
+
+.seiton-timeline .seiton-section-head {
+  border-bottom: 0;
+  margin-bottom: 6px;
+}
+
+.seiton-timeline-status {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  min-height: 1.2em;
+  padding-top: 4px;
+}
+
+.seiton-timeline-status:empty,
+.seiton-problems:empty {
+  display: none;
+}
+
+.seiton-problem-details {
+  border: 0;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin: 8px 0;
+  padding: 0;
+}
+
+.seiton-problem-details summary {
+  cursor: pointer;
+}
+
+.seiton-problem-details ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+}
+
+.seiton-problem-path {
+  color: var(--st-muted);
+  display: block;
+  font-family: var(--font-monospace);
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-day-group {
+  margin-top: 26px;
+}
+
+.seiton-day-group + .seiton-day-group {
+  margin-top: 30px;
+}
+
+.seiton-day-head {
+  align-items: baseline;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 8px;
+  margin-bottom: 0;
+  padding: 0 0 7px;
+}
+
+.seiton-day-head h3 {
+  color: var(--st-ink);
+  font-size: var(--st-text-base);
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.seiton-day-count {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.seiton-memo {
+  background: transparent;
+  border-bottom: 1px solid var(--st-hairline);
+  border-radius: 0;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  position: relative;
+  padding: 14px 0 12px;
+  transition: none;
+}
+
+.seiton-memo:hover,
+.seiton-memo:focus-within {
+  background: transparent;
+}
+
+.seiton-memo-time {
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.8;
+  padding-top: 1px;
+}
+
+.seiton-memo-main {
+  min-width: 0;
+  padding-right: 24px;
+}
+
+.seiton-memo-body {
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  line-height: var(--st-leading-relaxed);
+  max-width: 700px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-memo-body > :first-child {
+  margin-top: 0;
+}
+
+.seiton-memo-body > :last-child {
+  margin-bottom: 0;
+}
+
+.seiton-memo-body h1,
+.seiton-memo-body h2,
+.seiton-memo-body h3,
+.seiton-memo-body h4 {
+  font-size: 1.05em;
+  line-height: var(--st-leading-tight);
+  margin: 0.7em 0 0.3em;
+}
+
+.seiton-memo-body p,
+.seiton-memo-body ul,
+.seiton-memo-body ol,
+.seiton-memo-body blockquote,
+.seiton-memo-body pre {
+  margin: 0.35em 0;
+}
+
+.seiton-memo-body pre {
+  background: var(--background-secondary);
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  font-size: var(--st-text-sm);
+  padding: 8px 10px;
+}
+
+.seiton-memo-body blockquote {
+  border-left: 2px solid var(--st-hairline);
+  color: var(--st-muted);
+  padding-left: 10px;
+}
+
+.seiton-memo-body img {
+  border-radius: var(--st-radius-sm);
+  max-height: 260px;
+  max-width: 100%;
+}
+
+.seiton-memo-promoted {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 4px;
+}
+
+.seiton-memo-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.seiton-memo-meta:empty {
+  display: none;
+}
+
+.seiton-memo.is-deleted {
+  opacity: 0.58;
+}
+
+.seiton-memo.is-unknown {
+  border-left: 2px solid var(--text-warning);
+  padding-left: 10px;
+}
+
+.seiton-timeline-footer {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 14px;
+}
+
+.seiton-more-button {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+
+.seiton-capture-destination {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-left: 8px;
+}

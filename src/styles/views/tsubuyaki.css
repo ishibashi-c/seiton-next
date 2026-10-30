@@ -1,0 +1,434 @@
+/* --------------------------------------------------------------------------
+   つぶやき
+   -------------------------------------------------------------------------- */
+
+.seiton-tsubuyaki-content {
+  margin-top: 18px;
+  max-width: 760px;
+}
+
+.seiton-tsubuyaki-compose {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: 8px;
+  padding: 12px 14px 10px;
+}
+
+.seiton-tsubuyaki-compose:focus-within {
+  border-color: var(--st-ink);
+}
+
+.seiton-tsubuyaki-input {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink);
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  line-height: 1.7;
+  min-height: 26px;
+  outline: 0;
+  padding: 0;
+  resize: none;
+  width: 100%;
+}
+
+.seiton-tsubuyaki-input:focus {
+  box-shadow: none;
+  outline: 0;
+}
+
+.seiton-tsubuyaki-compose-foot {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.seiton-tsubuyaki-save {
+  min-height: 30px;
+}
+
+.seiton-tsubuyaki-status {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 1.4em;
+  padding-top: 4px;
+}
+
+.seiton-tsubuyaki-status:empty {
+  display: none;
+}
+
+.seiton-tsubuyaki-status.is-error {
+  color: var(--text-error);
+}
+
+.seiton-tsubuyaki-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 18px 0 0;
+  min-height: 40px;
+  padding-bottom: 6px;
+}
+
+.seiton-tsubuyaki-tags {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.seiton-tsubuyaki-tags::-webkit-scrollbar {
+  display: none;
+}
+
+.seiton-tsubuyaki-tag {
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--st-muted);
+  flex: 0 0 auto;
+  font-size: var(--st-text-sm);
+  min-height: 28px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.seiton-tsubuyaki-tag:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-tsubuyaki-tag.is-active {
+  box-shadow: inset 0 -2px 0 var(--st-ink);
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-tsubuyaki-tools {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+}
+
+.seiton-tsubuyaki-search-wrap {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.seiton-tsubuyaki-search-icon {
+  color: var(--st-muted);
+  display: inline-flex;
+}
+
+.seiton-tsubuyaki-search-icon svg {
+  height: 13px;
+  width: 13px;
+}
+
+.seiton-tsubuyaki-search {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--st-hairline);
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  height: 28px;
+  padding: 2px 0;
+  width: 140px;
+}
+
+.seiton-tsubuyaki-search:focus {
+  border-bottom-color: var(--st-ink);
+  box-shadow: none;
+  outline: 0;
+}
+
+.seiton-tsubuyaki-count {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.seiton-tsubuyaki-list {
+  margin-top: 6px;
+}
+
+.seiton-tsubuyaki-month {
+  margin-top: 28px;
+}
+
+.seiton-tsubuyaki-month-head {
+  align-items: baseline;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding-bottom: 7px;
+}
+
+.seiton-tsubuyaki-month-head h2 {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.seiton-tsubuyaki-month-count,
+.seiton-tsubuyaki-day-count {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-tsubuyaki-day {
+  margin-top: 16px;
+}
+
+.seiton-tsubuyaki-day-head {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.seiton-tsubuyaki-day-head h3 {
+  color: var(--st-ink);
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.seiton-tsubuyaki-day-badge {
+  background: var(--background-secondary);
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-size: var(--st-text-2xs);
+  padding: 1px 5px;
+}
+
+.seiton-tsubuyaki-row {
+  border-radius: 4px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  padding: 12px 6px 12px 0;
+  position: relative;
+}
+
+.seiton-tsubuyaki-row:hover {
+  background: var(--st-hover);
+}
+
+.seiton-tsubuyaki-row.is-deleted {
+  opacity: 0.55;
+}
+
+.seiton-tsubuyaki-time {
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.8;
+  padding-top: 1px;
+}
+
+.seiton-tsubuyaki-main {
+  min-width: 0;
+  padding-right: 28px;
+}
+
+.seiton-tsubuyaki-body {
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  line-height: var(--st-leading-relaxed);
+  max-width: 700px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-tsubuyaki-body > :first-child {
+  margin-top: 0;
+}
+
+.seiton-tsubuyaki-body > :last-child {
+  margin-bottom: 0;
+}
+
+.seiton-tsubuyaki-body p,
+.seiton-tsubuyaki-body ul,
+.seiton-tsubuyaki-body ol,
+.seiton-tsubuyaki-body blockquote,
+.seiton-tsubuyaki-body pre {
+  margin: 0.35em 0;
+}
+
+.seiton-tsubuyaki-body pre {
+  background: var(--background-secondary);
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  font-size: var(--st-text-sm);
+  padding: 8px 10px;
+}
+
+.seiton-tsubuyaki-body blockquote {
+  border-left: 2px solid var(--st-hairline);
+  color: var(--st-muted);
+  padding-left: 10px;
+}
+
+.seiton-tsubuyaki-body img {
+  border-radius: var(--st-radius-sm);
+  max-height: 260px;
+  max-width: 100%;
+}
+
+.seiton-tsubuyaki-promoted {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 4px;
+}
+
+.seiton-tsubuyaki-badges {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.seiton-tsubuyaki-more {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  color: var(--st-muted);
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 10px;
+  width: 26px;
+}
+
+.seiton-tsubuyaki-row:hover .seiton-tsubuyaki-more,
+.seiton-tsubuyaki-row:focus-within .seiton-tsubuyaki-more {
+  opacity: 1;
+}
+
+.seiton-tsubuyaki-more:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-tsubuyaki-more svg {
+  height: 15px;
+  width: 15px;
+}
+
+.seiton-tsubuyaki-edit {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-ink);
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  line-height: 1.7;
+  min-height: 88px;
+  padding: 8px 10px;
+  resize: vertical;
+  width: 100%;
+}
+
+.seiton-tsubuyaki-edit:focus {
+  border-color: var(--st-ink);
+  box-shadow: none;
+  outline: 0;
+}
+
+.seiton-tsubuyaki-edit-foot {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.seiton-tsubuyaki-edit-foot .seiton-tsubuyaki-status {
+  flex: 1;
+  padding-top: 0;
+}
+
+.seiton-tsubuyaki-edit-foot button {
+  min-height: 30px;
+}
+
+.seiton-tsubuyaki-footer {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 8px;
+}
+
+@media (max-width: 640px) {
+  .seiton-tsubuyaki-content {
+    margin-top: 14px;
+  }
+
+  .seiton-tsubuyaki-compose {
+    padding: 10px 12px 8px;
+  }
+
+  .seiton-tsubuyaki-input {
+    font-size: var(--st-text-md);
+  }
+
+  .seiton-tsubuyaki-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .seiton-tsubuyaki-tools {
+    width: 100%;
+  }
+
+  .seiton-tsubuyaki-search {
+    width: 100%;
+  }
+
+  .seiton-tsubuyaki-search-wrap {
+    flex: 1;
+  }
+
+  .seiton-tsubuyaki-row {
+    gap: 10px;
+    grid-template-columns: 44px minmax(0, 1fr);
+    padding: 12px 0;
+  }
+
+  .seiton-tsubuyaki-more {
+    opacity: 1;
+  }
+
+  .seiton-tsubuyaki-day-head h3 {
+    font-size: var(--st-text-md);
+  }
+
+  .seiton-tsubuyaki-month {
+    margin-top: 24px;
+  }
+}
+

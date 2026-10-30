@@ -1,0 +1,287 @@
+/* --------------------------------------------------------------------------
+   Tab skeleton: every tab starts with the same header, nav, and content gap
+   -------------------------------------------------------------------------- */
+
+/* The common body wrapper gives every tab the same first-content offset. */
+.seiton-tab-body {
+  margin-top: 24px;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .seiton-tab-body {
+    margin-top: 18px;
+  }
+}
+
+/* The page title is one line in every tab, even when the action row is full. */
+.seiton-page-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.seiton-page-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The top nav is the only element that should sit directly under the header. */
+.seiton-page-head + .seiton-top-nav {
+  margin-top: 20px;
+}
+
+@media (max-width: 760px) {
+  .seiton-page-head + .seiton-top-nav {
+    margin-top: 12px;
+  }
+}
+
+/* Keep the nav on one line; the next tab is reachable by horizontal scroll. */
+.seiton-top-nav {
+  align-items: stretch;
+  flex-wrap: nowrap;
+  height: 36px;
+}
+
+@media (max-width: 760px) {
+  /* The action row sits on the baseline of the fixed header in every tab. */
+  .seiton-page-head {
+    justify-content: space-between;
+  }
+
+  .seiton-top-nav {
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .seiton-top-tab {
+    min-height: 40px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Tab motion, sticky nav, and floating actions
+   -------------------------------------------------------------------------- */
+
+.seiton-top-nav {
+  background: var(--background-primary);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.seiton-top-tab.is-active {
+  box-shadow: none;
+}
+
+.seiton-top-tab.is-active::after {
+  background: var(--st-ink);
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.seiton-top-nav.is-tab-transitioning .seiton-top-tab.is-active::after {
+  animation: seiton-tab-underline 160ms cubic-bezier(0.2, 0, 0, 1) both;
+  transform-origin: left center;
+}
+
+.seiton-tab-body.is-tab-entering {
+  animation: seiton-tab-in 150ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes seiton-tab-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--seiton-enter-x, 8px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes seiton-tab-underline {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes seiton-tab-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.seiton-fab {
+  align-items: center;
+  background: var(--st-primary);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  color: var(--st-on-primary);
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+  position: fixed;
+  transform: translateY(6px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+  width: 48px;
+  z-index: 40;
+}
+
+.seiton-fab.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.seiton-fab:hover {
+  background: var(--st-primary);
+  color: var(--st-on-primary);
+  opacity: 0.88;
+}
+
+.seiton-fab svg {
+  height: 20px;
+  width: 20px;
+}
+
+.seiton-fab:focus-visible {
+  outline: 2px solid var(--st-ink);
+  outline-offset: 2px;
+}
+
+.seiton-quick-search-modal .seiton-quick-search-input {
+  border: 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  box-shadow: none;
+  font-size: var(--st-text-md);
+  padding: 8px 2px;
+  width: 100%;
+}
+
+.seiton-quick-search-modal .seiton-quick-search-input:focus {
+  border-bottom-color: var(--text-normal);
+  box-shadow: none;
+  outline: 0;
+}
+
+.seiton-quick-search-count {
+  color: var(--text-faint);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  padding: 6px 2px;
+}
+
+.seiton-quick-search-list {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.seiton-quick-search-item {
+  align-items: baseline;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 9px 2px;
+  text-align: left;
+  width: 100%;
+}
+
+.seiton-quick-search-item:hover,
+.seiton-quick-search-item:focus-visible {
+  background: var(--background-modifier-hover);
+}
+
+.seiton-quick-search-title {
+  color: var(--text-normal);
+  font-size: var(--st-text-base);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-quick-search-meta {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: var(--st-text-xs);
+}
+
+@media (max-width: 640px) {
+  .seiton-fab {
+    height: 52px;
+    width: 52px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seiton-tab-body.is-tab-entering {
+    animation: seiton-tab-fade 80ms ease both;
+  }
+
+  .seiton-top-nav.is-tab-transitioning .seiton-top-tab.is-active::after {
+    animation: none;
+  }
+
+  .seiton-fab {
+    transition: none;
+  }
+}
+
+/* Obsidian gives .view-content a 12px padding. The Seiton shell already owns
+   its margins, and the padding makes the sticky nav stop below the top edge,
+   leaving a strip of scrolling content above it. */
+.workspace-leaf-content .view-content.seiton-home,
+.workspace-leaf-content .view-content.seiton-prompt-root {
+  padding: 0;
+}
+
+/* Keep keyboard focus visible inside the horizontally scrollable tab row. */
+.seiton-top-nav {
+  padding-inline: 2px;
+  scroll-padding-inline: 8px;
+}
+
+@media (max-width: 520px) {
+  /* Six tabs do not fit on a phone. Wrap them instead of hiding the last one
+     behind a scrollbar that has no visible affordance. */
+  .seiton-top-nav {
+    flex-wrap: wrap;
+    gap: 0 8px;
+    height: auto;
+    overflow-x: visible;
+  }
+
+  .seiton-top-nav .seiton-top-tab {
+    font-size: var(--st-text-xs);
+    letter-spacing: -0.01em;
+    min-height: 36px;
+    padding: 6px 0;
+  }
+}

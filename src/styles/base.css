@@ -1,0 +1,252 @@
+/* --------------------------------------------------------------------------
+   Shared structure
+   -------------------------------------------------------------------------- */
+
+.seiton-home {
+  background: var(--background-primary);
+}
+
+.seiton-home-inner {
+  margin: 0 auto;
+  max-width: var(--st-max-home);
+  padding: 44px 32px 88px;
+}
+
+.seiton-library .seiton-home-inner {
+  max-width: var(--st-max-library);
+}
+
+.seiton-projects .seiton-home-inner {
+  max-width: var(--st-max-projects);
+}
+.seiton-page-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.seiton-page-head {
+  margin-bottom: 4px;
+}
+.seiton-page-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.seiton-page-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.seiton-page-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-2xl);
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.seiton-page-subline{
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+/* Buttons are quiet by default. Only primary actions carry the accent. */
+
+.seiton-home button,
+.seiton-prompt-root button {
+  background: transparent;
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  font-weight: 450;
+  height: auto;
+  min-height: 28px;
+  padding: 4px 7px;
+  transition:
+    background-color var(--st-transition),
+    color var(--st-transition);
+}
+
+.seiton-home button:hover,
+.seiton-prompt-root button:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-home button:focus-visible,
+.seiton-prompt-root button:focus-visible,
+.seiton-home a:focus-visible,
+.seiton-prompt-root a:focus-visible {
+  outline: 2px solid var(--st-ink);
+  outline-offset: 2px;
+}
+
+.seiton-home button.mod-cta,
+.seiton-prompt-root button.mod-cta,
+.seiton-home button.seiton-primary-text.seiton-primary-text,
+.seiton-projects button.seiton-primary-text {
+  background: var(--st-primary);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-on-primary);
+  font-weight: 600;
+  padding: 5px 11px;
+}
+
+.seiton-home button.mod-cta:hover,
+.seiton-prompt-root button.mod-cta:hover,
+.seiton-home button.seiton-primary-text:hover,
+.seiton-projects button.seiton-primary-text:hover {
+  background: var(--st-primary);
+  color: var(--st-on-primary);
+  opacity: 0.86;
+}
+
+.seiton-text-action {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+}
+
+/* Keep every text action a comfortable target. Obsidian's default button
+   height is 28px, which is tight on a trackpad and too small on a phone. */
+.seiton-text-action.seiton-text-action,
+.seiton-primary-text.seiton-primary-text,
+.seiton-item-action.seiton-item-action,
+.seiton-prompt-action.seiton-prompt-action,
+.seiton-prompt-secondary.seiton-prompt-secondary,
+.seiton-index-label.seiton-index-label,
+.seiton-status-filter.seiton-status-filter {
+  align-items: center;
+  display: inline-flex;
+  height: auto;
+  min-height: 32px;
+}
+
+@media (max-width: 760px) {
+  .seiton-text-action.seiton-text-action,
+  .seiton-primary-text.seiton-primary-text,
+  .seiton-item-action.seiton-item-action,
+  .seiton-prompt-action.seiton-prompt-action,
+  .seiton-prompt-secondary.seiton-prompt-secondary,
+  .seiton-index-label.seiton-index-label,
+  .seiton-status-filter.seiton-status-filter {
+    min-height: 40px;
+  }
+}
+
+.seiton-top-nav {
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 22px;
+  margin: 12px 0 32px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.seiton-top-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.seiton-top-tab {
+  border-radius: 0;
+  color: var(--st-muted);
+  flex: 0 0 auto;
+  font-size: var(--st-text-sm);
+  min-height: 34px;
+  padding: 6px 0;
+  position: relative;
+}
+
+.seiton-top-tab:hover {
+  background: transparent;
+  color: var(--st-ink);
+}
+
+.seiton-top-tab.is-active {
+  box-shadow: inset 0 -2px 0 var(--st-ink);
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+/* Common section labels and empty states */
+
+.seiton-section-head {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.seiton-section-head h2 {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.seiton-section-count {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-empty {
+  border: 0;
+  color: var(--st-muted);
+  font-size: var(--st-text-base);
+  line-height: var(--st-leading-normal);
+  padding: 42px 0;
+}
+
+.seiton-section-empty {
+  border-top: 1px solid var(--st-hairline);
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  padding: 18px 0;
+}
+
+.seiton-keyhint {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  white-space: nowrap;
+}
+
+.seiton-badge,
+.seiton-item-marker {
+  border-radius: 0;
+  font-size: var(--st-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 0;
+}
+
+.seiton-badge.is-deleted,
+.seiton-badge.is-unknown,
+.seiton-item-marker.is-warm {
+  color: var(--text-warning);
+}
+
+.seiton-badge.is-promoted {
+  color: var(--st-accent);
+}
+
+.seiton-item-marker {
+  color: var(--st-muted);
+}
+
+.seiton-item-marker + .seiton-item-marker::before {
+  content: "· ";
+}
+

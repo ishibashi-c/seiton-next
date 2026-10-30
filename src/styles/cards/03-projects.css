@@ -1,0 +1,79 @@
+/* Projects: cards */
+
+.seiton-projects .seiton-projects-body {
+  margin-top: 20px;
+}
+
+.seiton-project-list {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.seiton-project-list .seiton-project-item {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  padding: 16px;
+  transition: border-color 120ms ease;
+}
+
+.seiton-project-list .seiton-project-item:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-project-list .seiton-item-kicker {
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+  margin-bottom: 10px;
+}
+
+.seiton-project-list .seiton-item-title {
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.seiton-project-list .seiton-item-excerpt {
+  -webkit-line-clamp: 2;
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.seiton-project-list .seiton-item-meta {
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 8px;
+}
+
+.seiton-project-list .seiton-item-actions {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.seiton-project-overview {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  padding: 22px 24px;
+}
+
+.seiton-related-list {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.seiton-related-item {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  padding: 16px;
+}
+

@@ -1,0 +1,364 @@
+/* Home: zones and cards */
+
+.seiton-home .seiton-home-content {
+  margin-top: 0;
+}
+
+.seiton-zone {
+  margin-top: 36px;
+}
+
+.seiton-zone:first-of-type {
+  margin-top: 28px;
+}
+
+.seiton-zone-head {
+  align-items: baseline;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.seiton-zone-head h2 {
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+
+.seiton-zone-count {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-home-section > h2 {
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.seiton-resume {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.seiton-resume > .is-featured {
+  grid-column: 1 / -1;
+}
+
+.seiton-home-cards {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+}
+
+.seiton-home-card {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 96px;
+  min-width: 0;
+  padding: 16px;
+  position: relative;
+  transition: border-color 120ms ease;
+}
+
+.seiton-home-card:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-home-card-head {
+  align-items: center;
+  color: var(--text-faint);
+  display: flex;
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.seiton-home-card-kind {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.seiton-home-card-title {
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.seiton-home-card-link {
+  all: unset;
+  cursor: pointer;
+}
+
+.seiton-home-card-link::after {
+  border-radius: 16px;
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.seiton-home-card-link:focus-visible {
+  outline: none;
+}
+
+.seiton-home-card:has(.seiton-home-card-link:focus-visible) {
+  outline: 2px solid var(--text-normal);
+  outline-offset: 2px;
+}
+
+.seiton-home-card-meta {
+  color: var(--text-muted);
+  display: -webkit-box;
+  font-size: var(--st-text-sm);
+  line-height: 1.5;
+  margin-top: 6px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.seiton-home-card-foot {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.seiton-home-card-state {
+  color: var(--text-faint);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-home-card.is-featured {
+  min-height: 104px;
+  padding: 18px 20px;
+}
+
+.seiton-home-card.is-featured .seiton-home-card-title {
+  font-size: 18px;
+}
+
+.seiton-home-card.is-featured .seiton-home-card-meta {
+  -webkit-line-clamp: 1;
+}
+
+.seiton-home-card-action {
+  background: none;
+  border: 1px solid var(--background-modifier-border-hover);
+  border-radius: 8px;
+  color: var(--text-normal);
+  flex: none;
+  font-size: var(--st-text-sm);
+  height: 34px;
+  padding: 0 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.seiton-home-card-action:hover {
+  border-color: var(--text-faint);
+}
+
+/* Capture card */
+
+.seiton-home .seiton-capture-card {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.seiton-home .seiton-capture-card:focus-within {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-capture-label {
+  color: var(--text-muted);
+  display: block;
+  font-size: var(--st-text-xs);
+  margin-bottom: 8px;
+}
+
+.seiton-capture-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.seiton-home .seiton-capture-card .seiton-capture-textarea {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  flex: 1;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-base);
+  line-height: 1.5;
+  max-height: 180px;
+  min-height: 44px;
+  padding: 11px 14px;
+  resize: vertical;
+}
+
+.seiton-home .seiton-capture-card .seiton-capture-textarea:focus {
+  border-color: var(--text-faint);
+  box-shadow: none;
+}
+
+.seiton-home .seiton-capture-card .seiton-save-button {
+  border-radius: 8px;
+  flex: none;
+  height: 44px;
+  padding: 0 18px;
+}
+
+.seiton-home .seiton-capture-card .seiton-capture-footer {
+  align-items: center;
+  border-top: 1px solid var(--background-modifier-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.seiton-home .seiton-capture-card .seiton-keyhint {
+  margin-left: auto;
+}
+
+/* Memo log as a card */
+
+.seiton-home .seiton-home-memo-details {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  margin-top: 36px;
+  padding: 0;
+}
+
+.seiton-home .seiton-home-memo-details > summary {
+  font-size: var(--st-text-sm);
+  font-weight: 550;
+  padding: 16px 20px;
+}
+
+@media (max-width: 760px) {
+  .seiton-zone {
+    margin-top: 28px;
+  }
+
+  .seiton-zone-head {
+    margin-bottom: 10px;
+  }
+
+  .seiton-resume {
+    display: flex;
+    gap: 12px;
+    margin: 0 -16px;
+    overflow-x: auto;
+    padding: 0 16px 4px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .seiton-resume::-webkit-scrollbar {
+    display: none;
+  }
+
+  .seiton-resume > * {
+    flex: 0 0 84%;
+    scroll-snap-align: start;
+  }
+
+  .seiton-resume > .is-featured {
+    grid-column: auto;
+  }
+
+  .seiton-home-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seiton-home-card {
+    min-height: 88px;
+  }
+
+  .seiton-home-card.is-featured .seiton-home-card-title {
+    font-size: var(--st-text-md);
+  }
+
+  .seiton-capture-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .seiton-home .seiton-capture-card .seiton-save-button {
+    width: 100%;
+  }
+
+  .seiton-home .seiton-capture-card .seiton-keyhint {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+.seiton-home button.seiton-home-card-link {
+  all: unset;
+  cursor: pointer;
+  display: inline;
+}
+
+.seiton-home button.seiton-home-card-link:focus-visible {
+  outline: none;
+}
+
+.seiton-home button.seiton-home-card-action {
+  background: none;
+  border: 1px solid var(--background-modifier-border-hover);
+  border-radius: 8px;
+  color: var(--text-normal);
+  font-size: var(--st-text-sm);
+  height: 34px;
+  padding: 0 14px;
+}
+
+/* Home: zones are separated by space, not bands */
+
+.seiton-home .seiton-home-content {
+  gap: 0;
+}
+
+.seiton-home .seiton-zone.seiton-home-section {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.seiton-home .seiton-top-nav {
+  margin-bottom: 20px;
+}
+
+
+/* Long titles should not push the whole card grid down. */
+.seiton-home-card-title {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.seiton-home-card.is-featured .seiton-home-card-title {
+  -webkit-line-clamp: 3;
+}

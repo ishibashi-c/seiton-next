@@ -1,0 +1,264 @@
+/* One frame across the four views: same column, title, nav and content start */
+
+.seiton-home-inner {
+  margin: 0 auto;
+  max-width: 1360px;
+  padding: 28px 32px 72px;
+}
+
+.seiton-prompt-root {
+  display: block;
+  margin: 0;
+  max-width: none;
+  padding: 0;
+}
+
+.seiton-page-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin: 0;
+  min-height: 64px;
+}
+
+.seiton-page-title {
+  font-size: 26px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-page-subline {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0 0;
+}
+
+.seiton-page-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding-top: 4px;
+}
+
+.seiton-top-nav {
+  border-bottom: 1px solid var(--background-modifier-border);
+  display: flex;
+  gap: 22px;
+  height: 36px;
+  margin: 20px 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.seiton-prompt-header {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.seiton-home-content,
+.seiton-projects-body,
+.seiton-prompt-body {
+  gap: 0;
+  margin-top: 24px;
+}
+
+.seiton-library-tool {
+  margin-top: 24px;
+}
+
+.seiton-home .seiton-zone:first-of-type {
+  margin-top: 0;
+}
+
+.seiton-prompt-body {
+  max-width: 920px;
+}
+
+@media (max-width: 760px) {
+  .seiton-home-inner {
+    padding: 20px 16px 56px;
+  }
+
+  .seiton-page-head {
+    min-height: 0;
+  }
+
+  .seiton-page-title {
+    font-size: 24px;
+  }
+
+  .seiton-top-nav {
+    margin-top: 14px;
+  }
+
+  .seiton-home-content,
+  .seiton-projects-body,
+  .seiton-prompt-body {
+    margin-top: 18px;
+  }
+
+  .seiton-library-tool {
+    margin-top: 18px;
+  }
+}
+
+/* Frame: equalise the remaining per-view overrides */
+
+.seiton-prompt-header h1.seiton-page-title {
+  font-family: var(--font-interface);
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.seiton-projects .seiton-projects-body {
+  margin-top: 24px;
+}
+
+.seiton-home .seiton-top-nav {
+  margin-bottom: 0;
+}
+
+@media (max-width: 760px) {
+  .seiton-prompt-header h1.seiton-page-title {
+    font-size: 24px;
+  }
+}
+
+.seiton-home .seiton-home-content {
+  margin-top: 24px;
+}
+
+@media (max-width: 760px) {
+  .seiton-home .seiton-home-content {
+    margin-top: 18px;
+  }
+}
+
+/* Frame stability: the head never grows with the number of actions or a long meta */
+
+.seiton-page-heading {
+  min-width: 0;
+}
+
+.seiton-page-subline {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-page-actions {
+  flex-wrap: nowrap;
+  max-width: 62%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.seiton-page-actions::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .seiton-page-head {
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 12px;
+    min-height: 52px;
+  }
+
+  .seiton-page-heading {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .seiton-page-actions {
+    flex: none;
+    flex-basis: auto;
+    justify-content: flex-end;
+    margin-top: 0;
+    max-width: 60%;
+    padding-top: 0;
+  }
+
+  .seiton-library .seiton-page-title,
+  .seiton-projects .seiton-page-title,
+  .seiton-prompt-header h1.seiton-page-title {
+    font-size: 24px;
+  }
+
+  .seiton-top-nav {
+    margin-top: 12px;
+  }
+}
+
+/* Fixed head height so the nav lands on the same line in every view */
+
+.seiton-page-head {
+  height: 64px;
+  min-height: 64px;
+}
+
+@media (max-width: 760px) {
+  .seiton-page-head {
+    align-items: flex-start;
+    height: 52px;
+    min-height: 52px;
+  }
+
+  .seiton-projects .seiton-projects-body {
+    margin-top: 18px;
+  }
+}
+
+@media (max-width: 760px) {
+  .seiton-library .seiton-tool-card {
+    margin-top: 18px;
+  }
+}
+
+/* Phone: title on its own line, actions on the next, fixed head height */
+
+@media (max-width: 760px) {
+  .seiton-page-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    height: 96px;
+    min-height: 96px;
+  }
+
+  .seiton-page-heading {
+    flex: none;
+  }
+
+  .seiton-page-actions {
+    flex: none;
+    flex-basis: auto;
+    height: 32px;
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-top: 0;
+  }
+
+  .seiton-page-title {
+    font-size: 24px;
+  }
+
+  .seiton-library .seiton-page-title,
+  .seiton-projects .seiton-page-title,
+  .seiton-prompt-header h1.seiton-page-title {
+    font-size: 24px;
+  }
+}
+

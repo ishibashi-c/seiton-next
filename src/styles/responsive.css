@@ -1,0 +1,436 @@
+/* --------------------------------------------------------------------------
+   Narrow windows and mobile
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+
+  .seiton-prompt-root {
+    padding: 20px 18px 32px;
+  }
+
+  .seiton-prompt-body {
+    gap: 20px;
+  }
+
+  .seiton-prompt-composer {
+    min-height: auto;
+  }
+
+  .seiton-prompt-root textarea.seiton-prompt-composer-input {
+    min-height: 150px;
+  }
+
+  .seiton-prompt-history {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .seiton-prompt-header {
+    display: block;
+  }
+
+  .seiton-card-grid,
+  .seiton-project-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .seiton-home-inner {
+    padding: 24px 16px 64px;
+  }
+
+  .seiton-page-head {
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .seiton-page-title{
+    font-size: 24px;
+  }
+
+  .seiton-page-actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    margin-top: 2px;
+  }
+
+  .seiton-top-nav {
+    gap: 18px;
+    margin: 10px 0 24px;
+  }
+
+  .seiton-top-tab {
+    font-size: var(--st-text-sm);
+    min-height: 40px;
+  }
+
+  .seiton-capture {
+    margin-bottom: 36px;
+  }
+
+  .seiton-home .seiton-capture-textarea {
+    font-size: var(--st-text-md);
+    min-height: 96px;
+  }
+
+  .seiton-home button.seiton-save-button {
+    min-height: 44px;
+    padding: 8px 18px;
+  }
+
+  .seiton-home button.seiton-primary-text {
+    min-height: 40px;
+    padding: 7px 12px;
+  }
+
+  .seiton-memo {
+    gap: 10px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    padding: 13px 0;
+  }
+
+  .seiton-memo-time {
+    font-size: var(--st-text-2xs);
+  }
+
+  .seiton-memo-body {
+    font-size: var(--st-text-base);
+  }
+  .seiton-item-actions,
+  .seiton-prompt-item-actions {
+    opacity: 1;
+    transform: none;
+  }
+  .seiton-item-more {
+    display: none;
+  }
+
+  .seiton-item-content,
+  .seiton-memo-main {
+    padding-right: 0;
+  }
+  .seiton-home button.seiton-item-action {
+    min-height: 40px;
+    padding: 5px 9px;
+  }
+
+  .seiton-home button.seiton-index-label,
+  .seiton-home button.seiton-status-filter {
+    min-height: 32px;
+    padding: 4px 0;
+  }
+
+  .seiton-item {
+    gap: 12px;
+    grid-template-columns: 72px minmax(0, 1fr);
+    padding: 12px 0;
+  }
+
+  .seiton-item-type {
+    font-size: var(--st-text-2xs);
+  }
+
+  .seiton-item-cover,
+  .seiton-book-spine {
+    height: 56px;
+    width: 40px;
+  }
+
+  .seiton-item-content {
+    max-width: none;
+    padding-right: 0;
+  }
+
+  .seiton-item-side {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 3px 10px;
+    grid-column: 2;
+    padding-right: 0;
+    text-align: left;
+  }
+
+  .seiton-item-side .seiton-item-actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+
+  .seiton-item-excerpt {
+    -webkit-line-clamp: 2;
+  }
+
+  .seiton-index-top {
+    gap: 16px;
+  }
+
+  .seiton-index-total-number {
+    font-size: 25px;
+  }
+
+  .seiton-index-labels {
+    gap: 3px 14px;
+  }
+
+  .seiton-index-status {
+    gap: 3px 14px;
+  }
+
+  .seiton-item[data-kind="book"] {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .seiton-search {
+    flex-basis: 100%;
+  }
+
+.seiton-index-top {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+}
+
+.seiton-home button.seiton-index-total.is-active .seiton-index-total-label {
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-home button.seiton-index-total {
+  align-items: baseline;
+  background: transparent;
+  color: var(--st-ink);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 7px;
+  min-height: 0;
+  padding: 0;
+}
+
+.seiton-index-total-number {
+  color: var(--st-data);
+  font-size: 27px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.seiton-index-total-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-index-labels {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  padding: 8px 0 0;
+}
+
+.seiton-home button.seiton-index-label {
+  background: transparent;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 24px;
+  padding: 2px 0;
+}
+
+.seiton-home button.seiton-index-label:hover {
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-index-label.is-active {
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-index-count {
+  color: var(--st-muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+.seiton-index-status {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 3px;
+}
+
+.seiton-home button.seiton-status-filter {
+  background: transparent;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 24px;
+  padding: 2px 0;
+}
+
+.seiton-home button.seiton-status-filter:hover {
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-status-filter.is-active {
+  color: var(--st-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+  .seiton-library-selects {
+    gap: 6px;
+  }
+
+  .seiton-project-title {
+    font-size: 25px;
+  }
+
+  .seiton-project-primary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .seiton-home button.seiton-project-action {
+    min-height: 40px;
+    padding: 6px 9px;
+  }
+
+  .seiton-prompt-root {
+    padding: 16px 14px 28px;
+  }
+
+  .seiton-prompt-header h1 {
+    font-size: 22px;
+  }
+
+  .seiton-prompt-root button.seiton-prompt-action {
+    min-height: 30px;
+    padding: 3px 6px;
+  }
+
+  .seiton-prompt-composer {
+    padding: 12px 12px 10px;
+  }
+
+  .seiton-prompt-root button.seiton-prompt-copy {
+    min-height: 44px;
+  }
+
+  .seiton-prompt-root button.seiton-prompt-secondary {
+    min-height: 36px;
+  }
+
+  .seiton-prompt-composer-footer .seiton-keyhint {
+    display: none;
+  }
+
+  .seiton-prompt-composer-footer {
+    justify-content: flex-end;
+  }
+
+  .seiton-capture-modal .seiton-capture-textarea,
+  .seiton-edit-textarea {
+    min-height: 160px;
+  }
+
+  .modal.seiton-capture-modal,
+  .modal.seiton-edit-modal,
+  .modal.seiton-promote-modal,
+  .modal.seiton-book-modal,
+  .modal.seiton-migration-modal {
+    width: calc(100vw - 20px);
+  }
+
+  .seiton-migration-layout {
+    display: block;
+  }
+
+  .seiton-migration-list-panel {
+    border-right: 0;
+    max-height: 38vh;
+    padding-right: 0;
+  }
+
+  .seiton-migration-preview {
+    max-height: none;
+    padding-left: 0;
+    padding-top: 12px;
+  }
+}
+
+@media (hover: none) {
+  .seiton-item-actions,
+  .seiton-prompt-item-actions {
+    opacity: 1;
+    transform: none;
+  }
+  .seiton-item-more {
+    display: none;
+  }
+
+  /* Touch has no hover: keep the row menu visible and reachable. */
+  .seiton-tsubuyaki-more {
+    opacity: 1;
+  }
+
+  .seiton-item-content,
+  .seiton-memo-main {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .seiton-new-note-modal .setting-item {
+    align-items: stretch;
+    display: block;
+  }
+
+  .seiton-new-note-modal .setting-item-info {
+    margin-bottom: 6px;
+  }
+
+  .seiton-new-note-modal .setting-item-control {
+    width: 100%;
+  }
+
+  .seiton-new-note-modal .setting-item-control input[type="text"],
+  .seiton-new-note-modal .setting-item-control input[type="date"],
+  .seiton-new-note-modal .setting-item-control select {
+    max-width: none;
+    width: 100%;
+  }
+
+  .seiton-class-candidate {
+    align-items: stretch;
+    display: block;
+  }
+
+  .seiton-home button.seiton-class-candidate-open,
+  .seiton-home button.seiton-class-candidate-create {
+    width: 100%;
+  }
+
+  .seiton-home button.seiton-class-candidate-open {
+    margin-top: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seiton-capture,
+  .seiton-memo,
+  .seiton-item,
+  .seiton-item-actions,
+  .seiton-prompt-item-actions,
+  .seiton-prompt-composer {
+    transition: none;
+  }
+}
+
+.seiton-home .seiton-home-quick textarea.seiton-capture-textarea {
+  height: 64px;
+  min-height: 64px;
+}
+

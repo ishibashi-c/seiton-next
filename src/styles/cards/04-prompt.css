@@ -1,0 +1,48 @@
+/* Prompt: composer and history cards */
+
+.seiton-prompt-root {
+  background: var(--background-secondary);
+}
+
+.seiton-prompt-composer {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+
+.seiton-prompt-item {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  margin-bottom: 12px;
+  padding: 16px;
+}
+
+.seiton-prompt-history {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 760px) {
+  .seiton-project-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seiton-related-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seiton-project-overview {
+    padding: 18px;
+  }
+}
+
+.seiton-project-list .seiton-item-actions {
+  opacity: 1;
+}
+
+.seiton-project-list .seiton-item-action {
+  font-size: var(--st-text-sm);
+}
+

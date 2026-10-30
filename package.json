@@ -1,0 +1,38 @@
+{
+  "name": "seiton-next",
+  "version": "0.4.5",
+  "description": "Seiton Next - personal capture and rediscovery plugin for Obsidian",
+  "private": true,
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "dev": "pnpm styles:build && node esbuild.config.mjs",
+    "build": "pnpm styles:build && pnpm typecheck && node esbuild.config.mjs production",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check src tests scripts",
+    "lint:fix": "biome check --write src tests scripts",
+    "styles:build": "node scripts/build-styles.mjs",
+    "styles:check": "node scripts/build-styles.mjs --check"
+  },
+  "keywords": [
+    "obsidian",
+    "plugin",
+    "capture",
+    "memo"
+  ],
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.9",
+    "@types/node": "^22.10.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "^1.14.4",
+    "typescript": "^5.8.0",
+    "ultracite": "^7.10.7",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "defuddle": "^0.19.6"
+  },
+  "author": "IshibashiCustomize"
+}

@@ -1,0 +1,187 @@
+/* Books: cover-first shelf and detail */
+
+.seiton-card-grid.is-shelf:not(.is-list) {
+  display: grid;
+  gap: 20px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+.seiton-book-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.seiton-book-cover-wrap {
+  aspect-ratio: 2 / 3;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 120ms ease;
+}
+
+.seiton-book-cover-wrap:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-book-cover-wrap:focus-visible {
+  outline: 2px solid var(--text-normal);
+  outline-offset: 2px;
+}
+
+.seiton-book-cover-image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.seiton-book-cover-fallback {
+  align-items: center;
+  background: var(--background-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  justify-content: center;
+  padding: 16px;
+  text-align: center;
+}
+
+.seiton-book-cover-fallback-title {
+  color: var(--text-muted);
+  display: -webkit-box;
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+}
+
+.seiton-book-cover-fallback-note {
+  color: var(--text-faint);
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-book-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.seiton-book-card .seiton-book-card-title {
+  background: none;
+  border: 0;
+  color: var(--text-normal);
+  display: -webkit-box;
+  font-size: var(--st-text-base);
+  font-weight: 600;
+  line-height: 1.5;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.seiton-book-card-meta {
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+  line-height: 1.5;
+}
+
+.seiton-book-card .seiton-item-actions {
+  gap: 8px;
+  margin-top: 2px;
+  opacity: 1;
+}
+
+.seiton-book-card .seiton-item-action {
+  font-size: var(--st-text-xs);
+}
+
+/* Book detail: a portrait cover at the top of the modal */
+
+.seiton-book-detail-modal .seiton-book-cover {
+  aspect-ratio: 2 / 3;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  margin: 4px auto 18px;
+  max-width: 220px;
+  min-height: 0;
+  overflow: hidden;
+  width: 220px;
+}
+
+.seiton-book-detail-modal .seiton-book-cover-image {
+  display: block;
+  height: 100%;
+  max-height: none;
+  object-fit: cover;
+  width: 100%;
+}
+
+.seiton-book-detail-modal .seiton-book-cover-name {
+  display: none;
+}
+
+/* Obsidian's settings row keeps the field column narrow. A book title is long,
+   so the detail modal gives the field the width instead of the label. */
+.seiton-book-detail-modal .setting-item-info {
+  flex: 0 1 30%;
+  padding-right: 12px;
+}
+
+.seiton-book-detail-modal .setting-item-control {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.seiton-book-detail-modal .setting-item-control input[type="text"] {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .seiton-card-grid.is-shelf:not(.is-list) {
+    gap: 16px 12px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .seiton-book-detail-modal .seiton-book-cover {
+    max-width: 180px;
+    width: 180px;
+  }
+}
+
+.seiton-home .seiton-book-card .seiton-book-card-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+
+/* Library card view: keep the cover as the primary hover target. */
+.seiton-book-card.is-card-clickable {
+  cursor: pointer;
+}
+
+.seiton-book-card.is-card-clickable:hover .seiton-book-cover-wrap,
+.seiton-book-card.is-card-clickable:focus-within .seiton-book-cover-wrap {
+  border-color: var(--st-accent);
+  box-shadow: 0 0 0 1px var(--st-accent);
+}
+
+.seiton-book-card.is-card-clickable:hover .seiton-book-card-title,
+.seiton-book-card.is-card-clickable:focus-within .seiton-book-card-title {
+  color: var(--st-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

@@ -1,0 +1,396 @@
+/* One card skeleton for every kind */
+
+.seiton-item-state {
+  color: var(--text-faint);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-card-grid:not(.is-list) .seiton-item-side .seiton-item-state {
+  margin-left: 0;
+}
+
+.seiton-card-grid.is-list .seiton-item-side {
+  align-items: flex-end;
+}
+
+.seiton-card-grid:not(.is-list) .seiton-item-source {
+  -webkit-line-clamp: 2;
+}
+
+/* Starter card, undo, mobile order */
+
+.seiton-starter {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  margin-top: 4px;
+  padding: 20px 22px;
+}
+
+.seiton-starter h2 {
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.seiton-starter-text {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  margin-bottom: 14px;
+}
+
+.seiton-starter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.seiton-status-undo {
+  background: none;
+  border: 0;
+  color: var(--text-normal);
+  font-size: var(--st-text-xs);
+  margin-left: 8px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+  .seiton-starter {
+    padding: 16px;
+  }
+
+  .seiton-top-nav {
+    gap: 14px;
+  }
+}
+
+/* Selection mode */
+
+.seiton-selection-bar {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 16px;
+  display: none;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 10px 16px;
+}
+
+.seiton-selection-bar.is-visible {
+  display: flex;
+}
+
+.seiton-selection-count {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-selection-bar .seiton-text-action:disabled {
+  opacity: 0.4;
+}
+
+.seiton-select {
+  align-items: center;
+  background: none;
+  border: 1px solid var(--background-modifier-border-hover);
+  border-radius: 4px;
+  color: var(--text-normal);
+  display: inline-flex;
+  flex: none;
+  font-size: var(--st-text-xs);
+  height: 18px;
+  justify-content: center;
+  padding: 0;
+  width: 18px;
+}
+
+.seiton-select.is-selected {
+  background: var(--text-normal);
+  border-color: var(--text-normal);
+  color: var(--background-primary);
+}
+
+.seiton-select-toggle.is-active {
+  color: var(--text-normal);
+  font-weight: 600;
+}
+
+/* Refreshing: a quiet progress line under the index card */
+
+.seiton-tool-card {
+  position: relative;
+}
+
+.seiton-library.is-refreshing .seiton-tool-card::after {
+  animation: seiton-progress 1s ease-in-out infinite;
+  background: var(--text-faint);
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 20px;
+  opacity: 0.4;
+  position: absolute;
+  right: 20px;
+}
+
+@keyframes seiton-progress {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seiton-library.is-refreshing .seiton-tool-card::after {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+
+/* Selection checkmark drawn in CSS (no glyph) */
+
+.seiton-select.is-selected::after {
+  border-bottom: 2px solid var(--background-primary);
+  border-right: 2px solid var(--background-primary);
+  content: "";
+  display: block;
+  height: 8px;
+  transform: rotate(45deg) translate(-1px, -1px);
+  width: 4px;
+}
+
+/* Card head: date and ⋯ together, always visible */
+
+.seiton-item-head {
+  justify-content: flex-start;
+}
+
+.seiton-item-head-right {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.seiton-item-head .seiton-item-updated {
+  margin-left: 0;
+}
+
+.seiton-card-grid:not(.is-list) .seiton-item-more {
+  bottom: auto;
+  color: var(--seiton-meta);
+  opacity: 1;
+  position: static;
+  right: auto;
+  top: auto;
+}
+
+.seiton-card-grid:not(.is-list) .seiton-item:hover .seiton-item-more,
+.seiton-card-grid:not(.is-list) .seiton-item:focus-within .seiton-item-more,
+.seiton-card-grid:not(.is-list) .seiton-item.is-actions-open .seiton-item-more {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.seiton-card-grid.is-list .seiton-item-more {
+  position: static;
+  right: auto;
+  top: auto;
+  transform: none;
+}
+
+.seiton-card-grid.is-list .seiton-item-head-right {
+  margin-left: 0;
+}
+
+/* Meta text with 4.5:1 or better in both themes */
+
+.seiton-home,
+.seiton-library,
+.seiton-projects,
+.seiton-prompt-root {
+  --seiton-meta: #6b6b6b;
+}
+
+body.theme-dark .seiton-home,
+body.theme-dark .seiton-library,
+body.theme-dark .seiton-projects,
+body.theme-dark .seiton-prompt-root {
+  --seiton-meta: #a9a9a3;
+}
+
+.seiton-item-head,
+.seiton-item-head .seiton-item-updated,
+.seiton-item-state,
+.seiton-home-card-head,
+.seiton-home-card-state,
+.seiton-zone-count,
+.seiton-page-subline,
+.seiton-status-filter,
+.seiton-book-card-meta,
+.seiton-index-count {
+  color: var(--seiton-meta);
+}
+
+/* Mobile: the index folds to one row */
+
+.seiton-index-toggle {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .seiton-library .seiton-index-toggle {
+    align-items: center;
+    background: none;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    display: inline-flex;
+    flex: none;
+    font-size: var(--st-text-sm);
+    height: 28px;
+    padding: 0 8px;
+  }
+
+  .seiton-index-labels,
+  .seiton-index-status {
+    display: none;
+  }
+
+  .seiton-index.is-expanded .seiton-index-labels {
+    display: flex;
+  }
+
+  .seiton-index.is-expanded .seiton-index-status {
+    display: flex;
+  }
+}
+
+/* Shelf selection */
+
+.seiton-select-cover {
+  background: var(--background-primary);
+  left: 8px;
+  opacity: 0;
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+}
+
+.seiton-book-cover-wrap:hover .seiton-select-cover,
+.seiton-select-cover.is-selected,
+.seiton-select-cover:focus-visible {
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .seiton-select-cover {
+    opacity: 1;
+  }
+}
+
+/* Capture field keeps a keyboard focus ring */
+
+.seiton-home .seiton-capture-card .seiton-capture-textarea:focus-visible {
+  outline: 2px solid var(--text-normal);
+  outline-offset: 2px;
+}
+
+.seiton-top-nav {
+  scroll-padding-inline: 12px;
+}
+
+/* Prompt: the five text actions fold into ⋯ on a phone */
+
+.seiton-prompt-more {
+  align-items: center;
+  background: none;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  display: none;
+  font-size: var(--st-text-base);
+  height: 30px;
+  justify-content: center;
+  padding: 0 10px;
+}
+
+@media (max-width: 760px) {
+  .seiton-prompt-header .seiton-prompt-action {
+    display: none;
+  }
+
+  .seiton-prompt-more {
+    display: inline-flex;
+  }
+}
+
+/* Phone: filter controls stay on one row */
+
+@media (max-width: 760px) {
+  .seiton-library-controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .seiton-library-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  .seiton-library-controls .seiton-segmented {
+    margin-left: 0;
+  }
+}
+
+/* Prompt ⋯ and the four tabs on a phone */
+
+.seiton-prompt-root button.seiton-prompt-more {
+  align-items: center;
+  background: none;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  display: none;
+  font-size: var(--st-text-base);
+  height: 30px;
+  justify-content: center;
+  padding: 0 10px;
+}
+
+@media (max-width: 760px) {
+  .seiton-prompt-root button.seiton-prompt-more {
+    display: inline-flex;
+  }
+
+  .seiton-prompt-header .seiton-page-actions {
+    justify-content: flex-end;
+  }
+
+  .seiton-top-nav {
+    gap: 10px;
+  }
+
+  .seiton-top-tab {
+    font-size: var(--st-text-sm);
+  }
+}
+
+@media (max-width: 760px) {
+  .seiton-library-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .seiton-library-controls .seiton-segmented button {
+    padding: 0 8px;
+  }
+}
+

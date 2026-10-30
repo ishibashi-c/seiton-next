@@ -1,0 +1,44 @@
+/* Memo timeline: weeks */
+
+.seiton-week-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+
+.seiton-week-group {
+  margin-top: 18px;
+}
+
+.seiton-week-head {
+  align-items: baseline;
+  border-bottom: 1px solid var(--background-modifier-border);
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 6px;
+}
+
+.seiton-week-head h3 {
+  color: var(--text-normal);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin: 0;
+}
+
+.seiton-week-count {
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-week-group .seiton-day-group {
+  margin-top: 10px;
+}
+
+.seiton-week-group .seiton-day-head h4 {
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 500;
+  margin: 0;
+}
+

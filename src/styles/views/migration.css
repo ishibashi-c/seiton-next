@@ -1,0 +1,178 @@
+/* --------------------------------------------------------------------------
+   Migration
+   -------------------------------------------------------------------------- */
+
+.modal.seiton-migration-modal {
+  width: min(1050px, 90vw);
+}
+
+.seiton-migration-safety {
+  border-left: 2px solid var(--text-warning);
+  margin-bottom: 12px;
+  padding: 1px 0 1px 10px;
+}
+
+.seiton-migration-safety-title {
+  font-size: var(--st-text-sm);
+  font-weight: 620;
+}
+
+.seiton-migration-safety-text {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: var(--st-leading-normal);
+  margin-top: 3px;
+}
+
+.seiton-migration-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+
+.seiton-migration-summary,
+.seiton-migration-status {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-migration-layout {
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.4fr);
+  min-height: 360px;
+}
+
+.seiton-migration-list-panel {
+  border-right: 1px solid var(--st-hairline);
+  max-height: 58vh;
+  overflow: auto;
+  padding-right: 12px;
+}
+
+.seiton-migration-list {
+  margin-top: 8px;
+}
+
+.seiton-migration-row {
+  border-radius: 0;
+  padding: 7px 4px;
+}
+
+.seiton-migration-row:hover {
+  background: var(--st-hover);
+}
+
+.seiton-migration-checkbox {
+  align-items: flex-start;
+  display: flex;
+  gap: 7px;
+}
+
+.seiton-migration-row-main {
+  min-width: 0;
+}
+
+.seiton-migration-row-title {
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.seiton-migration-row-target,
+.seiton-migration-row-reason,
+.seiton-migration-row-detail {
+  color: var(--st-muted);
+  font-size: var(--st-text-2xs);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-migration-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.seiton-migration-badge {
+  color: var(--st-muted);
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-migration-preview {
+  max-height: 58vh;
+  overflow: auto;
+  padding-left: 16px;
+}
+
+.seiton-migration-heading {
+  font-size: var(--st-text-md);
+  font-weight: 620;
+  margin-bottom: 4px;
+}
+
+.seiton-migration-preview-meta,
+.seiton-migration-preview-text,
+.seiton-migration-preview-reasons,
+.seiton-migration-preview-warnings,
+.seiton-migration-preview-placeholder,
+.seiton-migration-problem,
+.seiton-migration-error {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: var(--st-leading-normal);
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-migration-preview-body {
+  background: var(--background-secondary);
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  font-family: var(--font-monospace);
+  font-size: var(--st-text-2xs);
+  line-height: 1.55;
+  margin-top: 10px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.seiton-migration-footer {
+  border-top: 1px solid var(--st-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.seiton-migration-log {
+  color: var(--st-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--st-text-2xs);
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-migration-result-summary {
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+}
+
+.seiton-migration-result-item,
+.seiton-migration-result-message,
+.seiton-migration-result-targets {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: var(--st-leading-normal);
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+

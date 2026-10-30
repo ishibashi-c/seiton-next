@@ -1,0 +1,192 @@
+/* --------------------------------------------------------------------------
+   Projects
+   -------------------------------------------------------------------------- */
+
+.seiton-project-list {
+  display: grid;
+  gap: 0 38px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.seiton-project-item {
+  border-top: 1px solid var(--st-hairline);
+  min-width: 0;
+  padding: 18px 0;
+}
+
+.seiton-project-item .seiton-item-title {
+  font-size: 18px;
+}
+
+.seiton-project-overview {
+  border-bottom: 1px solid var(--st-hairline);
+  margin-top: 2px;
+  padding-bottom: 16px;
+}
+
+.seiton-project-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-2xl);
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-project-description {
+  color: var(--st-muted);
+  font-family: var(--font-text);
+  font-size: var(--st-text-base);
+  line-height: var(--st-leading-relaxed);
+  margin: 0 0 8px;
+  max-width: 760px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-project-stats {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-project-resume-target {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin: 2px 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-project-resume-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  margin: 20px 0 2px;
+}
+
+.seiton-project-primary {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.seiton-home button.seiton-project-action,
+.seiton-projects button.seiton-project-action {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  min-height: 30px;
+  padding: 4px 8px;
+}
+
+.seiton-home button.seiton-project-action:hover,
+.seiton-projects button.seiton-project-action:hover {
+  color: var(--st-ink);
+}
+
+.seiton-projects button.seiton-project-action.is-primary {
+  background: var(--st-primary);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-on-primary);
+  font-weight: 600;
+  padding: 4px 10px;
+}
+
+.seiton-projects button.seiton-project-action.is-primary:hover {
+  background: var(--st-primary);
+  color: var(--st-on-primary);
+  opacity: 0.86;
+}
+
+.seiton-project-more {
+  margin: 10px 0 0;
+}
+
+.seiton-project-more > summary {
+  color: var(--st-muted);
+  cursor: pointer;
+  font-size: var(--st-text-xs);
+  list-style: none;
+  width: max-content;
+}
+
+.seiton-project-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.seiton-project-more > summary::after {
+  content: "  ▾";
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-project-more[open] > summary::after {
+  content: "  ▴";
+}
+
+.seiton-project-more-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding-top: 4px;
+}
+
+.seiton-back {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin: 2px 0 16px;
+  padding: 2px 0;
+}
+
+.seiton-section {
+  margin-top: 30px;
+}
+
+.seiton-section .seiton-section-head {
+  border-bottom: 1px solid var(--st-hairline);
+  padding-bottom: 7px;
+}
+
+.seiton-related-item,
+.seiton-session-item {
+  border-top: 1px solid var(--st-hairline);
+  padding: 12px 0 10px;
+}
+
+.seiton-related-item:first-child,
+.seiton-session-item:first-child {
+  border-top: 0;
+}
+
+.seiton-home button.seiton-related-title,
+.seiton-projects button.seiton-related-title {
+  color: var(--st-ink);
+  display: block;
+  font-family: var(--font-text);
+  font-size: var(--st-text-base);
+  font-weight: 600;
+  line-height: 1.5;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.seiton-home button.seiton-related-title:hover,
+.seiton-projects button.seiton-related-title:hover {
+  color: var(--st-accent);
+}
+
+.seiton-related-excerpt {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.55;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-related-meta {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 2px;
+}
+

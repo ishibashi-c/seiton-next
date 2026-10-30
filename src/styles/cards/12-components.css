@@ -1,0 +1,119 @@
+/* Card foot alignment and the overflow menu */
+
+.seiton-project-list .seiton-project-item .seiton-item-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.seiton-project-list .seiton-project-item .seiton-item-actions {
+  margin-top: auto;
+}
+
+.seiton-book-card-body {
+  flex: 1;
+}
+
+.seiton-book-card .seiton-item-actions {
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.seiton-book-card-meta,
+.seiton-book-card-state {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  display: -webkit-box;
+  overflow: hidden;
+}
+
+.seiton-card-grid:not(.is-list) .seiton-item-side {
+  justify-content: flex-start;
+}
+
+.seiton-item-more {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 32px;
+}
+
+@media (max-width: 760px) {
+  .seiton-item-more {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+
+.seiton-vocab-row {
+  margin: -4px 0 10px;
+}
+
+.seiton-vocab {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.seiton-vocab-label {
+  color: var(--text-faint);
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-vocab-chip {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+  padding: 3px 8px;
+}
+
+.seiton-vocab-chip:hover {
+  border-color: var(--background-modifier-border-hover);
+  color: var(--text-normal);
+}
+
+/* Prompt: composer 2/3, history 1/3 */
+
+.seiton-prompt-body {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+  max-width: none;
+}
+
+.seiton-prompt-composer {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.seiton-prompt-history-pane {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* With no history the right column would be empty; let the composer have the
+   width instead of holding a third of the screen for nothing. */
+.seiton-prompt-body.is-empty-history {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.seiton-prompt-body.is-empty-history .seiton-prompt-history-pane {
+  grid-column: 1;
+}
+
+@media (max-width: 900px) {
+  .seiton-prompt-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seiton-prompt-composer,
+  .seiton-prompt-history-pane {
+    grid-column: 1;
+  }
+}
+

@@ -1,0 +1,237 @@
+/* --------------------------------------------------------------------------
+   Modals and writing surfaces
+   -------------------------------------------------------------------------- */
+
+.modal.seiton-capture-modal {
+  width: min(660px, 92vw);
+}
+
+.modal.seiton-edit-modal {
+  width: min(720px, 94vw);
+}
+
+.modal.seiton-promote-modal {
+  width: min(700px, 94vw);
+}
+
+.seiton-capture-modal .seiton-capture-hint,
+.seiton-edit-note,
+.seiton-promote-description {
+  color: var(--st-muted);
+}
+
+.seiton-capture-modal .seiton-capture-textarea,
+.seiton-edit-textarea {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  color: var(--st-ink);
+  font-family: var(--font-text);
+  font-size: var(--st-text-md);
+  line-height: var(--st-leading-relaxed);
+  min-height: 180px;
+  padding: 11px 13px;
+  resize: vertical;
+  width: 100%;
+}
+
+.seiton-capture-modal .seiton-capture-textarea:focus,
+.seiton-edit-textarea:focus {
+  border-color: var(--st-accent);
+  box-shadow: none;
+  outline: none;
+}
+
+.seiton-edit-textarea {
+  min-height: 250px;
+}
+
+.modal.seiton-capture-modal .mod-cta,
+.modal.seiton-edit-modal .mod-cta,
+.modal.seiton-promote-modal .mod-cta,
+.modal.seiton-book-modal .mod-cta,
+.modal.seiton-migration-modal .mod-cta,
+.modal.seiton-new-note-modal .mod-cta,
+.modal.seiton-webclip-modal .mod-cta,
+.modal.seiton-organize-modal .mod-cta {
+  background: var(--st-primary);
+  color: var(--st-on-primary);
+}
+
+.seiton-class-fields {
+  border-top: 1px solid var(--st-hairline);
+  margin-top: 8px;
+  padding-top: 4px;
+}
+
+.seiton-class-candidates {
+  margin-top: 10px;
+}
+
+.seiton-class-candidate-box {
+  border: 1px solid var(--st-hairline);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.seiton-class-candidate-title {
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.seiton-class-candidate {
+  align-items: center;
+  border-top: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.seiton-class-candidate:first-of-type {
+  border-top: 0;
+}
+
+.seiton-class-candidate-text {
+  font-size: var(--st-text-sm);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.seiton-class-candidate-meta {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 2px;
+}
+
+.seiton-home button.seiton-class-candidate-open,
+.seiton-home button.seiton-class-candidate-create {
+  flex: 0 0 auto;
+  font-size: var(--st-text-xs);
+  min-height: 32px;
+  padding: 4px 10px;
+}
+
+.seiton-home button.seiton-class-candidate-create {
+  margin-top: 10px;
+}
+
+.seiton-modal-footer {
+  align-items: center;
+  border-top: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 10px;
+}
+
+.seiton-modal-footer .seiton-keyhint {
+  margin-right: auto;
+}
+
+.seiton-modal-status {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  min-height: 1.35em;
+  overflow-wrap: anywhere;
+  padding-top: 4px;
+}
+
+.seiton-modal-status.is-error {
+  color: var(--text-error);
+}
+
+.seiton-edit-meta {
+  color: var(--st-muted);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--st-text-xs);
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.seiton-id-label {
+  color: var(--st-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--st-text-2xs);
+}
+
+.seiton-edit-note {
+  background: transparent;
+  border-left: 2px solid var(--st-hairline);
+  font-size: var(--st-text-sm);
+  line-height: var(--st-leading-normal);
+  margin: 0 0 10px;
+  padding: 2px 0 2px 10px;
+}
+
+.seiton-promote-preview {
+  background: transparent;
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-top: 16px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 12px 14px;
+}
+
+.seiton-promote-preview-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.seiton-promote-preview .markdown-rendered {
+  font-family: var(--font-text);
+  font-size: var(--st-text-base);
+  line-height: var(--st-leading-relaxed);
+}
+
+.seiton-webclip-preview {
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-top: 12px;
+  min-height: 100px;
+  padding: 12px;
+}
+
+.seiton-webclip-preview-image {
+  border-radius: var(--st-radius-sm);
+  display: block;
+  margin-bottom: 9px;
+  max-height: 220px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.seiton-webclip-domain {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-webclip-source {
+  color: var(--st-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--st-text-2xs);
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+
+/* Link picker */
+
+.seiton-link-list {
+  margin-top: 10px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.seiton-link-row {
+  border-top: 1px solid var(--st-hairline);
+  padding: 9px 0;
+}
+

@@ -1,0 +1,200 @@
+/* Home shortcuts */
+
+.seiton-shortcuts-zone h2 {
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin: 0 0 12px;
+}
+
+.seiton-shortcuts {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+}
+
+.seiton-shortcuts-empty {
+  color: var(--seiton-meta);
+  flex-basis: 100%;
+  font-size: var(--st-text-sm);
+}
+
+.seiton-shortcut {
+  position: relative;
+  width: 76px;
+}
+
+.seiton-shortcut-main {
+  align-items: center;
+  background: none;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  width: 100%;
+}
+
+.seiton-shortcut-icon {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 50%;
+  color: var(--text-normal);
+  display: flex;
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  height: 44px;
+  justify-content: center;
+  overflow: hidden;
+  width: 44px;
+}
+
+.seiton-shortcut-icon svg {
+  height: 18px;
+  width: 18px;
+}
+
+.seiton-shortcut-favicon {
+  height: 22px;
+  object-fit: contain;
+  width: 22px;
+}
+
+.seiton-shortcut-letter {
+  line-height: 1;
+}
+
+.seiton-shortcut-label {
+  color: var(--text-muted);
+  font-size: var(--st-text-xs);
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.seiton-shortcut-main:hover .seiton-shortcut-icon,
+.seiton-shortcut-main:focus-visible .seiton-shortcut-icon {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-shortcut-add .seiton-shortcut-icon {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.seiton-shortcut-more {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  height: 20px;
+  line-height: 1;
+  opacity: 0;
+  padding: 0;
+  position: absolute;
+  right: -4px;
+  top: -2px;
+  width: 20px;
+}
+
+.seiton-shortcut:hover .seiton-shortcut-more,
+.seiton-shortcut:focus-within .seiton-shortcut-more {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .seiton-shortcut-more {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .seiton-shortcuts {
+    gap: 12px;
+  }
+
+  .seiton-shortcut {
+    width: 62px;
+  }
+
+  .seiton-shortcut-icon {
+    height: 40px;
+    width: 40px;
+  }
+}
+
+/* Shortcut folders */
+
+.seiton-shortcuts-folder-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.seiton-shortcuts-back {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  display: inline-flex;
+  font-size: var(--st-text-sm);
+  gap: 4px;
+  padding: 0;
+}
+
+.seiton-shortcuts-back svg {
+  height: 14px;
+  width: 14px;
+}
+
+.seiton-shortcuts-back:hover {
+  color: var(--text-normal);
+}
+
+.seiton-shortcuts-folder-title {
+  color: var(--text-normal);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+}
+
+/* Add shortcut / folder choice */
+
+.seiton-add-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.seiton-add-choice-item {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.seiton-add-choice-item:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-add-choice-title {
+  color: var(--text-normal);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+}
+
+.seiton-add-choice-desc {
+  color: var(--text-muted);
+  font-size: var(--st-text-sm);
+  margin-top: 2px;
+}
+

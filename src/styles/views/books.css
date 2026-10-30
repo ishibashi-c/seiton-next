@@ -1,0 +1,243 @@
+/* --------------------------------------------------------------------------
+   Books
+   -------------------------------------------------------------------------- */
+
+.modal.seiton-book-modal {
+  width: min(760px, 94vw);
+}
+
+.seiton-book-hint {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  line-height: var(--st-leading-normal);
+  margin: 0 0 12px;
+}
+
+.seiton-book-field {
+  padding: 6px 0;
+}
+
+.seiton-book-isbn {
+  font-family: var(--font-monospace);
+}
+
+.seiton-book-title {
+  font-family: var(--font-text);
+  font-size: 17px;
+  font-weight: 620;
+  line-height: 1.4;
+  margin: 0 0 4px;
+}
+
+.seiton-book-bib {
+  border-left: 2px solid var(--st-hairline);
+  margin: 10px 0;
+  padding: 2px 0 2px 10px;
+}
+
+.seiton-book-bib-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+}
+
+.seiton-book-bib-line {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.seiton-book-cover {
+  background: var(--background-secondary);
+  border: 0;
+  border-radius: 4px;
+  min-height: 150px;
+  overflow: hidden;
+}
+
+.seiton-book-cover-image {
+  max-height: 240px;
+  max-width: 100%;
+  object-fit: contain;
+}
+.seiton-book-cover-name {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  padding: 18px;
+  text-align: center;
+}
+
+.seiton-book-memo {
+  min-height: 90px;
+  width: 100%;
+}
+
+.seiton-book-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.seiton-book-calil {
+  border-top: 1px solid var(--st-hairline);
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.seiton-book-calil-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seiton-book-calil-configured,
+.seiton-book-calil-meta,
+.seiton-book-calil-notice,
+.seiton-book-calil-system,
+.seiton-book-calil-reserve,
+.seiton-book-calil-message,
+.seiton-book-calil-empty,
+.seiton-book-calil-pending {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-book-calil-list {
+  margin-top: 8px;
+}
+
+.seiton-book-calil-item {
+  border-top: 1px solid var(--st-hairline);
+  padding: 7px 0;
+}
+
+.seiton-book-calil-library {
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+}
+
+.seiton-book-calil-state {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-left: 8px;
+}
+
+.seiton-book-bulk-summary,
+.seiton-book-bulk-more {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+}
+
+.seiton-book-bulk-titles {
+  background: transparent;
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  margin: 8px 0;
+  max-height: 120px;
+  overflow: auto;
+  padding: 8px 10px;
+}
+
+.seiton-book-bulk-title {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  padding: 2px 0;
+}
+
+
+/* Calil detail: summary and branch list */
+
+.seiton-book-calil-top {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.seiton-book-calil-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 650;
+}
+
+.seiton-book-calil-link {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  text-decoration: none;
+}
+
+.seiton-book-calil-link:hover {
+  color: var(--st-ink);
+  text-decoration: underline;
+}
+
+.seiton-book-calil-summary {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: 8px;
+  margin-top: 8px;
+  padding: 10px 12px;
+}
+
+.seiton-book-calil-summary-place {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.seiton-book-calil-address {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: 1.5;
+  margin-top: 3px;
+}
+
+.seiton-book-calil-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 7px;
+}
+
+.seiton-book-calil-details {
+  margin-top: 10px;
+}
+
+.seiton-book-calil-details > summary {
+  color: var(--st-muted);
+  cursor: pointer;
+  font-size: var(--st-text-xs);
+  list-style-position: inside;
+}
+
+.seiton-book-calil-details[open] > summary {
+  margin-bottom: 4px;
+}
+
+.seiton-book-calil-branch {
+  border-top: 1px solid var(--st-hairline);
+  padding: 8px 0;
+}
+
+.seiton-book-calil-branch-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seiton-book-calil-branch .seiton-book-calil-library {
+  color: var(--st-ink);
+  margin-top: 3px;
+}
+
+.seiton-book-calil-branch .seiton-book-calil-state {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-left: 0;
+}

@@ -1,0 +1,59 @@
+/* Seiton Next — quiet workspace design system.
+   Obsidian theme variables only. No fixed palette, no shadows on content. */
+
+.seiton-home,
+.seiton-prompt-root,
+.seiton-capture-modal,
+.seiton-edit-modal,
+.seiton-promote-modal,
+.seiton-book-modal,
+.seiton-migration-modal {
+  --st-max-home: 1060px;
+  --st-max-library: 1120px;
+  --st-max-projects: 1060px;
+  --st-max-prompt: 1180px;
+  --st-gap-1: 4px;
+  --st-gap-2: 8px;
+  --st-gap-3: 12px;
+  --st-gap-4: 16px;
+  --st-gap-5: 24px;
+  --st-gap-6: 32px;
+  --st-gap-7: 48px;
+  --st-text-2xs: 11px;
+  --st-text-xs: 12px;
+  --st-text-sm: 13px;
+  --st-text-base: 15px;
+  --st-text-md: 16px;
+  --st-text-lg: 17px;
+  --st-text-xl: 20px;
+  --st-text-2xl: 24px;
+  --st-leading-tight: 1.35;
+  --st-leading-normal: 1.6;
+  --st-leading-relaxed: 1.8;
+  --st-hairline: var(--background-modifier-border);
+  --st-ink: var(--text-normal);
+  --st-muted: var(--text-muted);
+  --st-faint: var(--text-faint);
+  --st-data: #1d5fbf;
+  --st-primary: var(--text-normal);
+  --st-on-primary: var(--background-primary);
+  --st-accent: var(--text-normal);
+  --st-accent-ink: var(--background-primary);
+  --st-hover: var(--background-modifier-hover);
+  --st-radius-sm: 4px;
+  --st-radius-md: 7px;
+  --st-transition: 120ms ease;
+  color: var(--st-ink);
+  font-family: var(--font-interface);
+}
+
+.theme-dark .seiton-home,
+.theme-dark .seiton-prompt-root,
+.theme-dark .seiton-capture-modal,
+.theme-dark .seiton-edit-modal,
+.theme-dark .seiton-promote-modal,
+.theme-dark .seiton-book-modal,
+.theme-dark .seiton-migration-modal {
+  --st-data: #7aa7ff;
+}
+
