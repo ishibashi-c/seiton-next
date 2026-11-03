@@ -12,6 +12,7 @@ import { formatLocalIso } from "../domain/time";
 import type { WebClipMetadata } from "../domain/webclip";
 import {
   parseHtmlMetadata,
+  sanitizeTag,
   tidyMarkdownLinks,
   webClipCardFromProperties,
   webClipDuplicateKey,
@@ -303,9 +304,7 @@ export class WebClipService {
     const title = input.title.trim() || domainOf(source) || "Webクリップ";
     const tags = [
       ...new Set(
-        input.tags
-          .map((tag) => tag.trim().replace(/^#/u, ""))
-          .filter((tag) => tag !== "")
+        input.tags.map((tag) => sanitizeTag(tag)).filter((tag) => tag !== "")
       ),
     ];
     const fields: Record<string, string> = {

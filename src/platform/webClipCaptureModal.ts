@@ -2,6 +2,7 @@ import type { App } from "obsidian";
 import { Modal, TFile } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { domainOf, normalizeSourceUrl } from "../domain/network";
+import { domainTagOf } from "../domain/webclip";
 import type {
   WebClipCapture,
   WebClipDuplicate,
@@ -280,7 +281,7 @@ export class WebClipCaptureModal extends Modal {
         note: this.noteValue,
         published: this.capture?.published,
         source: url,
-        tags: ["webクリップ", domainOf(url)],
+        tags: ["webクリップ", domainTagOf(url)],
         title: this.titleValue || this.capture?.title || domainOf(url),
       });
       showToast("Webクリップを保存しました。");

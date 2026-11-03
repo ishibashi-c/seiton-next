@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   domainTagOf,
   parseSharedWebText,
+  sanitizeTag,
   tidyMarkdownLinks,
   WEB_CLIP_BOOKMARKLET,
 } from "../src/domain/webclip";
@@ -39,11 +40,23 @@ describe("WEB_CLIP_BOOKMARKLET", () => {
   });
 });
 
+describe("sanitizeTag", () => {
+  it("converts invalid Obsidian tag characters to hyphens and strips leading hash", () => {
+    expect(sanitizeTag("#note.com")).toBe("note-com");
+    expect(sanitizeTag("web クリップ")).toBe("web-クリップ");
+    expect(sanitizeTag("tag/nested")).toBe("tag/nested");
+    expect(sanitizeTag("hello_world")).toBe("hello_world");
+  });
+});
+
 describe("domainTagOf", () => {
   it("turns a hostname into a valid Obsidian tag", () => {
+    expect(domainTagOf("https://note.com/user/n/n123456")).toBe("note");
     expect(domainTagOf("https://zenn.dev/nrs/articles/1")).toBe("zenn");
     expect(domainTagOf("https://www.example.com/a")).toBe("example");
     expect(domainTagOf("https://note.booth.pm/items/1")).toBe("note");
+    expect(domainTagOf("https://youtu.be/dQw4w9WgXcQ")).toBe("youtube");
+    expect(domainTagOf("https://www.youtube.com/watch?v=123")).toBe("youtube");
   });
 });
 

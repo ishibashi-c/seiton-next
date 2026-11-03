@@ -112,14 +112,24 @@ export function parseHtmlMetadata(
   };
 }
 
-/** ドメインをObsidianタグとして有効な形（例: zenn.dev → zenn）にする。 */
-export function domainTagOf(source: string): string {
-  const host = domainOf(normalizeSourceUrl(source) ?? source);
-  const base = host.replace(/^www\./u, "").split(".")[0] ?? "";
-  const tag = base
-    .replace(/[^\p{L}\p{N}_-]/gu, "-")
+/** Obsidianタグとして有効な文字のみに正規化する。ピリオドや空白などの無効文字をハイフンに変換する。 */
+export function sanitizeTag(raw: string): string {
+  const stripped = raw.trim().replace(/^#/u, "");
+  const normalized = stripped
+    .replace(/[^\p{L}\p{N}_/-]+/gu, "-")
     .replace(/-+/gu, "-")
     .replace(/^-|-$/gu, "");
+  return normalized;
+}
+
+/** ドメインをObsidianタグとして有効な形（例: note.com → note, zenn.dev → zenn, youtu.be → youtube）にする。 */
+export function domainTagOf(source: string): string {
+  const host = domainOf(normalizeSourceUrl(source) ?? source);
+  if (/^(?:www\.)?(?:youtube\.com|youtu\.be)$/iu.test(host)) {
+    return "youtube";
+  }
+  const base = host.replace(/^www\./u, "").split(".")[0] ?? "";
+  const tag = sanitizeTag(base);
   return tag === "" ? "web" : tag;
 }
 
