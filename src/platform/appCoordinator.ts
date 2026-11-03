@@ -26,6 +26,7 @@ import { TriageService } from "../services/triageService";
 import type { NoteRecord, VaultIndexService } from "../services/vaultIndex";
 import type { WebClipService } from "../services/webClipService";
 import { AddBookModal } from "./books/addBookModal";
+import { BarcodeScannerModal } from "./books/barcodeScannerModal";
 import { BookBulkEditModal } from "./books/bookBulkEditModal";
 import { BookDetailModal } from "./books/bookDetailModal";
 import { BulkIsbnModal } from "./bulkIsbnModal";
@@ -381,6 +382,15 @@ export class AppCoordinator {
       onCreated: (result) => {
         this.indexService.invalidate();
         void this.openFile(result.path);
+      },
+    }).open();
+  }
+
+  openBarcodeScanner(onSaved?: (count: number) => void): void {
+    new BarcodeScannerModal(this.app, this.books, {
+      onSaved: (count) => {
+        this.indexService.invalidate();
+        onSaved?.(count);
       },
     }).open();
   }

@@ -8,6 +8,7 @@ export interface SeitonCommandsHost {
   newPromptSession: () => void;
   openActiveWebClipPreview: () => void;
   openAddBook: () => void;
+  openBarcodeScanner: () => void;
   openBases: () => Promise<void>;
   openBookshelf: () => Promise<void>;
   openBulkIsbn: () => void;
@@ -108,6 +109,11 @@ export function registerCommands(
     callback: () => host.openAddBook(),
     id: "add-book",
     name: "書籍を追加",
+  });
+  plugin.addCommand({
+    callback: () => host.openBarcodeScanner(),
+    id: "scan-barcode",
+    name: "バーコードで本を追加",
   });
   plugin.addCommand({
     callback: () => host.bulkEditBooks(),

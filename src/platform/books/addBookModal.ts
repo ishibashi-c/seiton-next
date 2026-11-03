@@ -12,6 +12,7 @@ import type { BookService, CreateBookResult } from "../../services/bookService";
 import { markSeitonModal } from "../ui/modal";
 import { ButtonComponent, Setting, type TextComponent } from "../ui/setting";
 import { showToast } from "../ui/toast";
+import { BarcodeScannerModal } from "./barcodeScannerModal";
 
 export interface AddBookModalOptions {
   initialIsbn?: string;
@@ -80,6 +81,21 @@ export class AddBookModal extends Modal {
       button.setButtonText("照会").onClick(() => {
         void this.lookup();
       });
+    });
+    isbnSetting.addButton((button) => {
+      button
+        .setButtonText("📷 スキャン")
+        .setTooltip("バーコードをカメラで読み取る")
+        .onClick(() => {
+          new BarcodeScannerModal(this.app, this.bookService, {
+            onScanSingle: (scannedIsbn) => {
+              this.isbn = scannedIsbn;
+              this.isbnText?.setValue(scannedIsbn);
+              void this.lookup();
+            },
+            single: true,
+          }).open();
+        });
     });
 
     const titleSetting = new Setting(this.contentEl)

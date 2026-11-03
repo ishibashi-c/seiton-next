@@ -33,6 +33,7 @@ export interface BookshelfHost {
   manageCovers(records: NoteRecord[]): void;
   openBook(record: NoteRecord): void;
   openNote(path: string): void;
+  scanBarcode(): void;
 }
 
 const STATUS_OPTIONS: Array<{ label: string; value: BookFilters["status"] }> = [
@@ -102,6 +103,11 @@ export class SeitonBookshelfView extends ItemView {
           kind: "primary",
           label: "本を追加",
           onClick: () => this.host.addBook(),
+        },
+        {
+          kind: "text",
+          label: "バーコード読取",
+          onClick: () => this.host.scanBarcode(),
         },
         {
           kind: "text",

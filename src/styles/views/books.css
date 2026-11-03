@@ -241,3 +241,259 @@
   font-size: var(--st-text-xs);
   margin-left: 0;
 }
+
+/* --------------------------------------------------------------------------
+   Barcode Scanner
+   -------------------------------------------------------------------------- */
+
+.modal.seiton-scanner-modal {
+  width: min(520px, 94vw);
+}
+
+.seiton-scanner-viewport {
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--st-radius-md);
+  max-height: 220px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.seiton-scanner-video {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.seiton-scanner-overlay {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  pointer-events: none;
+  position: absolute;
+}
+
+.seiton-scanner-frame {
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--st-radius-sm);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  height: 60%;
+  position: relative;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 72%;
+}
+
+.seiton-scanner-laser {
+  background: rgba(255, 60, 60, 0.85);
+  box-shadow: 0 0 4px rgba(255, 60, 60, 0.8);
+  height: 1.5px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.seiton-scanner-overlay.is-success .seiton-scanner-frame {
+  border-color: #22c55e;
+  box-shadow: 0 0 12px #22c55e, 0 0 0 9999px rgba(0, 0, 0, 0.2);
+}
+
+.seiton-scanner-overlay.is-success .seiton-scanner-laser {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.seiton-scanner-notice {
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 99px;
+  color: #fff;
+  font-size: 12px;
+  left: 50%;
+  opacity: 0;
+  padding: 4px 12px;
+  pointer-events: none;
+  position: absolute;
+  top: 10px;
+  transform: translateX(-50%);
+  transition: opacity 0.2s;
+}
+
+.seiton-scanner-notice.is-visible {
+  opacity: 1;
+}
+
+.seiton-scanner-controls {
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+  position: absolute;
+  right: 8px;
+}
+
+.seiton-scanner-btn {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  width: 30px;
+}
+
+.seiton-scanner-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.seiton-scanner-hint {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin: 8px 0 12px;
+  text-align: center;
+}
+
+.seiton-scanner-queue {
+  border-top: 1px solid var(--st-hairline);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.seiton-scanner-queue-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.seiton-scanner-queue-head h3 {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin: 0;
+}
+
+.seiton-scanner-count-badge {
+  background: var(--background-secondary);
+  border-radius: 99px;
+  color: var(--st-muted);
+  font-size: 11px;
+  margin-left: 6px;
+  padding: 1px 6px;
+}
+
+.seiton-scanner-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.seiton-scanner-empty {
+  border: 1px dashed var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  padding: 20px 0;
+  text-align: center;
+}
+
+.seiton-scanner-card {
+  align-items: center;
+  background: var(--background-secondary);
+  border-radius: var(--st-radius-sm);
+  display: flex;
+  gap: 10px;
+  padding: 6px 8px;
+}
+
+.seiton-scanner-card-cover {
+  align-items: center;
+  background: var(--background-modifier-border);
+  border-radius: 2px;
+  display: flex;
+  flex-shrink: 0;
+  height: 48px;
+  justify-content: center;
+  overflow: hidden;
+  width: 34px;
+}
+
+.seiton-scanner-card-cover img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.seiton-scanner-cover-placeholder {
+  color: var(--st-muted);
+  display: inline-flex;
+}
+
+.seiton-scanner-cover-placeholder svg {
+  height: 16px;
+  width: 16px;
+}
+
+.seiton-scanner-card-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.seiton-scanner-card-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-scanner-card-title.is-loading {
+  color: var(--st-muted);
+  font-weight: normal;
+}
+
+.seiton-scanner-card-sub {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-scanner-card-isbn {
+  color: var(--st-muted);
+  font-family: var(--font-monospace);
+  font-size: 10px;
+  margin-top: 1px;
+}
+
+.seiton-scanner-card-del {
+  background: transparent;
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  color: var(--st-muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 4px;
+}
+
+.seiton-scanner-card-del:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-scanner-card-del svg {
+  height: 14px;
+  width: 14px;
+}

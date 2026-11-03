@@ -169,6 +169,7 @@ export default class SeitonNextPlugin extends Plugin {
           manageCovers: (records) => this.coordinator.openCoverCache(records),
           openBook: (record) => this.coordinator.openBookDetail(record),
           openNote: (path) => void this.coordinator.openFile(path),
+          scanBarcode: () => this.coordinator.openBarcodeScanner(),
         })
     );
     this.registerView(
@@ -265,6 +266,7 @@ export default class SeitonNextPlugin extends Plugin {
       openActiveWebClipPreview: () =>
         this.coordinator.openActiveWebClipPreview(),
       openAddBook: () => this.coordinator.openAddBook(),
+      openBarcodeScanner: () => this.coordinator.openBarcodeScanner(),
       openBases: () => this.coordinator.openBases(),
       openBookshelf: () => this.coordinator.openBookshelf(),
       openBulkIsbn: () => this.coordinator.openBulkIsbn(),
