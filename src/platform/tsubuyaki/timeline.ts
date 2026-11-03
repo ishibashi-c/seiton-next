@@ -14,6 +14,7 @@ export interface MemoTimelineFilters {
   now?: Date;
   period?: MemoPeriodFilter;
   query: string;
+  selectedDate?: string;
   showDeleted: boolean;
   sort?: MemoSortOrder;
   status?: MemoStatusFilter;
@@ -87,6 +88,23 @@ export function visibleMemos(
     : items.filter((item) => item.entry.state !== "deleted");
 }
 
+function matchesDate(at: string, selectedDate: string | undefined): boolean {
+  if (!selectedDate || selectedDate === "") {
+    return true;
+  }
+  const dateKey = dateKeyOf(at);
+  if (!dateKey) {
+    return false;
+  }
+  if (selectedDate.length === 10) {
+    return dateKey === selectedDate;
+  }
+  if (selectedDate.length === 7) {
+    return dateKey.slice(0, 7) === selectedDate;
+  }
+  return true;
+}
+
 function matchesPeriod(
   at: string,
   period: MemoPeriodFilter | undefined,
@@ -143,6 +161,9 @@ export function filterMemos(
   const now = filters.now ?? new Date();
   const filtered = items.filter((item) => {
     if (!matchesStatus(item, filters.status, filters.showDeleted)) {
+      return false;
+    }
+    if (!matchesDate(item.entry.at, filters.selectedDate)) {
       return false;
     }
     if (!matchesPeriod(item.entry.at, filters.period, now)) {

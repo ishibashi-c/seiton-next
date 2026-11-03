@@ -108,6 +108,28 @@ describe("tsubuyaki timeline", () => {
     ).toEqual(["m1", "m2", "m3"]);
   });
 
+  it("カレンダー選択日（特定日・特定月）で絞り込む", () => {
+    // 特定の日 "2026-08-12"
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        query: "",
+        selectedDate: "2026-08-12",
+        showDeleted: false,
+      }).map((item) => item.entry.id)
+    ).toEqual(["m3"]);
+
+    // 特定の月 "2026-07"
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        query: "",
+        selectedDate: "2026-07",
+        showDeleted: false,
+      }).map((item) => item.entry.id)
+    ).toEqual(["m4"]);
+  });
+
   it("状態で絞り込む（未整理・削除済み）", () => {
     expect(
       filterMemos(items, {

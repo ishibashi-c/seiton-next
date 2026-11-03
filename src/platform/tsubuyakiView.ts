@@ -19,6 +19,7 @@ import { ConfirmModal } from "./confirmModal";
 import { MemoCaptureModal } from "./memoCaptureModal";
 import { PromoteMemoModal } from "./promoteMemoModal";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
+import { CalendarPicker } from "./tsubuyaki/calendar";
 import { TsubuyakiComposer } from "./tsubuyaki/composer";
 import { TsubuyakiEditor } from "./tsubuyaki/editor";
 import {
@@ -55,6 +56,7 @@ export class SeitonTsubuyakiView extends ItemView {
   private query = "";
   private activeTag = "";
   private period: MemoPeriodFilter = "all";
+  private selectedDate = "";
   private status: MemoStatusFilter = "all";
   private sortOrder: MemoSortOrder = "newest";
   private showDeleted = false;
@@ -70,7 +72,7 @@ export class SeitonTsubuyakiView extends ItemView {
   private countEl: HTMLElement | null = null;
   private problemsEl: HTMLElement | null = null;
   private listEl: HTMLElement | null = null;
-  private periodSelect: SelectControl | null = null;
+  private calendarPicker: CalendarPicker | null = null;
   private statusSelect: SelectControl | null = null;
   private sortSelect: SelectControl | null = null;
 
@@ -165,7 +167,8 @@ export class SeitonTsubuyakiView extends ItemView {
     this.items = [];
     this.listEl = null;
     this.tagChipsEl = null;
-    this.periodSelect = null;
+    this.calendarPicker?.destroy();
+    this.calendarPicker = null;
     this.statusSelect = null;
     this.sortSelect = null;
   }
@@ -177,24 +180,17 @@ export class SeitonTsubuyakiView extends ItemView {
   private renderToolbar(parent: HTMLElement): void {
     const controls = parent.createDiv({ cls: "seiton-tsubuyaki-controls" });
 
-    this.periodSelect = createSelect({
-      choices: [
-        { label: "期間: すべて", value: "all" },
-        { label: "今日", value: "today" },
-        { label: "今週", value: "week" },
-        { label: "今月", value: "month" },
-      ],
-      onChange: (value) => {
-        this.period = value as MemoPeriodFilter;
+    this.calendarPicker = new CalendarPicker({
+      onChange: (sel) => {
+        this.period = sel.period;
+        this.selectedDate = sel.selectedDate;
         this.limit = PAGE_SIZE;
         this.renderTagChips();
         this.renderList();
       },
-      value: this.period,
     });
-    this.periodSelect.element.addClass("seiton-tsubuyaki-select");
-    this.periodSelect.element.addClass("is-quiet");
-    controls.append(this.periodSelect.element);
+    this.calendarPicker.mount(controls);
+    this.calendarPicker.setMemoItems(this.items);
 
     this.statusSelect = createSelect({
       choices: [
@@ -278,6 +274,7 @@ export class SeitonTsubuyakiView extends ItemView {
       if (this.activeTag !== "" && !this.hasTag(this.activeTag)) {
         this.activeTag = "";
       }
+      this.calendarPicker?.setMemoItems(this.items);
       this.renderProblems();
       this.renderMeta();
       this.renderTagChips();
@@ -388,6 +385,7 @@ export class SeitonTsubuyakiView extends ItemView {
       activeTag: "",
       period: this.period,
       query: "",
+      selectedDate: this.selectedDate,
       showDeleted: this.showDeleted,
       status: this.status,
     });
@@ -496,6 +494,7 @@ export class SeitonTsubuyakiView extends ItemView {
       activeTag: this.activeTag,
       period: this.period,
       query: this.query,
+      selectedDate: this.selectedDate,
       showDeleted: this.showDeleted,
       sort: this.sortOrder,
       status: this.status,
@@ -511,6 +510,7 @@ export class SeitonTsubuyakiView extends ItemView {
       this.query.trim() !== "" ||
       this.activeTag !== "" ||
       this.period !== "all" ||
+      this.selectedDate !== "" ||
       this.status !== "all";
     this.countEl.setText(
       filtering ? `${filteredCount}件 / ${total}件` : `${total}件`
