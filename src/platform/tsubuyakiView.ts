@@ -25,11 +25,15 @@ import {
   dayLabel,
   filterMemos,
   groupMemos,
+  type MemoPeriodFilter,
+  type MemoSortOrder,
+  type MemoStatusFilter,
   memoMeta,
   monthLabel,
   tagEntries,
   visibleMemos,
 } from "./tsubuyaki/timeline";
+import { createSelect, type SelectControl } from "./ui/select";
 
 const PAGE_SIZE = 60;
 function localDateKey(date: Date): string {
@@ -50,6 +54,9 @@ export class SeitonTsubuyakiView extends ItemView {
   private problems: MemoProblem[] = [];
   private query = "";
   private activeTag = "";
+  private period: MemoPeriodFilter = "all";
+  private status: MemoStatusFilter = "all";
+  private sortOrder: MemoSortOrder = "newest";
   private showDeleted = false;
   private limit = PAGE_SIZE;
   private loading = true;
@@ -63,6 +70,9 @@ export class SeitonTsubuyakiView extends ItemView {
   private countEl: HTMLElement | null = null;
   private problemsEl: HTMLElement | null = null;
   private listEl: HTMLElement | null = null;
+  private periodSelect: SelectControl | null = null;
+  private statusSelect: SelectControl | null = null;
+  private sortSelect: SelectControl | null = null;
 
   private readonly editor: TsubuyakiEditor;
 
@@ -155,6 +165,9 @@ export class SeitonTsubuyakiView extends ItemView {
     this.items = [];
     this.listEl = null;
     this.tagChipsEl = null;
+    this.periodSelect = null;
+    this.statusSelect = null;
+    this.sortSelect = null;
   }
 
   private renderCompose(parent: HTMLElement): void {
@@ -162,10 +175,64 @@ export class SeitonTsubuyakiView extends ItemView {
   }
 
   private renderToolbar(parent: HTMLElement): void {
-    const toolbar = parent.createDiv({ cls: "seiton-tsubuyaki-toolbar" });
-    this.tagChipsEl = toolbar.createDiv({ cls: "seiton-tsubuyaki-tags" });
+    const controls = parent.createDiv({ cls: "seiton-tsubuyaki-controls" });
 
-    const tools = toolbar.createDiv({ cls: "seiton-tsubuyaki-tools" });
+    this.periodSelect = createSelect({
+      choices: [
+        { label: "期間: すべて", value: "all" },
+        { label: "今日", value: "today" },
+        { label: "今週", value: "week" },
+        { label: "今月", value: "month" },
+      ],
+      onChange: (value) => {
+        this.period = value as MemoPeriodFilter;
+        this.limit = PAGE_SIZE;
+        this.renderTagChips();
+        this.renderList();
+      },
+      value: this.period,
+    });
+    this.periodSelect.element.addClass("seiton-tsubuyaki-select");
+    this.periodSelect.element.addClass("is-quiet");
+    controls.append(this.periodSelect.element);
+
+    this.statusSelect = createSelect({
+      choices: [
+        { label: "状態: すべて", value: "all" },
+        { label: "未整理", value: "active" },
+        { label: "ノート化済み", value: "promoted" },
+        { label: "削除済み", value: "deleted" },
+      ],
+      onChange: (value) => {
+        this.status = value as MemoStatusFilter;
+        this.showDeleted = this.status === "deleted";
+        this.limit = PAGE_SIZE;
+        this.renderTagChips();
+        this.renderList();
+      },
+      value: this.status,
+    });
+    this.statusSelect.element.addClass("seiton-tsubuyaki-select");
+    this.statusSelect.element.addClass("is-quiet");
+    controls.append(this.statusSelect.element);
+
+    this.sortSelect = createSelect({
+      choices: [
+        { label: "新しい順", value: "newest" },
+        { label: "古い順", value: "oldest" },
+      ],
+      onChange: (value) => {
+        this.sortOrder = value as MemoSortOrder;
+        this.limit = PAGE_SIZE;
+        this.renderList();
+      },
+      value: this.sortOrder,
+    });
+    this.sortSelect.element.addClass("seiton-tsubuyaki-select");
+    this.sortSelect.element.addClass("is-quiet");
+    controls.append(this.sortSelect.element);
+
+    const tools = controls.createDiv({ cls: "seiton-tsubuyaki-tools" });
     const searchWrap = tools.createDiv({ cls: "seiton-tsubuyaki-search-wrap" });
     setIcon(
       searchWrap.createSpan({ cls: "seiton-tsubuyaki-search-icon" }),
@@ -193,6 +260,8 @@ export class SeitonTsubuyakiView extends ItemView {
     });
 
     this.countEl = tools.createSpan({ cls: "seiton-tsubuyaki-count" });
+
+    this.tagChipsEl = parent.createDiv({ cls: "seiton-tsubuyaki-tags" });
   }
 
   private async refresh(): Promise<void> {
@@ -315,7 +384,14 @@ export class SeitonTsubuyakiView extends ItemView {
   }
 
   private tagEntries(): Array<{ count: number; key: string; label: string }> {
-    return tagEntries(this.visibleItems());
+    const baseItems = filterMemos(this.items, {
+      activeTag: "",
+      period: this.period,
+      query: "",
+      showDeleted: this.showDeleted,
+      status: this.status,
+    });
+    return tagEntries(baseItems);
   }
 
   private hasTag(key: string): boolean {
@@ -418,8 +494,11 @@ export class SeitonTsubuyakiView extends ItemView {
   private filteredItems(): MemoListItem[] {
     return filterMemos(this.items, {
       activeTag: this.activeTag,
+      period: this.period,
       query: this.query,
       showDeleted: this.showDeleted,
+      sort: this.sortOrder,
+      status: this.status,
     });
   }
 
@@ -428,7 +507,11 @@ export class SeitonTsubuyakiView extends ItemView {
       return;
     }
     const total = this.visibleItems().length;
-    const filtering = this.query.trim() !== "" || this.activeTag !== "";
+    const filtering =
+      this.query.trim() !== "" ||
+      this.activeTag !== "" ||
+      this.period !== "all" ||
+      this.status !== "all";
     this.countEl.setText(
       filtering ? `${filteredCount}件 / ${total}件` : `${total}件`
     );
@@ -660,6 +743,8 @@ export class SeitonTsubuyakiView extends ItemView {
         label: this.showDeleted ? "削除済みを隠す" : "削除済みも表示",
         run: () => {
           this.showDeleted = !this.showDeleted;
+          this.status = this.showDeleted ? "deleted" : "all";
+          this.statusSelect?.setValue(this.status);
           this.limit = PAGE_SIZE;
           void this.refresh();
         },

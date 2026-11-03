@@ -1,13 +1,22 @@
+import { weekIdOf } from "../../domain/isoWeek";
 import { extractTags } from "../../domain/memoTags";
 import { dateKeyOf, dateKeyToLocalDate } from "../../domain/time";
 import type { MemoListItem } from "../../services/memoService";
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
+export type MemoPeriodFilter = "all" | "today" | "week" | "month";
+export type MemoStatusFilter = "all" | "active" | "promoted" | "deleted";
+export type MemoSortOrder = "newest" | "oldest";
+
 export interface MemoTimelineFilters {
   activeTag: string;
+  now?: Date;
+  period?: MemoPeriodFilter;
   query: string;
   showDeleted: boolean;
+  sort?: MemoSortOrder;
+  status?: MemoStatusFilter;
 }
 
 export interface MemoDayGroup {
@@ -78,12 +87,67 @@ export function visibleMemos(
     : items.filter((item) => item.entry.state !== "deleted");
 }
 
+function matchesPeriod(
+  at: string,
+  period: MemoPeriodFilter | undefined,
+  now: Date
+): boolean {
+  if (!period || period === "all") {
+    return true;
+  }
+  const dateKey = dateKeyOf(at);
+  if (!dateKey) {
+    return false;
+  }
+  const todayKey = `${String(now.getFullYear()).padStart(4, "0")}-${String(
+    now.getMonth() + 1
+  ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  if (period === "today") {
+    return dateKey === todayKey;
+  }
+  if (period === "week") {
+    const currentWeek = weekIdOf(now);
+    const itemDate = dateKeyToLocalDate(dateKey);
+    return itemDate !== null && weekIdOf(itemDate) === currentWeek;
+  }
+  if (period === "month") {
+    return dateKey.slice(0, 7) === todayKey.slice(0, 7);
+  }
+  return true;
+}
+
+function matchesStatus(
+  item: MemoListItem,
+  status: MemoStatusFilter | undefined,
+  showDeleted: boolean
+): boolean {
+  const state = item.entry.state;
+  if (status === "deleted") {
+    return state === "deleted";
+  }
+  if (status === "active") {
+    return state === "active";
+  }
+  if (status === "promoted") {
+    return state === "promoted";
+  }
+  return showDeleted ? true : state !== "deleted";
+}
+
 export function filterMemos(
   items: MemoListItem[],
   filters: MemoTimelineFilters
 ): MemoListItem[] {
   const query = normalizeSearch(filters.query.trim());
-  return visibleMemos(items, filters.showDeleted).filter((item) => {
+  const now = filters.now ?? new Date();
+  const filtered = items.filter((item) => {
+    if (!matchesStatus(item, filters.status, filters.showDeleted)) {
+      return false;
+    }
+    if (!matchesPeriod(item.entry.at, filters.period, now)) {
+      return false;
+    }
     if (query !== "" && !normalizeSearch(item.entry.body).includes(query)) {
       return false;
     }
@@ -94,6 +158,12 @@ export function filterMemos(
       }
     }
     return true;
+  });
+
+  const sort = filters.sort ?? "newest";
+  return filtered.sort((a, b) => {
+    const diff = a.entry.at.localeCompare(b.entry.at);
+    return sort === "oldest" ? diff : -diff;
   });
 }
 

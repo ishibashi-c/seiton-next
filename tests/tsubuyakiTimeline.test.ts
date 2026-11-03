@@ -72,6 +72,82 @@ describe("tsubuyaki timeline", () => {
     ).toEqual(["m1", "m3"]);
   });
 
+  it("期間で絞り込む（今日・今週・今月）", () => {
+    const fixedNow = new Date("2026-08-14T23:00:00+09:00");
+    // 今日
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        now: fixedNow,
+        period: "today",
+        query: "",
+        showDeleted: false,
+      }).map((item) => item.entry.id)
+    ).toEqual(["m1", "m2"]);
+
+    // 今週 (2026-W33: 8/10〜8/16)
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        now: fixedNow,
+        period: "week",
+        query: "",
+        showDeleted: false,
+      }).map((item) => item.entry.id)
+    ).toEqual(["m1", "m2", "m3"]);
+
+    // 今月 (2026-08)
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        now: fixedNow,
+        period: "month",
+        query: "",
+        showDeleted: false,
+      }).map((item) => item.entry.id)
+    ).toEqual(["m1", "m2", "m3"]);
+  });
+
+  it("状態で絞り込む（未整理・削除済み）", () => {
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        query: "",
+        showDeleted: false,
+        status: "active",
+      }).map((item) => item.entry.id)
+    ).toEqual(["m1", "m2", "m3", "m4"]);
+
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        query: "",
+        showDeleted: true,
+        status: "deleted",
+      }).map((item) => item.entry.id)
+    ).toEqual(["m5"]);
+  });
+
+  it("新しい順と古い順で並び替える", () => {
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        query: "",
+        showDeleted: false,
+        sort: "newest",
+      }).map((item) => item.entry.id)
+    ).toEqual(["m1", "m2", "m3", "m4"]);
+
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        query: "",
+        showDeleted: false,
+        sort: "oldest",
+      }).map((item) => item.entry.id)
+    ).toEqual(["m4", "m3", "m2", "m1"]);
+  });
+
   it("月と日の順序を保ち、件数を数える", () => {
     const groups = groupMemos(visibleMemos(items, false), 60);
     expect(groups.map((group) => group.key)).toEqual(["2026-08", "2026-07"]);
