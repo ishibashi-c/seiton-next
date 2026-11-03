@@ -355,8 +355,79 @@
 .seiton-scanner-hint {
   color: var(--st-muted);
   font-size: var(--st-text-xs);
-  margin: 8px 0 12px;
+  margin: 8px 0 10px;
   text-align: center;
+}
+
+.seiton-scanner-error {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px dashed var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  inset: 0;
+  justify-content: center;
+  padding: 16px 24px;
+  position: absolute;
+  text-align: center;
+  z-index: 5;
+}
+
+.seiton-scanner-error-icon {
+  color: var(--text-warning, #f59e0b);
+  display: inline-flex;
+}
+
+.seiton-scanner-error-icon svg {
+  height: 28px;
+  width: 28px;
+}
+
+.seiton-scanner-error-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+}
+
+.seiton-scanner-error-desc {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: 1.45;
+  max-width: 360px;
+}
+
+.seiton-scanner-error-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.seiton-scanner-retry-btn {
+  font-size: var(--st-text-xs);
+  padding: 4px 12px;
+}
+
+.seiton-scanner-manual {
+  margin: 0 0 12px;
+}
+
+.seiton-scanner-manual-form {
+  display: flex;
+  gap: 8px;
+}
+
+.seiton-scanner-manual-input {
+  flex: 1;
+  font-family: var(--font-monospace);
+  font-size: var(--st-text-sm);
+}
+
+.seiton-scanner-manual-btn {
+  flex-shrink: 0;
+  font-size: var(--st-text-sm);
 }
 
 .seiton-scanner-queue {

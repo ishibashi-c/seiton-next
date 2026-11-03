@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { extractIsbnFromBarcode, isScanCooldown } from "../src/domain/barcode";
+import {
+  extractIsbnFromBarcode,
+  formatCameraErrorMessage,
+  isScanCooldown,
+} from "../src/domain/barcode";
 
 describe("extractIsbnFromBarcode", () => {
   it("有効なISBN-13（978/979）を正常に抽出する", () => {
@@ -32,5 +36,42 @@ describe("isScanCooldown", () => {
     expect(
       isScanCooldown("9784274226298", "9784873119243", 1000, 1500, 1500)
     ).toBe(false);
+  });
+});
+
+describe("formatCameraErrorMessage", () => {
+  it("NotFoundError をカメラ未検出メッセージに変換する", () => {
+    const err = {
+      message: "Requested device not found",
+      name: "NotFoundError",
+    };
+    expect(formatCameraErrorMessage(err)).toBe(
+      "利用可能なカメラが見つかりませんでした。カメラが接続されているか確認してください。"
+    );
+  });
+
+  it("NotAllowedError を権限拒否メッセージに変換する", () => {
+    const err = { message: "Permission denied", name: "NotAllowedError" };
+    expect(formatCameraErrorMessage(err)).toContain(
+      "カメラへのアクセスが拒否されています"
+    );
+  });
+
+  it("NotReadableError を占有中エラーメッセージに変換する", () => {
+    const err = { message: "Device in use", name: "NotReadableError" };
+    expect(formatCameraErrorMessage(err)).toContain(
+      "他のアプリケーション（FaceTimeやZoomなど）がカメラを使用していないか確認してください"
+    );
+  });
+
+  it("その他のエラーメッセージを保持する", () => {
+    const err = new Error("Custom error message");
+    expect(formatCameraErrorMessage(err)).toBe("Custom error message");
+  });
+
+  it("不明なエラーの場合は初期化失敗の既定メッセージを返す", () => {
+    expect(formatCameraErrorMessage(null)).toBe(
+      "カメラの初期化中にエラーが発生しました。"
+    );
   });
 });

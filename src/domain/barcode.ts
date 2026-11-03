@@ -80,3 +80,37 @@ export function triggerScanHaptic(): void {
     // 振動非対応環境は無視
   }
 }
+
+/**
+ * カメラアクセス時の例外（DOMException 等）から、利用者にわかりやすい説明文を生成する。
+ */
+export function formatCameraErrorMessage(error: unknown): string {
+  if (error && typeof error === "object") {
+    const err = error as { name?: string; message?: string };
+    const name = err.name || "";
+    const msg = err.message || "";
+
+    if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      return "利用可能なカメラが見つかりませんでした。カメラが接続されているか確認してください。";
+    }
+    if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      return "カメラへのアクセスが拒否されています。macOSの「システム設定 > プライバシーとセキュリティ > カメラ」または端末の設定で Obsidian にカメラのアクセスを許可してください。";
+    }
+    if (name === "NotReadableError" || name === "TrackStartError") {
+      return "カメラを起動できませんでした。他のアプリケーション（FaceTimeやZoomなど）がカメラを使用していないか確認してください。";
+    }
+    if (
+      name === "OverconstrainedError" ||
+      name === "ConstraintNotSatisfiedError"
+    ) {
+      return "お使いのカメラは指定された設定（解像度・向き）に対応していません。";
+    }
+    if (msg) {
+      return msg;
+    }
+  }
+  if (typeof error === "string" && error.length > 0) {
+    return error;
+  }
+  return "カメラの初期化中にエラーが発生しました。";
+}

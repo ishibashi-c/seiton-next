@@ -1,11 +1,11 @@
 /**
  * 本のバーコード（ISBN）スキャナーモーダル。
  * カメラ映像からEAN-13（ISBN）を自動認識し、連続スキャン＆一括追加を行う。
+ * カメラが利用できない環境（Mac mini等）では手動ISBN入力欄に自動フォールバック。
  */
 
 import {
   BarcodeFormat,
-  BrowserCodeReader,
   BrowserMultiFormatReader,
   type IScannerControls,
 } from "@zxing/browser";
@@ -13,6 +13,7 @@ import { DecodeHintType } from "@zxing/library";
 import { type App, Modal, setIcon } from "obsidian";
 import {
   extractIsbnFromBarcode,
+  formatCameraErrorMessage,
   isScanCooldown,
   playScanSound,
   triggerScanHaptic,
@@ -48,12 +49,16 @@ export class BarcodeScannerModal extends Modal {
 
   private reader: BrowserMultiFormatReader | null = null;
   private controls: IScannerControls | null = null;
+  private currentStream: MediaStream | null = null;
+  private viewportEl: HTMLElement | null = null;
   private videoEl: HTMLVideoElement | null = null;
   private overlayEl: HTMLElement | null = null;
+  private cameraErrorEl: HTMLElement | null = null;
   private flashTimer: number | null = null;
   private noticeEl: HTMLElement | null = null;
   private noticeTimer: number | null = null;
 
+  private manualInputEl: HTMLInputElement | null = null;
   private queueListEl: HTMLElement | null = null;
   private countBadgeEl: HTMLElement | null = null;
   private submitBtn: HTMLButtonElement | null = null;
@@ -89,6 +94,7 @@ export class BarcodeScannerModal extends Modal {
 
   override onClose(): void {
     this.stopScanner();
+    this.clearCameraError();
     if (this.flashTimer !== null) {
       window.clearTimeout(this.flashTimer);
       this.flashTimer = null;
@@ -99,9 +105,11 @@ export class BarcodeScannerModal extends Modal {
     }
     this.contentEl.empty();
     this.items = [];
+    this.viewportEl = null;
     this.videoEl = null;
     this.overlayEl = null;
     this.noticeEl = null;
+    this.manualInputEl = null;
     this.queueListEl = null;
     this.countBadgeEl = null;
     this.submitBtn = null;
@@ -113,6 +121,7 @@ export class BarcodeScannerModal extends Modal {
 
     // 1. スキャナー上部（ファインダー）
     const viewport = content.createDiv({ cls: "seiton-scanner-viewport" });
+    this.viewportEl = viewport;
 
     const video = viewport.createEl("video", {
       attr: {
@@ -150,12 +159,15 @@ export class BarcodeScannerModal extends Modal {
       text: "本の裏表紙のバーコード（上段のISBN）を枠に合わせてください。",
     });
 
-    // 2. 単体スキャンモードの場合はキュー一覧は不要
+    // 2. 手動入力フォーム（カメラなし環境・リーダー入力・かすれ対応）
+    this.renderManualInput(content);
+
+    // 3. 単体スキャンモードの場合はキュー一覧は不要
     if (this.options.single) {
       return;
     }
 
-    // 3. 連続スキャン用キュー一覧
+    // 4. 連続スキャン用キュー一覧
     const queueSection = content.createDiv({ cls: "seiton-scanner-queue" });
 
     const queueHead = queueSection.createDiv({
@@ -172,7 +184,7 @@ export class BarcodeScannerModal extends Modal {
     });
     this.renderQueueItems();
 
-    // 4. フッター（保存・キャンセル）
+    // 5. フッター（保存・キャンセル）
     const footer = content.createDiv({ cls: "seiton-modal-footer" });
     const cancelBtn = footer.createEl("button", {
       attr: { type: "button" },
@@ -191,6 +203,47 @@ export class BarcodeScannerModal extends Modal {
     });
   }
 
+  private renderManualInput(container: HTMLElement): void {
+    const manualSection = container.createDiv({
+      cls: "seiton-scanner-manual",
+    });
+    const form = manualSection.createEl("form", {
+      cls: "seiton-scanner-manual-form",
+    });
+    const input = form.createEl("input", {
+      attr: {
+        autocomplete: "off",
+        inputmode: "numeric",
+        placeholder: "ISBN（13桁）を入力、またはリーダーでスキャン…",
+        type: "text",
+      },
+      cls: "seiton-scanner-manual-input",
+    });
+    this.manualInputEl = input;
+
+    form.createEl("button", {
+      attr: { type: "submit" },
+      cls: "seiton-scanner-manual-btn",
+      text: this.options.single ? "確定" : "追加",
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const raw = input.value.trim();
+      if (!raw) {
+        return;
+      }
+      const isbn = extractIsbnFromBarcode(raw);
+      if (!isbn) {
+        showToast("有効なISBN（13桁）を入力してください。");
+        return;
+      }
+      input.value = "";
+      this.handleDetectedBarcode(isbn);
+      input.focus();
+    });
+  }
+
   private renderQueueItems(): void {
     const list = this.queueListEl;
     if (!list) {
@@ -201,7 +254,7 @@ export class BarcodeScannerModal extends Modal {
     if (this.items.length === 0) {
       list.createDiv({
         cls: "seiton-scanner-empty",
-        text: "バーコードをかざすと、ここに本が自動で追加されます。",
+        text: "バーコードをかざすかISBNを入力すると、ここに本が自動で追加されます。",
       });
       this.updateSubmitButton();
       return;
@@ -314,43 +367,133 @@ export class BarcodeScannerModal extends Modal {
     }, 400);
   }
 
-  private async startScanner(): Promise<void> {
+  private async startScanner(preferredDeviceId?: string): Promise<void> {
     if (!this.videoEl) {
       return;
     }
+
+    this.stopScanner();
+    this.clearCameraError();
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+      this.showCameraError("この環境ではカメラ機能がサポートされていません。");
+      return;
+    }
+
     try {
+      const stream = await this.acquireStream(preferredDeviceId);
+      this.currentStream = stream;
+
       const hints = new Map();
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]);
       this.reader = new BrowserMultiFormatReader(hints);
-
-      // 利用可能なビデオ入力デバイスを取得
-      const devices = await BrowserCodeReader.listVideoInputDevices();
-      this.videoDevices = devices;
-
-      let selectedDeviceId: string | undefined;
-      if (devices.length > 0) {
-        // 背面カメラ（environment）を優先的に探す
-        const backCameraIndex = devices.findIndex((d) =>
-          /back|rear|environment/iu.test(d.label)
-        );
-        this.currentDeviceIndex = backCameraIndex >= 0 ? backCameraIndex : 0;
-        selectedDeviceId = devices[this.currentDeviceIndex]?.deviceId;
-      }
-
       this.isScanning = true;
-      this.controls = await this.reader.decodeFromVideoDevice(
-        selectedDeviceId,
+
+      this.controls = await this.reader.decodeFromStream(
+        stream,
         this.videoEl,
         (result) => {
           if (!this.isScanning || !result) {
             return;
           }
-          const text = result.getText();
-          this.handleDetectedBarcode(text);
+          this.handleDetectedBarcode(result.getText());
         }
       );
+
+      // パーミッション取得後にカメラ一覧を安全に更新
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        this.videoDevices = devices.filter((d) => d.kind === "videoinput");
+        if (preferredDeviceId) {
+          const idx = this.videoDevices.findIndex(
+            (d) => d.deviceId === preferredDeviceId
+          );
+          if (idx >= 0) {
+            this.currentDeviceIndex = idx;
+          }
+        }
+      } catch {
+        // デバイス一覧取得失敗は無視
+      }
     } catch (error) {
-      showToast(`カメラの起動に失敗しました: ${userMessageOf(error)}`);
+      const message = formatCameraErrorMessage(error);
+      this.showCameraError(message);
+    }
+  }
+
+  private async acquireStream(
+    preferredDeviceId?: string
+  ): Promise<MediaStream> {
+    if (preferredDeviceId) {
+      try {
+        return await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: preferredDeviceId } },
+        });
+      } catch {
+        return await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { ideal: preferredDeviceId } },
+        });
+      }
+    }
+
+    // デフォルト: モバイルでは背面カメラ（environment）を優先、PC前面カメラ環境でもエラーにならないよう ideal で指定
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          height: { ideal: 720 },
+          width: { ideal: 1280 },
+        },
+      });
+    } catch {
+      // 制約エラーや解像度不適合時はフォールバック
+      return await navigator.mediaDevices.getUserMedia({ video: true });
+    }
+  }
+
+  private showCameraError(message: string): void {
+    this.clearCameraError();
+    if (!this.viewportEl) {
+      return;
+    }
+    const errBox = this.viewportEl.createDiv({ cls: "seiton-scanner-error" });
+    this.cameraErrorEl = errBox;
+
+    const iconEl = errBox.createDiv({ cls: "seiton-scanner-error-icon" });
+    setIcon(iconEl, "video-off");
+
+    errBox.createDiv({
+      cls: "seiton-scanner-error-title",
+      text: "カメラを起動できませんでした",
+    });
+
+    errBox.createDiv({
+      cls: "seiton-scanner-error-desc",
+      text: message,
+    });
+
+    const actions = errBox.createDiv({ cls: "seiton-scanner-error-actions" });
+    const retryBtn = actions.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-scanner-retry-btn",
+      text: "再試行",
+    });
+    retryBtn.addEventListener("click", () => {
+      void this.startScanner();
+    });
+
+    // 手動入力欄へフォーカス
+    this.manualInputEl?.focus();
+  }
+
+  private clearCameraError(): void {
+    if (this.cameraErrorEl) {
+      this.cameraErrorEl.remove();
+      this.cameraErrorEl = null;
     }
   }
 
@@ -366,28 +509,8 @@ export class BarcodeScannerModal extends Modal {
       return;
     }
 
-    this.stopScanner();
-    try {
-      const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]);
-      this.reader = new BrowserMultiFormatReader(hints);
-      this.isScanning = true;
-      if (this.videoEl) {
-        this.controls = await this.reader.decodeFromVideoDevice(
-          device.deviceId,
-          this.videoEl,
-          (result) => {
-            if (!this.isScanning || !result) {
-              return;
-            }
-            this.handleDetectedBarcode(result.getText());
-          }
-        );
-      }
-      this.showNotice(device.label || `カメラ ${this.currentDeviceIndex + 1}`);
-    } catch (error) {
-      showToast(`カメラ切替に失敗しました: ${userMessageOf(error)}`);
-    }
+    await this.startScanner(device.deviceId);
+    this.showNotice(device.label || `カメラ ${this.currentDeviceIndex + 1}`);
   }
 
   private stopScanner(): void {
@@ -395,6 +518,23 @@ export class BarcodeScannerModal extends Modal {
     if (this.controls) {
       this.controls.stop();
       this.controls = null;
+    }
+    if (this.currentStream) {
+      for (const track of this.currentStream.getTracks()) {
+        try {
+          track.stop();
+        } catch {
+          // ignore
+        }
+      }
+      this.currentStream = null;
+    }
+    if (this.videoEl) {
+      try {
+        this.videoEl.srcObject = null;
+      } catch {
+        // ignore
+      }
     }
     this.reader = null;
   }
