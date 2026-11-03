@@ -259,6 +259,7 @@ export class SeitonLibraryView extends ItemView {
   }
 
   override async onClose(): Promise<void> {
+    this.list.destroy();
     closeTabShell(this, VIEW_TYPE_LIBRARY);
     if (this.refreshTimer !== null) {
       window.clearTimeout(this.refreshTimer);

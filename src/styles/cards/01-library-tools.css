@@ -210,6 +210,23 @@
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
+/* Google Keep style masonry for mixed library items */
+.seiton-card-grid.is-masonry {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  width: 100%;
+}
+
+.seiton-card-col {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 /* Library cards hug their content; shelf layouts keep equal cards. */
 .seiton-library .seiton-card-grid:not(.is-list):not(.is-shelf) {
   align-items: start;
@@ -493,6 +510,10 @@
 
   .seiton-card-grid:not(.is-list) {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seiton-card-grid.is-masonry {
+    flex-direction: column;
   }
 
   .seiton-card-grid:not(.is-list) .seiton-item {

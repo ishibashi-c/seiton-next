@@ -54,9 +54,17 @@ export class LibraryList {
   private readonly options: LibraryListOptions;
   private currentHits: IndexItem[] = [];
   private renderLimit = 60;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(options: LibraryListOptions) {
     this.options = options;
+  }
+
+  destroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
   }
 
   render(container: HTMLElement, items: IndexItem[], resetLimit = true): void {
@@ -64,6 +72,7 @@ export class LibraryList {
       this.renderLimit = 60;
     }
     this.currentHits = items;
+    this.destroy();
     container.empty();
     if (items.length === 0) {
       this.renderEmpty(container);
@@ -73,26 +82,99 @@ export class LibraryList {
     const shelf =
       this.options.getFilter() === "book" &&
       this.options.getLayout() === "cards";
+    const isList = this.options.getLayout() === "list";
     const visible = items.slice(0, this.renderLimit);
-    const grid = container.createDiv({
-      cls: `seiton-card-grid${
-        this.options.getLayout() === "list" ? " is-list" : ""
-      }${shelf ? " is-shelf" : ""}`,
-    });
-    for (const item of visible) {
-      let card: HTMLElement;
-      if (item.type === "note") {
-        card =
-          shelf && item.kind === "book"
-            ? this.renderBookShelfCard(item)
-            : this.renderNoteCard(item);
-      } else if (item.type === "memo") {
-        card = this.renderMemoCard(item);
-      } else {
-        card = this.renderPromptCard(item);
+
+    if (shelf || isList) {
+      const grid = container.createDiv({
+        cls: `seiton-card-grid${isList ? " is-list" : ""}${shelf ? " is-shelf" : ""}`,
+      });
+      for (const item of visible) {
+        let card: HTMLElement;
+        if (item.type === "note") {
+          card =
+            shelf && item.kind === "book"
+              ? this.renderBookShelfCard(item)
+              : this.renderNoteCard(item);
+        } else if (item.type === "memo") {
+          card = this.renderMemoCard(item);
+        } else {
+          card = this.renderPromptCard(item);
+        }
+        grid.appendChild(card);
       }
-      grid.appendChild(card);
+    } else {
+      // Google Keep 式 Masonry: 各列にカードを分散配置し、上下の無駄な余白を完全にゼロにする
+      const grid = container.createDiv({
+        cls: "seiton-card-grid is-masonry",
+      });
+      const cards: HTMLElement[] = [];
+      for (const item of visible) {
+        let card: HTMLElement;
+        if (item.type === "note") {
+          card = this.renderNoteCard(item);
+        } else if (item.type === "memo") {
+          card = this.renderMemoCard(item);
+        } else {
+          card = this.renderPromptCard(item);
+        }
+        cards.push(card);
+      }
+
+      const getColumnCount = (width: number): number => {
+        if (width < 600) {
+          return 1;
+        }
+        if (width < 920) {
+          return 2;
+        }
+        if (width < 1260) {
+          return 3;
+        }
+        return 4;
+      };
+
+      const distributeCards = (count: number) => {
+        while (grid.firstChild) {
+          grid.removeChild(grid.firstChild);
+        }
+        const cols: HTMLElement[] = [];
+        for (let i = 0; i < count; i += 1) {
+          cols.push(grid.createDiv({ cls: "seiton-card-col" }));
+        }
+        for (let i = 0; i < cards.length; i += 1) {
+          const card = cards[i];
+          const col = cols[i % count];
+          if (card && col) {
+            col.appendChild(card);
+          }
+        }
+      };
+
+      const initialWidth =
+        container.clientWidth ||
+        container.parentElement?.clientWidth ||
+        (typeof window === "undefined" ? 1000 : window.innerWidth);
+      let currentCols = getColumnCount(initialWidth);
+      distributeCards(currentCols);
+
+      if (typeof ResizeObserver !== "undefined") {
+        this.resizeObserver = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const width = entry.contentRect.width;
+            if (width > 0) {
+              const nextCols = getColumnCount(width);
+              if (nextCols !== currentCols) {
+                currentCols = nextCols;
+                distributeCards(currentCols);
+              }
+            }
+          }
+        });
+        this.resizeObserver.observe(container);
+      }
     }
+
     if (items.length > this.renderLimit) {
       const more = container.createEl("button", {
         attr: { type: "button" },
