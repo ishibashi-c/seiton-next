@@ -1,19 +1,16 @@
 /**
  * 本のバーコード（ISBN）スキャナーモーダル。
- * カメラ映像からEAN-13（ISBN）を自動認識し、連続スキャン＆一括追加を行う。
- * カメラが利用できない環境（Mac mini等）では手動ISBN入力欄に自動フォールバック。
+ * OS標準のカメラアプリ呼び出し（capture="environment"）または画像選択・ドラッグ＆ドロップ・
+ * クリップボード貼り付けからバーコードを自動検知し、連続スキャン＆一括追加を行う。
+ * キーボードやUSBバーコードリーダーによるISBN直接入力にも対応。
  */
 
-import {
-  BarcodeFormat,
-  BrowserMultiFormatReader,
-  type IScannerControls,
-} from "@zxing/browser";
+import { BarcodeFormat, BrowserMultiFormatReader } from "@zxing/browser";
 import { DecodeHintType } from "@zxing/library";
 import { type App, Modal, setIcon } from "obsidian";
 import {
   extractIsbnFromBarcode,
-  formatCameraErrorMessage,
+  formatScanErrorMessage,
   isScanCooldown,
   playScanSound,
   triggerScanHaptic,
@@ -47,18 +44,10 @@ export class BarcodeScannerModal extends Modal {
   private readonly bookService: BookService;
   private readonly options: BarcodeScannerModalOptions;
 
-  private reader: BrowserMultiFormatReader | null = null;
-  private controls: IScannerControls | null = null;
-  private currentStream: MediaStream | null = null;
-  private viewportEl: HTMLElement | null = null;
-  private videoEl: HTMLVideoElement | null = null;
-  private overlayEl: HTMLElement | null = null;
-  private cameraErrorEl: HTMLElement | null = null;
-  private flashTimer: number | null = null;
-  private noticeEl: HTMLElement | null = null;
-  private noticeTimer: number | null = null;
+  private captureBtn: HTMLButtonElement | null = null;
+  private statusEl: HTMLElement | null = null;
+  private statusTimer: number | null = null;
 
-  private manualInputEl: HTMLInputElement | null = null;
   private queueListEl: HTMLElement | null = null;
   private countBadgeEl: HTMLElement | null = null;
   private submitBtn: HTMLButtonElement | null = null;
@@ -66,10 +55,10 @@ export class BarcodeScannerModal extends Modal {
   private items: ScannedBookItem[] = [];
   private lastScannedIsbn: string | null = null;
   private lastScannedAt = 0;
-  private isScanning = false;
-  private videoDevices: MediaDeviceInfo[] = [];
-  private currentDeviceIndex = 0;
+  private isAnalyzing = false;
   private saving = false;
+
+  private pasteHandler: ((e: ClipboardEvent) => void) | null = null;
 
   constructor(
     app: App,
@@ -89,27 +78,22 @@ export class BarcodeScannerModal extends Modal {
     );
 
     this.renderUI();
-    void this.startScanner();
+    this.registerGlobalPaste();
   }
 
   override onClose(): void {
-    this.stopScanner();
-    this.clearCameraError();
-    if (this.flashTimer !== null) {
-      window.clearTimeout(this.flashTimer);
-      this.flashTimer = null;
+    if (this.pasteHandler) {
+      window.removeEventListener("paste", this.pasteHandler);
+      this.pasteHandler = null;
     }
-    if (this.noticeTimer !== null) {
-      window.clearTimeout(this.noticeTimer);
-      this.noticeTimer = null;
+    if (this.statusTimer !== null) {
+      window.clearTimeout(this.statusTimer);
+      this.statusTimer = null;
     }
     this.contentEl.empty();
     this.items = [];
-    this.viewportEl = null;
-    this.videoEl = null;
-    this.overlayEl = null;
-    this.noticeEl = null;
-    this.manualInputEl = null;
+    this.captureBtn = null;
+    this.statusEl = null;
     this.queueListEl = null;
     this.countBadgeEl = null;
     this.submitBtn = null;
@@ -119,47 +103,10 @@ export class BarcodeScannerModal extends Modal {
     const content = this.contentEl;
     content.empty();
 
-    // 1. スキャナー上部（ファインダー）
-    const viewport = content.createDiv({ cls: "seiton-scanner-viewport" });
-    this.viewportEl = viewport;
+    // 1. カメラ撮影・画像選択エリア（Hero Card）
+    this.renderCaptureHero(content);
 
-    const video = viewport.createEl("video", {
-      attr: {
-        autoplay: "true",
-        muted: "true",
-        playsinline: "true",
-      },
-      cls: "seiton-scanner-video",
-    });
-    this.videoEl = video;
-
-    const overlay = viewport.createDiv({ cls: "seiton-scanner-overlay" });
-    this.overlayEl = overlay;
-
-    // ガイド枠
-    const frame = overlay.createDiv({ cls: "seiton-scanner-frame" });
-    frame.createDiv({ cls: "seiton-scanner-laser" });
-
-    // 一時通知メッセージ（「すでに追加されています」など）
-    this.noticeEl = overlay.createDiv({ cls: "seiton-scanner-notice" });
-
-    // カメラ操作ボタン（カメラ切替）
-    const controlsBar = overlay.createDiv({ cls: "seiton-scanner-controls" });
-    const switchCamBtn = controlsBar.createEl("button", {
-      attr: { "aria-label": "カメラを切り替え", type: "button" },
-      cls: "seiton-scanner-btn",
-    });
-    setIcon(switchCamBtn, "switch-camera");
-    switchCamBtn.addEventListener("click", () => {
-      void this.switchCamera();
-    });
-
-    content.createEl("p", {
-      cls: "seiton-scanner-hint",
-      text: "本の裏表紙のバーコード（上段のISBN）を枠に合わせてください。",
-    });
-
-    // 2. 手動入力フォーム（カメラなし環境・リーダー入力・かすれ対応）
+    // 2. 手動ISBN入力フォーム
     this.renderManualInput(content);
 
     // 3. 単体スキャンモードの場合はキュー一覧は不要
@@ -203,6 +150,124 @@ export class BarcodeScannerModal extends Modal {
     });
   }
 
+  private renderCaptureHero(container: HTMLElement): void {
+    const hero = container.createDiv({ cls: "seiton-scanner-hero" });
+
+    // 非表示のファイル入力（capture="environment" でスマホの標準カメラアプリを起動）
+    const fileInput = hero.createEl("input", {
+      attr: {
+        accept: "image/*",
+        capture: "environment",
+        style: "display: none;",
+        type: "file",
+      },
+      cls: "seiton-scanner-file-input",
+    });
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (file) {
+        void this.scanImageFile(file);
+      }
+      // 同じファイルを再選択できるようにリセット
+      fileInput.value = "";
+    });
+
+    // ドラッグ＆ドロップ対応
+    hero.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      hero.addClass("is-dragover");
+    });
+    hero.addEventListener("dragleave", () => {
+      hero.removeClass("is-dragover");
+    });
+    hero.addEventListener("drop", (e) => {
+      e.preventDefault();
+      hero.removeClass("is-dragover");
+      const file = e.dataTransfer?.files?.[0];
+      if (file?.type.startsWith("image/")) {
+        void this.scanImageFile(file);
+      }
+    });
+
+    // 撮影ボタン
+    const captureBtn = hero.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-scanner-capture-btn mod-cta",
+    });
+    this.captureBtn = captureBtn;
+    this.updateCaptureButtonText();
+
+    captureBtn.addEventListener("click", () => {
+      if (!this.isAnalyzing) {
+        fileInput.click();
+      }
+    });
+
+    // サブ説明
+    hero.createEl("p", {
+      cls: "seiton-scanner-hero-sub",
+      text: "本の裏表紙のバーコードを撮影、または画像をドロップ / 貼り付け",
+    });
+
+    // ステータス・結果通知領域
+    this.statusEl = hero.createDiv({ cls: "seiton-scanner-status" });
+  }
+
+  private updateCaptureButtonText(): void {
+    if (!this.captureBtn) {
+      return;
+    }
+    this.captureBtn.empty();
+
+    if (this.isAnalyzing) {
+      const spinner = this.captureBtn.createSpan({
+        cls: "seiton-scanner-btn-icon is-spinning",
+      });
+      setIcon(spinner, "loader-2");
+      this.captureBtn.createSpan({ text: "画像を解析中…" });
+      this.captureBtn.disabled = true;
+    } else {
+      const iconSpan = this.captureBtn.createSpan({
+        cls: "seiton-scanner-btn-icon",
+      });
+      setIcon(iconSpan, "camera");
+      const btnText =
+        this.items.length > 0
+          ? "続けて次の本を撮影"
+          : "カメラでバーコードを撮影";
+      this.captureBtn.createSpan({ text: btnText });
+      this.captureBtn.disabled = false;
+    }
+  }
+
+  private registerGlobalPaste(): void {
+    this.pasteHandler = (e: ClipboardEvent) => {
+      // テキスト入力中は除外
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      const items = e.clipboardData?.items;
+      if (!items) {
+        return;
+      }
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            void this.scanImageFile(file);
+            break;
+          }
+        }
+      }
+    };
+    window.addEventListener("paste", this.pasteHandler);
+  }
+
   private renderManualInput(container: HTMLElement): void {
     const manualSection = container.createDiv({
       cls: "seiton-scanner-manual",
@@ -219,7 +284,6 @@ export class BarcodeScannerModal extends Modal {
       },
       cls: "seiton-scanner-manual-input",
     });
-    this.manualInputEl = input;
 
     form.createEl("button", {
       attr: { type: "submit" },
@@ -244,6 +308,194 @@ export class BarcodeScannerModal extends Modal {
     });
   }
 
+  private async scanImageFile(file: File | Blob): Promise<void> {
+    if (!file.type.startsWith("image/")) {
+      this.showStatus("画像ファイルを選択してください。", "error");
+      return;
+    }
+
+    this.isAnalyzing = true;
+    this.updateCaptureButtonText();
+    this.showStatus("バーコードを解析中…", "loading");
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const img = await this.loadImage(objectUrl);
+      const isbn = await this.detectIsbnFromImage(img);
+
+      if (!isbn) {
+        this.showStatus(
+          "バーコードが見つかりませんでした。ピントを合わせてバーコード全体が写るように撮影してください。",
+          "error"
+        );
+        return;
+      }
+
+      this.showStatus(`ISBN: ${isbn} を読み取りました`, "success");
+      this.handleDetectedBarcode(isbn);
+    } catch (error) {
+      this.showStatus(formatScanErrorMessage(error), "error");
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      this.isAnalyzing = false;
+      this.updateCaptureButtonText();
+    }
+  }
+
+  private loadImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
+      img.src = src;
+    });
+  }
+
+  /**
+   * 画像から多段探索でISBNを検出する。
+   * 1. 画像全体からデコード
+   * 2. 上半分（日本の本の2段バーコードの上段ISBN）からデコード
+   * 3. 下半分（逆さま撮影対策）からデコード
+   */
+  private async detectIsbnFromImage(
+    img: HTMLImageElement
+  ): Promise<string | null> {
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    const reader = new BrowserMultiFormatReader(hints);
+
+    // 1. 全体スキャン（最大幅1200px）
+    try {
+      const canvas = this.createScaledCanvas(img, 1200);
+      const result = reader.decodeFromCanvas(canvas);
+      const isbn = extractIsbnFromBarcode(result.getText());
+      if (isbn) {
+        return isbn;
+      }
+    } catch {
+      // not found, continue to crops
+    }
+
+    // 2. 上半分（高さ0〜65%）を切り抜いてスキャン（上段のISBNバーコードを抽出）
+    try {
+      const topCanvas = this.createCroppedCanvas(img, 0, 0, 1, 0.65, 1200);
+      const result = reader.decodeFromCanvas(topCanvas);
+      const isbn = extractIsbnFromBarcode(result.getText());
+      if (isbn) {
+        return isbn;
+      }
+    } catch {
+      // not found
+    }
+
+    // 3. 下半分（高さ35〜100%）を切り抜いてスキャン（上下逆さま対策）
+    try {
+      const bottomCanvas = this.createCroppedCanvas(
+        img,
+        0,
+        0.35,
+        1,
+        0.65,
+        1200
+      );
+      const result = reader.decodeFromCanvas(bottomCanvas);
+      const isbn = extractIsbnFromBarcode(result.getText());
+      if (isbn) {
+        return isbn;
+      }
+    } catch {
+      // not found
+    }
+
+    return null;
+  }
+
+  private createScaledCanvas(
+    img: HTMLImageElement,
+    maxDimension: number
+  ): HTMLCanvasElement {
+    const canvas = document.createElement("canvas");
+    let { width, height } = img;
+    if (width > maxDimension || height > maxDimension) {
+      if (width > height) {
+        height = Math.round((height * maxDimension) / width);
+        width = maxDimension;
+      } else {
+        width = Math.round((width * maxDimension) / height);
+        height = maxDimension;
+      }
+    }
+    canvas.width = Math.max(width, 1);
+    canvas.height = Math.max(height, 1);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    }
+    return canvas;
+  }
+
+  private createCroppedCanvas(
+    img: HTMLImageElement,
+    rx: number,
+    ry: number,
+    rw: number,
+    rh: number,
+    maxDimension: number
+  ): HTMLCanvasElement {
+    const canvas = document.createElement("canvas");
+    const sx = img.width * rx;
+    const sy = img.height * ry;
+    const sw = img.width * rw;
+    const sh = img.height * rh;
+
+    let dw = sw;
+    let dh = sh;
+    if (dw > maxDimension || dh > maxDimension) {
+      if (dw > dh) {
+        dh = Math.round((dh * maxDimension) / dw);
+        dw = maxDimension;
+      } else {
+        dw = Math.round((dw * maxDimension) / dh);
+        dh = maxDimension;
+      }
+    }
+    canvas.width = Math.max(Math.round(dw), 1);
+    canvas.height = Math.max(Math.round(dh), 1);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    }
+    return canvas;
+  }
+
+  private showStatus(
+    message: string,
+    type: "error" | "loading" | "success"
+  ): void {
+    if (!this.statusEl) {
+      return;
+    }
+    if (this.statusTimer !== null) {
+      window.clearTimeout(this.statusTimer);
+      this.statusTimer = null;
+    }
+
+    this.statusEl.empty();
+    this.statusEl.className = `seiton-scanner-status is-${type}`;
+    this.statusEl.setText(message);
+
+    if (type !== "loading") {
+      this.statusTimer = window.setTimeout(() => {
+        this.statusTimer = null;
+        if (this.statusEl) {
+          this.statusEl.empty();
+          this.statusEl.className = "seiton-scanner-status";
+        }
+      }, 3500);
+    }
+  }
+
   private renderQueueItems(): void {
     const list = this.queueListEl;
     if (!list) {
@@ -254,7 +506,7 @@ export class BarcodeScannerModal extends Modal {
     if (this.items.length === 0) {
       list.createDiv({
         cls: "seiton-scanner-empty",
-        text: "バーコードをかざすかISBNを入力すると、ここに本が自動で追加されます。",
+        text: "バーコードを撮影するかISBNを入力すると、ここに本が自動で追加されます。",
       });
       this.updateSubmitButton();
       return;
@@ -336,215 +588,10 @@ export class BarcodeScannerModal extends Modal {
   private removeItem(id: string): void {
     this.items = this.items.filter((item) => item.id !== id);
     this.renderQueueItems();
+    this.updateCaptureButtonText();
   }
 
-  private showNotice(message: string): void {
-    if (!this.noticeEl) {
-      return;
-    }
-    this.noticeEl.setText(message);
-    this.noticeEl.addClass("is-visible");
-    if (this.noticeTimer !== null) {
-      window.clearTimeout(this.noticeTimer);
-    }
-    this.noticeTimer = window.setTimeout(() => {
-      this.noticeTimer = null;
-      this.noticeEl?.removeClass("is-visible");
-    }, 1800);
-  }
-
-  private flashSuccess(): void {
-    if (!this.overlayEl) {
-      return;
-    }
-    this.overlayEl.addClass("is-success");
-    if (this.flashTimer !== null) {
-      window.clearTimeout(this.flashTimer);
-    }
-    this.flashTimer = window.setTimeout(() => {
-      this.flashTimer = null;
-      this.overlayEl?.removeClass("is-success");
-    }, 400);
-  }
-
-  private async startScanner(preferredDeviceId?: string): Promise<void> {
-    if (!this.videoEl) {
-      return;
-    }
-
-    this.stopScanner();
-    this.clearCameraError();
-
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ) {
-      this.showCameraError("この環境ではカメラ機能がサポートされていません。");
-      return;
-    }
-
-    try {
-      const stream = await this.acquireStream(preferredDeviceId);
-      this.currentStream = stream;
-
-      const hints = new Map();
-      hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.EAN_13]);
-      this.reader = new BrowserMultiFormatReader(hints);
-      this.isScanning = true;
-
-      this.controls = await this.reader.decodeFromStream(
-        stream,
-        this.videoEl,
-        (result) => {
-          if (!this.isScanning || !result) {
-            return;
-          }
-          this.handleDetectedBarcode(result.getText());
-        }
-      );
-
-      // パーミッション取得後にカメラ一覧を安全に更新
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        this.videoDevices = devices.filter((d) => d.kind === "videoinput");
-        if (preferredDeviceId) {
-          const idx = this.videoDevices.findIndex(
-            (d) => d.deviceId === preferredDeviceId
-          );
-          if (idx >= 0) {
-            this.currentDeviceIndex = idx;
-          }
-        }
-      } catch {
-        // デバイス一覧取得失敗は無視
-      }
-    } catch (error) {
-      const message = formatCameraErrorMessage(error);
-      this.showCameraError(message);
-    }
-  }
-
-  private async acquireStream(
-    preferredDeviceId?: string
-  ): Promise<MediaStream> {
-    if (preferredDeviceId) {
-      try {
-        return await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: preferredDeviceId } },
-        });
-      } catch {
-        return await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { ideal: preferredDeviceId } },
-        });
-      }
-    }
-
-    // デフォルト: モバイルでは背面カメラ（environment）を優先、PC前面カメラ環境でもエラーにならないよう ideal で指定
-    try {
-      return await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          height: { ideal: 720 },
-          width: { ideal: 1280 },
-        },
-      });
-    } catch {
-      // 制約エラーや解像度不適合時はフォールバック
-      return await navigator.mediaDevices.getUserMedia({ video: true });
-    }
-  }
-
-  private showCameraError(message: string): void {
-    this.clearCameraError();
-    if (!this.viewportEl) {
-      return;
-    }
-    const errBox = this.viewportEl.createDiv({ cls: "seiton-scanner-error" });
-    this.cameraErrorEl = errBox;
-
-    const iconEl = errBox.createDiv({ cls: "seiton-scanner-error-icon" });
-    setIcon(iconEl, "video-off");
-
-    errBox.createDiv({
-      cls: "seiton-scanner-error-title",
-      text: "カメラを起動できませんでした",
-    });
-
-    errBox.createDiv({
-      cls: "seiton-scanner-error-desc",
-      text: message,
-    });
-
-    const actions = errBox.createDiv({ cls: "seiton-scanner-error-actions" });
-    const retryBtn = actions.createEl("button", {
-      attr: { type: "button" },
-      cls: "seiton-scanner-retry-btn",
-      text: "再試行",
-    });
-    retryBtn.addEventListener("click", () => {
-      void this.startScanner();
-    });
-
-    // 手動入力欄へフォーカス
-    this.manualInputEl?.focus();
-  }
-
-  private clearCameraError(): void {
-    if (this.cameraErrorEl) {
-      this.cameraErrorEl.remove();
-      this.cameraErrorEl = null;
-    }
-  }
-
-  private async switchCamera(): Promise<void> {
-    if (this.videoDevices.length <= 1) {
-      this.showNotice("切り替え可能なカメラがありません");
-      return;
-    }
-    this.currentDeviceIndex =
-      (this.currentDeviceIndex + 1) % this.videoDevices.length;
-    const device = this.videoDevices[this.currentDeviceIndex];
-    if (!device) {
-      return;
-    }
-
-    await this.startScanner(device.deviceId);
-    this.showNotice(device.label || `カメラ ${this.currentDeviceIndex + 1}`);
-  }
-
-  private stopScanner(): void {
-    this.isScanning = false;
-    if (this.controls) {
-      this.controls.stop();
-      this.controls = null;
-    }
-    if (this.currentStream) {
-      for (const track of this.currentStream.getTracks()) {
-        try {
-          track.stop();
-        } catch {
-          // ignore
-        }
-      }
-      this.currentStream = null;
-    }
-    if (this.videoEl) {
-      try {
-        this.videoEl.srcObject = null;
-      } catch {
-        // ignore
-      }
-    }
-    this.reader = null;
-  }
-
-  private handleDetectedBarcode(rawText: string): void {
-    const isbn = extractIsbnFromBarcode(rawText);
-    if (!isbn) {
-      return;
-    }
-
+  private handleDetectedBarcode(isbn: string): void {
     const now = Date.now();
     if (isScanCooldown(isbn, this.lastScannedIsbn, this.lastScannedAt, now)) {
       return;
@@ -557,7 +604,6 @@ export class BarcodeScannerModal extends Modal {
     if (this.options.single) {
       playScanSound();
       triggerScanHaptic();
-      this.flashSuccess();
       this.options.onScanSingle?.(isbn);
       this.close();
       return;
@@ -565,14 +611,13 @@ export class BarcodeScannerModal extends Modal {
 
     // すでにスキャンリストにあるか確認
     if (this.items.some((item) => item.isbn === isbn)) {
-      this.showNotice("すでに追加されています");
+      this.showStatus("すでに追加されています", "error");
       return;
     }
 
     // 読み取り成功
     playScanSound();
     triggerScanHaptic();
-    this.flashSuccess();
 
     // キューに追加
     const id = `scan_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -588,6 +633,7 @@ export class BarcodeScannerModal extends Modal {
     };
     this.items.unshift(newItem); // 最新を先頭へ
     this.renderQueueItems();
+    this.updateCaptureButtonText();
 
     // バックグラウンドで書誌照会
     void this.lookupItem(id, isbn);

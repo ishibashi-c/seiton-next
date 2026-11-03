@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   extractIsbnFromBarcode,
   formatCameraErrorMessage,
+  formatScanErrorMessage,
   isScanCooldown,
 } from "../src/domain/barcode";
 
@@ -72,6 +73,20 @@ describe("formatCameraErrorMessage", () => {
   it("不明なエラーの場合は初期化失敗の既定メッセージを返す", () => {
     expect(formatCameraErrorMessage(null)).toBe(
       "カメラの初期化中にエラーが発生しました。"
+    );
+  });
+});
+
+describe("formatScanErrorMessage", () => {
+  it("Errorインスタンスのメッセージをそのまま返す", () => {
+    expect(formatScanErrorMessage(new Error("バーコードが不鮮明です"))).toBe(
+      "バーコードが不鮮明です"
+    );
+  });
+
+  it("不明なエラーの場合は既定の案内文を返す", () => {
+    expect(formatScanErrorMessage(null)).toBe(
+      "バーコードを検出できませんでした。ピントを合わせてバーコード全体が写るように撮影してください。"
     );
   });
 });

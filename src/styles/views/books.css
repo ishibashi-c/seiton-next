@@ -243,171 +243,90 @@
 }
 
 /* --------------------------------------------------------------------------
-   Barcode Scanner
+   Barcode Scanner (OS Camera Capture / Image Scan / Manual Input)
    -------------------------------------------------------------------------- */
 
 .modal.seiton-scanner-modal {
   width: min(520px, 94vw);
 }
 
-.seiton-scanner-viewport {
-  aspect-ratio: 16 / 9;
-  background: #000;
-  border-radius: var(--st-radius-md);
-  max-height: 220px;
-  overflow: hidden;
-  position: relative;
-  width: 100%;
-}
-
-.seiton-scanner-video {
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
-}
-
-.seiton-scanner-overlay {
+.seiton-scanner-hero {
   align-items: center;
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  pointer-events: none;
-  position: absolute;
-}
-
-.seiton-scanner-frame {
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  border-radius: var(--st-radius-sm);
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
-  height: 60%;
-  position: relative;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  width: 72%;
-}
-
-.seiton-scanner-laser {
-  background: rgba(255, 60, 60, 0.85);
-  box-shadow: 0 0 4px rgba(255, 60, 60, 0.8);
-  height: 1.5px;
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transition: background 0.15s, box-shadow 0.15s;
-}
-
-.seiton-scanner-overlay.is-success .seiton-scanner-frame {
-  border-color: #22c55e;
-  box-shadow: 0 0 12px #22c55e, 0 0 0 9999px rgba(0, 0, 0, 0.2);
-}
-
-.seiton-scanner-overlay.is-success .seiton-scanner-laser {
-  background: #22c55e;
-  box-shadow: 0 0 6px #22c55e;
-}
-
-.seiton-scanner-notice {
-  background: rgba(0, 0, 0, 0.75);
-  border-radius: 99px;
-  color: #fff;
-  font-size: 12px;
-  left: 50%;
-  opacity: 0;
-  padding: 4px 12px;
-  pointer-events: none;
-  position: absolute;
-  top: 10px;
-  transform: translateX(-50%);
-  transition: opacity 0.2s;
-}
-
-.seiton-scanner-notice.is-visible {
-  opacity: 1;
-}
-
-.seiton-scanner-controls {
-  bottom: 8px;
-  display: flex;
-  gap: 6px;
-  pointer-events: auto;
-  position: absolute;
-  right: 8px;
-}
-
-.seiton-scanner-btn {
-  align-items: center;
-  background: rgba(0, 0, 0, 0.55);
-  border: 0;
-  border-radius: var(--st-radius-sm);
-  color: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  height: 30px;
-  justify-content: center;
-  padding: 0;
-  width: 30px;
-}
-
-.seiton-scanner-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-}
-
-.seiton-scanner-hint {
-  color: var(--st-muted);
-  font-size: var(--st-text-xs);
-  margin: 8px 0 10px;
-  text-align: center;
-}
-
-.seiton-scanner-error {
-  align-items: center;
-  background: var(--background-primary);
-  border: 1px dashed var(--st-hairline);
+  background: var(--background-secondary);
+  border: 1.5px dashed var(--st-hairline);
   border-radius: var(--st-radius-md);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  inset: 0;
+  gap: 8px;
   justify-content: center;
-  padding: 16px 24px;
-  position: absolute;
+  margin-bottom: 12px;
+  padding: 24px 16px;
   text-align: center;
-  z-index: 5;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-.seiton-scanner-error-icon {
-  color: var(--text-warning, #f59e0b);
+.seiton-scanner-hero.is-dragover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+
+.seiton-scanner-capture-btn {
+  align-items: center;
+  border-radius: var(--st-radius-sm);
+  display: inline-flex;
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  gap: 8px;
+  justify-content: center;
+  padding: 10px 22px;
+}
+
+.seiton-scanner-btn-icon {
   display: inline-flex;
 }
 
-.seiton-scanner-error-icon svg {
-  height: 28px;
-  width: 28px;
+.seiton-scanner-btn-icon svg {
+  height: 18px;
+  width: 18px;
 }
 
-.seiton-scanner-error-title {
-  color: var(--st-ink);
-  font-size: var(--st-text-sm);
-  font-weight: 600;
+.seiton-scanner-btn-icon.is-spinning svg {
+  animation: seiton-spin 1s linear infinite;
 }
 
-.seiton-scanner-error-desc {
+@keyframes seiton-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.seiton-scanner-hero-sub {
   color: var(--st-muted);
   font-size: var(--st-text-xs);
-  line-height: 1.45;
-  max-width: 360px;
+  margin: 2px 0 0;
 }
 
-.seiton-scanner-error-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.seiton-scanner-retry-btn {
+.seiton-scanner-status {
   font-size: var(--st-text-xs);
-  padding: 4px 12px;
+  font-weight: 550;
+  min-height: 18px;
+  transition: color 0.15s;
+}
+
+.seiton-scanner-status.is-loading {
+  color: var(--st-muted);
+}
+
+.seiton-scanner-status.is-success {
+  color: var(--st-green, #22c55e);
+}
+
+.seiton-scanner-status.is-error {
+  color: var(--st-red, #ef4444);
 }
 
 .seiton-scanner-manual {
@@ -428,6 +347,7 @@
 .seiton-scanner-manual-btn {
   flex-shrink: 0;
   font-size: var(--st-text-sm);
+}
 }
 
 .seiton-scanner-queue {

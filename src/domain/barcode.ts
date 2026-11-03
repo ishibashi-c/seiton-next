@@ -82,6 +82,16 @@ export function triggerScanHaptic(): void {
 }
 
 /**
+ * 画像スキャン時のエラーから、利用者にわかりやすい説明文を生成する。
+ */
+export function formatScanErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return "バーコードを検出できませんでした。ピントを合わせてバーコード全体が写るように撮影してください。";
+}
+
+/**
  * カメラアクセス時の例外（DOMException 等）から、利用者にわかりやすい説明文を生成する。
  */
 export function formatCameraErrorMessage(error: unknown): string {
