@@ -9,16 +9,43 @@ import type { MemoListItem } from "../../services/memoService";
 import type { MemoPeriodFilter } from "./timeline";
 
 export interface CalendarSelection {
-  /** 表示用ラベル（例: "11月4日"、"今週"、"2026年11月"、"期間: すべて"） */
+  /** 範囲指定の終了日 (YYYY-MM-DD) */
+  endDate?: string;
+  /** 表示用ラベル（例: "11月4日"、"10/15〜11/4"、"今週"、"2026年11月"、"期間: すべて"） */
   label: string;
   period: MemoPeriodFilter;
   /** YYYY-MM-DD または YYYY-MM（指定なし時は空文字） */
   selectedDate: string;
+  /** 範囲指定の開始日 (YYYY-MM-DD) */
+  startDate?: string;
 }
 
 export interface CalendarPickerOptions {
   initialSelection?: CalendarSelection;
   onChange: (selection: CalendarSelection) => void;
+}
+
+const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
+
+function formatDateLabel(dateKey: string): string {
+  const parts = dateKey.split("-");
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  const dateObj = dateKeyToLocalDate(dateKey);
+  const weekdayStr = dateObj ? ` (${WEEK_LABELS[dateObj.getDay()] ?? ""})` : "";
+  return `${m}月${d}日${weekdayStr}`;
+}
+
+function formatRangeLabel(startKey: string, endKey: string): string {
+  if (startKey === endKey) {
+    return formatDateLabel(startKey);
+  }
+  const [sy, sm, sd] = startKey.split("-").map(Number);
+  const [ey, em, ed] = endKey.split("-").map(Number);
+  if (sy === ey) {
+    return `${sm}/${sd} 〜 ${em}/${ed}`;
+  }
+  return `${sy}/${sm}/${sd} 〜 ${ey}/${em}/${ed}`;
 }
 
 export class CalendarPicker {
@@ -28,6 +55,8 @@ export class CalendarPicker {
   private memoDates = new Set<string>();
   private selection: CalendarSelection;
   private isOpen = false;
+  private rangeStart: string | null = null;
+  private rangeEnd: string | null = null;
 
   private wrapEl: HTMLElement | null = null;
   private triggerBtn: HTMLElement | null = null;
@@ -86,6 +115,8 @@ export class CalendarPicker {
     this.clearBtn = clear;
     clear.addEventListener("click", (e) => {
       e.stopPropagation();
+      this.rangeStart = null;
+      this.rangeEnd = null;
       this.select({
         label: "期間: すべて",
         period: "all",
@@ -140,9 +171,25 @@ export class CalendarPicker {
     this.isOpen = true;
     this.triggerBtn?.setAttribute("aria-expanded", "true");
 
-    // 選択中の日付があれば、その年月に移動
-    if (this.selection.selectedDate) {
-      const parts = this.selection.selectedDate.split("-");
+    // 現在の選択状態から仮選択範囲を初期化
+    if (this.selection.startDate && this.selection.endDate) {
+      this.rangeStart = this.selection.startDate;
+      this.rangeEnd = this.selection.endDate;
+    } else if (
+      this.selection.selectedDate &&
+      this.selection.selectedDate.length === 10
+    ) {
+      this.rangeStart = this.selection.selectedDate;
+      this.rangeEnd = this.selection.selectedDate;
+    } else {
+      this.rangeStart = null;
+      this.rangeEnd = null;
+    }
+
+    // 表示する年月を決定
+    const targetDate = this.rangeStart ?? this.selection.selectedDate;
+    if (targetDate) {
+      const parts = targetDate.split("-");
       const y = Number(parts[0]);
       const m = Number(parts[1]);
       if (!Number.isNaN(y) && !Number.isNaN(m) && m >= 1 && m <= 12) {
@@ -216,6 +263,8 @@ export class CalendarPicker {
       const monthKey = `${this.currentYear}-${String(
         this.currentMonth + 1
       ).padStart(2, "0")}`;
+      this.rangeStart = null;
+      this.rangeEnd = null;
       this.select({
         label: `${this.currentYear}年${this.currentMonth + 1}月`,
         period: "month",
@@ -269,7 +318,8 @@ export class CalendarPicker {
     for (const item of quickItems) {
       const isCurrent =
         item.sel.period === this.selection.period &&
-        item.sel.selectedDate === this.selection.selectedDate;
+        item.sel.selectedDate === this.selection.selectedDate &&
+        !this.selection.startDate;
       const chip = quickBar.createEl("button", {
         attr: { type: "button" },
         cls: `seiton-calendar-chip${isCurrent ? " is-active" : ""}`,
@@ -277,6 +327,8 @@ export class CalendarPicker {
       });
       chip.addEventListener("click", (e) => {
         e.stopPropagation();
+        this.rangeStart = null;
+        this.rangeEnd = null;
         this.select(item.sel);
         this.closePopover();
       });
@@ -285,7 +337,6 @@ export class CalendarPicker {
     // 3. 曜日ヘッダー
     const grid = popover.createDiv({ cls: "seiton-calendar-grid" });
     const weekdays = grid.createDiv({ cls: "seiton-calendar-weekdays" });
-    const WEEK_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
     for (const day of WEEK_LABELS) {
       weekdays.createSpan({ cls: "seiton-calendar-weekday", text: day });
     }
@@ -321,16 +372,37 @@ export class CalendarPicker {
         this.currentMonth + 1
       ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       const isToday = dateKey === todayStr;
-      const isSelected =
-        this.selection.selectedDate === dateKey ||
-        (this.selection.period === "today" && isToday);
       const hasMemo = this.memoDates.has(dateKey);
+
+      const isRangeStart = this.rangeStart === dateKey;
+      const isRangeEnd = this.rangeEnd === dateKey;
+      const isInRange = Boolean(
+        this.rangeStart &&
+          this.rangeEnd &&
+          this.rangeStart < dateKey &&
+          dateKey < this.rangeEnd
+      );
+      const isSingleSelected =
+        (this.rangeStart === dateKey && this.rangeEnd === dateKey) ||
+        (this.rangeStart === dateKey && this.rangeEnd === null) ||
+        (!this.rangeStart &&
+          (this.selection.selectedDate === dateKey ||
+            (this.selection.period === "today" && isToday)));
 
       let cls = "seiton-calendar-day";
       if (isToday) {
         cls += " is-today";
       }
-      if (isSelected) {
+      if (isInRange) {
+        cls += " is-in-range";
+      }
+      if (isRangeStart && this.rangeEnd && this.rangeStart !== this.rangeEnd) {
+        cls += " is-range-start";
+      }
+      if (isRangeEnd && this.rangeStart && this.rangeStart !== this.rangeEnd) {
+        cls += " is-range-end";
+      }
+      if (isSingleSelected) {
         cls += " is-selected";
       }
       if (hasMemo) {
@@ -353,18 +425,90 @@ export class CalendarPicker {
 
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const dateObj = dateKeyToLocalDate(dateKey);
-        const weekdayStr = dateObj
-          ? ` (${WEEK_LABELS[dateObj.getDay()] ?? ""})`
-          : "";
-        this.select({
-          label: `${this.currentMonth + 1}月${day}日${weekdayStr}`,
-          period: "all",
-          selectedDate: dateKey,
-        });
+        this.handleDayClick(dateKey);
+      });
+    }
+
+    // 5. フッター（選択期間表示・リセット・適用）
+    const footer = popover.createDiv({ cls: "seiton-calendar-footer" });
+    const footerInfo = footer.createDiv({
+      cls: "seiton-calendar-footer-info",
+    });
+
+    if (this.rangeStart && this.rangeEnd) {
+      footerInfo.setText(formatRangeLabel(this.rangeStart, this.rangeEnd));
+    } else if (this.rangeStart) {
+      footerInfo.setText(`${formatDateLabel(this.rangeStart)} 〜 終了日を選択`);
+    } else {
+      footerInfo.setText("日付をクリックして期間を選択");
+    }
+
+    const footerActions = footer.createDiv({
+      cls: "seiton-calendar-footer-actions",
+    });
+
+    const resetBtn = footerActions.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-calendar-footer-btn is-secondary",
+      text: "解除",
+    });
+    resetBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.rangeStart = null;
+      this.rangeEnd = null;
+      this.select({
+        label: "期間: すべて",
+        period: "all",
+        selectedDate: "",
+      });
+      this.closePopover();
+    });
+
+    const canApply = Boolean(this.rangeStart);
+    const applyBtn = footerActions.createEl("button", {
+      attr: { type: "button" },
+      cls: `seiton-calendar-footer-btn mod-cta${canApply ? "" : " is-disabled"}`,
+      text: "適用",
+    });
+    if (canApply) {
+      applyBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!this.rangeStart) {
+          return;
+        }
+        const start = this.rangeStart;
+        const end = this.rangeEnd ?? start;
+        if (start === end) {
+          this.select({
+            label: formatDateLabel(start),
+            period: "all",
+            selectedDate: start,
+          });
+        } else {
+          this.select({
+            endDate: end,
+            label: formatRangeLabel(start, end),
+            period: "all",
+            selectedDate: "",
+            startDate: start,
+          });
+        }
         this.closePopover();
       });
     }
+  }
+
+  private handleDayClick(dateKey: string): void {
+    if (!this.rangeStart || (this.rangeStart && this.rangeEnd)) {
+      this.rangeStart = dateKey;
+      this.rangeEnd = null;
+    } else if (dateKey < this.rangeStart) {
+      this.rangeEnd = this.rangeStart;
+      this.rangeStart = dateKey;
+    } else {
+      this.rangeEnd = dateKey;
+    }
+    this.renderPopover();
   }
 
   private prevMonth(): void {
@@ -406,7 +550,10 @@ export class CalendarPicker {
       this.labelEl.setText(this.selection.label);
     }
     const isFiltered =
-      this.selection.period !== "all" || this.selection.selectedDate !== "";
+      this.selection.period !== "all" ||
+      this.selection.selectedDate !== "" ||
+      Boolean(this.selection.startDate) ||
+      Boolean(this.selection.endDate);
     if (this.triggerBtn) {
       this.triggerBtn.classList.toggle("is-active", isFiltered);
     }

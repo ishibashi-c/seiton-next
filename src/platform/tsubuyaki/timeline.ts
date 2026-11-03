@@ -11,12 +11,14 @@ export type MemoSortOrder = "newest" | "oldest";
 
 export interface MemoTimelineFilters {
   activeTag: string;
+  endDate?: string;
   now?: Date;
   period?: MemoPeriodFilter;
   query: string;
   selectedDate?: string;
   showDeleted: boolean;
   sort?: MemoSortOrder;
+  startDate?: string;
   status?: MemoStatusFilter;
 }
 
@@ -105,6 +107,27 @@ function matchesDate(at: string, selectedDate: string | undefined): boolean {
   return true;
 }
 
+function matchesDateRange(
+  at: string,
+  startDate?: string,
+  endDate?: string
+): boolean {
+  if (!startDate && !endDate) {
+    return true;
+  }
+  const dateKey = dateKeyOf(at);
+  if (!dateKey) {
+    return false;
+  }
+  if (startDate && dateKey < startDate) {
+    return false;
+  }
+  if (endDate && dateKey > endDate) {
+    return false;
+  }
+  return true;
+}
+
 function matchesPeriod(
   at: string,
   period: MemoPeriodFilter | undefined,
@@ -164,6 +187,9 @@ export function filterMemos(
       return false;
     }
     if (!matchesDate(item.entry.at, filters.selectedDate)) {
+      return false;
+    }
+    if (!matchesDateRange(item.entry.at, filters.startDate, filters.endDate)) {
       return false;
     }
     if (!matchesPeriod(item.entry.at, filters.period, now)) {

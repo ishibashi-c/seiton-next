@@ -57,6 +57,8 @@ export class SeitonTsubuyakiView extends ItemView {
   private activeTag = "";
   private period: MemoPeriodFilter = "all";
   private selectedDate = "";
+  private startDate = "";
+  private endDate = "";
   private status: MemoStatusFilter = "all";
   private sortOrder: MemoSortOrder = "newest";
   private showDeleted = false;
@@ -184,6 +186,8 @@ export class SeitonTsubuyakiView extends ItemView {
       onChange: (sel) => {
         this.period = sel.period;
         this.selectedDate = sel.selectedDate;
+        this.startDate = sel.startDate ?? "";
+        this.endDate = sel.endDate ?? "";
         this.limit = PAGE_SIZE;
         this.renderTagChips();
         this.renderList();
@@ -383,10 +387,12 @@ export class SeitonTsubuyakiView extends ItemView {
   private tagEntries(): Array<{ count: number; key: string; label: string }> {
     const baseItems = filterMemos(this.items, {
       activeTag: "",
+      endDate: this.endDate || undefined,
       period: this.period,
       query: "",
       selectedDate: this.selectedDate,
       showDeleted: this.showDeleted,
+      startDate: this.startDate || undefined,
       status: this.status,
     });
     return tagEntries(baseItems);
@@ -492,11 +498,13 @@ export class SeitonTsubuyakiView extends ItemView {
   private filteredItems(): MemoListItem[] {
     return filterMemos(this.items, {
       activeTag: this.activeTag,
+      endDate: this.endDate || undefined,
       period: this.period,
       query: this.query,
       selectedDate: this.selectedDate,
       showDeleted: this.showDeleted,
       sort: this.sortOrder,
+      startDate: this.startDate || undefined,
       status: this.status,
     });
   }
@@ -511,6 +519,8 @@ export class SeitonTsubuyakiView extends ItemView {
       this.activeTag !== "" ||
       this.period !== "all" ||
       this.selectedDate !== "" ||
+      this.startDate !== "" ||
+      this.endDate !== "" ||
       this.status !== "all";
     this.countEl.setText(
       filtering ? `${filteredCount}件 / ${total}件` : `${total}件`

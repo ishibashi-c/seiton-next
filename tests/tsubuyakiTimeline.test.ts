@@ -130,6 +130,50 @@ describe("tsubuyaki timeline", () => {
     ).toEqual(["m4"]);
   });
 
+  it("指定した日付範囲（開始日〜終了日）で絞り込む", () => {
+    // 2026-08-12 から 2026-08-14
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        endDate: "2026-08-14",
+        query: "",
+        showDeleted: false,
+        startDate: "2026-08-12",
+      }).map((item) => item.entry.id)
+    ).toEqual(["m1", "m2", "m3"]);
+
+    // 2026-07-01 から 2026-08-12
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        endDate: "2026-08-12",
+        query: "",
+        showDeleted: false,
+        startDate: "2026-07-01",
+      }).map((item) => item.entry.id)
+    ).toEqual(["m3", "m4"]);
+
+    // 開始日のみ指定 (2026-08-13 以降)
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        query: "",
+        showDeleted: false,
+        startDate: "2026-08-13",
+      }).map((item) => item.entry.id)
+    ).toEqual(["m1", "m2"]);
+
+    // 終了日のみ指定 (2026-08-12 以前)
+    expect(
+      filterMemos(items, {
+        activeTag: "",
+        endDate: "2026-08-12",
+        query: "",
+        showDeleted: false,
+      }).map((item) => item.entry.id)
+    ).toEqual(["m3", "m4"]);
+  });
+
   it("状態で絞り込む（未整理・削除済み）", () => {
     expect(
       filterMemos(items, {

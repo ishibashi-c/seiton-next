@@ -317,6 +317,40 @@
   background: var(--background-primary);
 }
 
+.seiton-calendar-day.is-in-range {
+  background: var(--background-modifier-hover);
+  border-radius: 0;
+  color: var(--st-ink);
+}
+
+.seiton-calendar-day.is-in-range:hover {
+  background: var(--st-hover);
+}
+
+.seiton-calendar-day.is-range-start {
+  background: var(--st-ink);
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+  color: var(--background-primary);
+  font-weight: 600;
+}
+
+.seiton-calendar-day.is-range-start .seiton-calendar-day-dot {
+  background: var(--background-primary);
+}
+
+.seiton-calendar-day.is-range-end {
+  background: var(--st-ink);
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+  color: var(--background-primary);
+  font-weight: 600;
+}
+
+.seiton-calendar-day.is-range-end .seiton-calendar-day-dot {
+  background: var(--background-primary);
+}
+
 .seiton-calendar-day-dot {
   background: var(--interactive-accent);
   border-radius: 50%;
@@ -324,6 +358,77 @@
   height: 3px;
   position: absolute;
   width: 3px;
+}
+
+.seiton-calendar-footer {
+  align-items: center;
+  border-top: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.seiton-calendar-footer-info {
+  color: var(--st-muted);
+  flex: 1;
+  font-size: var(--st-text-xs);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-calendar-footer-actions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.seiton-calendar-footer-btn {
+  background: transparent;
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-ink);
+  cursor: pointer;
+  font-size: var(--st-text-xs);
+  height: 24px;
+  line-height: 1;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.seiton-calendar-footer-btn:hover {
+  background: var(--st-hover);
+}
+
+.seiton-calendar-footer-btn.is-secondary {
+  border-color: transparent;
+  color: var(--st-muted);
+}
+
+.seiton-calendar-footer-btn.is-secondary:hover {
+  color: var(--st-ink);
+}
+
+.seiton-calendar-footer-btn.mod-cta {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-weight: 500;
+}
+
+.seiton-calendar-footer-btn.mod-cta:hover {
+  background: var(--interactive-accent-hover);
+  border-color: var(--interactive-accent-hover);
+}
+
+.seiton-calendar-footer-btn.mod-cta.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 .seiton-tsubuyaki-tags {
