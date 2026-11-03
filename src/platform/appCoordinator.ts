@@ -2,6 +2,7 @@ import type { App } from "obsidian";
 import { TFile } from "obsidian";
 import {
   LINKS_FILE,
+  VIEW_TYPE_ASSETS,
   VIEW_TYPE_BOOKSHELF,
   VIEW_TYPE_HOME,
   VIEW_TYPE_LIBRARY,
@@ -323,6 +324,10 @@ export class AppCoordinator {
 
   async openProjects(): Promise<void> {
     await openSeitonView(this.app, VIEW_TYPE_PROJECTS);
+  }
+
+  async openAssets(): Promise<void> {
+    await openSeitonView(this.app, VIEW_TYPE_ASSETS);
   }
 
   async openProject(path: string): Promise<void> {

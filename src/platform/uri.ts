@@ -18,6 +18,7 @@ export interface SeitonUriHost {
   indexService: VaultIndexService;
   memoService: MemoService;
   openAddBook: (isbn: string) => void;
+  openAssets: () => Promise<void>;
   openBookDetail: (record: NoteRecord) => void;
   openBookshelf: () => Promise<void>;
   openHome: () => Promise<void>;
@@ -116,6 +117,10 @@ export async function handleSeitonUri(
     }
     if (view === "prompt") {
       await host.openPromptView();
+      return;
+    }
+    if (view === "assets") {
+      await host.openAssets();
       return;
     }
     await host.openHome();

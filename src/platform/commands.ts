@@ -8,6 +8,7 @@ export interface SeitonCommandsHost {
   newPromptSession: () => void;
   openActiveWebClipPreview: () => void;
   openAddBook: () => void;
+  openAssets: () => Promise<void>;
   openBarcodeScanner: () => void;
   openBases: () => Promise<void>;
   openBookshelf: () => Promise<void>;
@@ -83,6 +84,11 @@ export function registerCommands(
     hotkeys: [{ key: "p", modifiers: ["Mod", "Alt"] }],
     id: "open-projects",
     name: "プロジェクトを開く",
+  });
+  plugin.addCommand({
+    callback: () => void host.openAssets(),
+    id: "open-assets",
+    name: "資産を開く",
   });
   plugin.addCommand({
     callback: () => void host.openPrompt(),

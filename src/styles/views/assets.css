@@ -1,0 +1,555 @@
+/* --------------------------------------------------------------------------
+   Assets View (資産・家計台帳)
+   -------------------------------------------------------------------------- */
+
+.seiton-assets {
+  --st-asset-accent: #2563eb;
+  --st-asset-special: #7c3aed;
+  --st-asset-stock: #d97706;
+}
+
+/* サブナビゲーション */
+.seiton-asset-subnav {
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+}
+
+.seiton-asset-subtab {
+  background: transparent;
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  color: var(--st-muted);
+  cursor: pointer;
+  font-size: var(--st-text-sm);
+  font-weight: 500;
+  padding: 6px 14px;
+  transition: all 0.15s ease;
+}
+
+.seiton-asset-subtab:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-asset-subtab.is-active {
+  background: var(--background-secondary);
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+/* B/S カードグリッド */
+.seiton-asset-bs-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin-bottom: 24px;
+}
+
+.seiton-asset-stat-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.seiton-asset-stat-card.is-hero {
+  border-color: var(--interactive-accent);
+  border-width: 1.5px;
+}
+
+.seiton-asset-stat-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 550;
+}
+
+.seiton-asset-stat-value {
+  color: var(--st-ink);
+  font-family: var(--font-monospace);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.seiton-asset-stat-desc {
+  color: var(--st-muted);
+  font-size: 11px;
+}
+
+/* P/L 当月カード */
+.seiton-asset-pl-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-bottom: 24px;
+  padding: 16px 20px;
+}
+
+.seiton-asset-pl-head {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.seiton-asset-pl-head h3 {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin: 0;
+}
+
+.seiton-asset-pl-sub {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 550;
+}
+
+.seiton-asset-pl-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.seiton-asset-pl-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seiton-asset-pl-stat.is-highlight .seiton-asset-pl-value {
+  color: var(--interactive-accent);
+  font-weight: 700;
+}
+
+.seiton-asset-pl-label {
+  color: var(--st-muted);
+  font-size: 11px;
+}
+
+.seiton-asset-pl-value {
+  color: var(--st-ink);
+  font-family: var(--font-monospace);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.seiton-asset-pl-desc {
+  color: var(--st-muted);
+  font-size: 10px;
+}
+
+/* ストック支出カード */
+.seiton-asset-section {
+  margin-bottom: 28px;
+}
+
+.seiton-asset-section-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.seiton-asset-section-head h3 {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin: 0;
+}
+
+.seiton-asset-stock-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.seiton-asset-stock-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.seiton-asset-stock-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.seiton-asset-stock-title-wrap {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.seiton-asset-stock-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin: 0;
+}
+
+.seiton-asset-stock-badges {
+  display: flex;
+  gap: 6px;
+}
+
+.seiton-asset-badge {
+  background: var(--background-modifier-border);
+  border-radius: 99px;
+  color: var(--st-muted);
+  font-size: 10px;
+  font-weight: 550;
+  padding: 1px 7px;
+}
+
+.seiton-asset-badge.is-living {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.seiton-asset-badge.is-special {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+.seiton-asset-badge.is-repay {
+  background: rgba(217, 119, 6, 0.15);
+  color: #d97706;
+}
+
+.seiton-asset-badge.is-completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.seiton-asset-repay-btn {
+  font-size: var(--st-text-xs);
+  padding: 4px 12px;
+}
+
+.seiton-asset-stock-meta {
+  color: var(--st-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--st-text-xs);
+  gap: 16px;
+}
+
+.seiton-asset-stock-repay-alert {
+  color: var(--st-red, #ef4444);
+  font-weight: 600;
+}
+
+/* プログレスバー */
+.seiton-asset-stock-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seiton-asset-progress-track {
+  background: var(--background-modifier-border);
+  border-radius: 99px;
+  height: 6px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.seiton-asset-progress-amort {
+  background: rgba(124, 58, 237, 0.35);
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transition: width 0.2s ease;
+}
+
+.seiton-asset-progress-repay {
+  background: var(--interactive-accent);
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transition: width 0.2s ease;
+}
+
+.seiton-asset-progress-legend {
+  display: flex;
+  font-size: 11px;
+  gap: 16px;
+}
+
+.seiton-asset-legend-item {
+  color: var(--st-muted);
+}
+
+.seiton-asset-legend-item.is-amort {
+  color: #7c3aed;
+}
+
+.seiton-asset-legend-item.is-repay {
+  color: var(--interactive-accent);
+  font-weight: 550;
+}
+
+/* SVG チャート */
+.seiton-asset-svg-chart {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  box-sizing: border-box;
+  height: auto;
+  margin-top: 8px;
+  padding: 10px;
+  width: 100%;
+}
+
+.seiton-chart-grid-line {
+  stroke: var(--background-modifier-border);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+
+.seiton-chart-label {
+  fill: var(--st-muted);
+  font-family: var(--font-monospace);
+  font-size: 10px;
+}
+
+.seiton-chart-line-total {
+  fill: none;
+  stroke: var(--interactive-accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+.seiton-chart-line-living {
+  fill: none;
+  stroke: var(--st-muted);
+  stroke-dasharray: 4 4;
+  stroke-width: 1.5;
+}
+
+.seiton-chart-dot {
+  fill: var(--interactive-accent);
+}
+
+.seiton-chart-bar-income {
+  fill: #22c55e;
+  rx: 3;
+}
+
+.seiton-chart-bar-cost {
+  fill: #3b82f6;
+  rx: 3;
+}
+
+.seiton-asset-chart-empty {
+  border: 1px dashed var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  padding: 36px 0;
+  text-align: center;
+}
+
+/* 履歴テーブル */
+.seiton-asset-history-table {
+  border-collapse: collapse;
+  font-size: var(--st-text-sm);
+  width: 100%;
+}
+
+.seiton-asset-history-table th,
+.seiton-asset-history-table td {
+  border-bottom: 1px solid var(--st-hairline);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.seiton-asset-history-table th {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 550;
+}
+
+.seiton-asset-history-table td {
+  color: var(--st-ink);
+  font-family: var(--font-monospace);
+}
+
+.seiton-asset-col-date {
+  color: var(--st-muted);
+}
+
+.seiton-asset-col-net {
+  font-weight: 600;
+}
+
+.seiton-asset-col-note {
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+}
+
+/* モーダル内フォーム */
+.seiton-asset-group-section {
+  border-top: 1px solid var(--st-hairline);
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.seiton-asset-group-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.seiton-asset-group-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.seiton-asset-input-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seiton-asset-input-row {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.seiton-asset-input-label-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.seiton-asset-input-name {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 500;
+}
+
+.seiton-asset-input-prev {
+  color: var(--st-muted);
+  font-family: var(--font-monospace);
+  font-size: 11px;
+}
+
+.seiton-asset-number-input {
+  max-width: 140px;
+  text-align: right;
+}
+
+.seiton-asset-income-inline-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.seiton-asset-income-amount {
+  max-width: 110px;
+  text-align: right;
+}
+
+.seiton-asset-income-memo {
+  flex: 1;
+}
+
+.seiton-scanner-btn-mini {
+  background: var(--background-modifier-border);
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  color: var(--st-ink);
+  cursor: pointer;
+  font-size: var(--st-text-xs);
+  padding: 3px 8px;
+}
+
+.seiton-scanner-btn-mini:hover {
+  background: var(--background-modifier-hover);
+}
+
+.seiton-asset-amortization-preview {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  margin-top: -6px;
+}
+
+.seiton-asset-checkbox-field {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0 6px;
+}
+
+.seiton-asset-checkbox-field label {
+  color: var(--st-ink);
+  cursor: pointer;
+  font-size: var(--st-text-sm);
+  font-weight: 500;
+}
+
+.seiton-asset-add-account-box {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-bottom: 16px;
+  padding: 12px 14px;
+}
+
+.seiton-asset-accounts-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seiton-asset-accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seiton-asset-account-row {
+  align-items: center;
+  background: var(--background-secondary);
+  border-radius: var(--st-radius-sm);
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+}
+
+.seiton-asset-account-info {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.seiton-asset-account-name {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 500;
+}

@@ -1,5 +1,6 @@
 import type { App, WorkspaceLeaf } from "obsidian";
 import {
+  VIEW_TYPE_ASSETS,
   VIEW_TYPE_BOOKSHELF,
   VIEW_TYPE_HOME,
   VIEW_TYPE_LIBRARY,
@@ -11,6 +12,7 @@ import { beginTabMotion, clearTabMotion } from "./tabMotion";
 import { saveTabScroll } from "./tabScroll";
 
 export type SeitonTopTab =
+  | "assets"
   | "bookshelf"
   | "home"
   | "library"
@@ -28,6 +30,7 @@ export const TOP_TABS: Array<{
   { id: "library", label: "ライブラリ", type: VIEW_TYPE_LIBRARY },
   { id: "bookshelf", label: "本棚", type: VIEW_TYPE_BOOKSHELF },
   { id: "projects", label: "プロジェクト", type: VIEW_TYPE_PROJECTS },
+  { id: "assets", label: "資産", type: VIEW_TYPE_ASSETS },
   { id: "prompt", label: "Prompt", type: VIEW_TYPE_PROMPT },
 ];
 

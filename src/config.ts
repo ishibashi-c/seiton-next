@@ -26,3 +26,4 @@ export function memoFilePath(week: string): string {
 export const VIEW_TYPE_LIBRARY = "seiton-next-library";
 export const VIEW_TYPE_BOOKSHELF = "seiton-next-bookshelf";
 export const VIEW_TYPE_PROJECTS = "seiton-next-projects";
+export const VIEW_TYPE_ASSETS = "seiton-next-assets";

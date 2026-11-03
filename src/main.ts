@@ -8,6 +8,7 @@ import type { EventRef, Menu } from "obsidian";
 import { Plugin } from "obsidian";
 import {
   LINKS_FILE,
+  VIEW_TYPE_ASSETS,
   VIEW_TYPE_BOOKSHELF,
   VIEW_TYPE_HOME,
   VIEW_TYPE_LIBRARY,
@@ -18,6 +19,7 @@ import {
 import { isSeitonError } from "./domain/errors";
 import { parseSharedWebText } from "./domain/webclip";
 import { AppCoordinator } from "./platform/appCoordinator";
+import { AssetsView } from "./platform/assetsView";
 import { SeitonBookshelfView } from "./platform/bookshelfView";
 import { registerCommands } from "./platform/commands";
 import { renderPlaceholderCover } from "./platform/coverPlaceholder";
@@ -32,6 +34,7 @@ import { SeitonSettingTab } from "./platform/settingsTab";
 import { SeitonTsubuyakiView } from "./platform/tsubuyakiView";
 import { showToast } from "./platform/ui/toast";
 import { handleSeitonUri } from "./platform/uri";
+import { AssetService } from "./services/assetService";
 import { BookService } from "./services/bookService";
 import { CoverStore } from "./services/coverStore";
 import { ObsidianHttpClient } from "./services/http";
@@ -57,6 +60,7 @@ export default class SeitonNextPlugin extends Plugin {
   private notes!: NoteService;
   private webClips!: WebClipService;
   private books!: BookService;
+  private assetService!: AssetService;
   private migration!: MigrationService;
   private links!: LinkListService;
   private coordinator!: AppCoordinator;
@@ -99,6 +103,7 @@ export default class SeitonNextPlugin extends Plugin {
       port: createObsidianMigrationPort(this.app),
     });
     this.links = new LinkListService(vault, LINKS_FILE);
+    this.assetService = new AssetService(vault);
 
     this.coordinator = new AppCoordinator({
       app: this.app,
@@ -188,6 +193,10 @@ export default class SeitonNextPlugin extends Plugin {
       VIEW_TYPE_PROMPT,
       (leaf) => new PromptWorkbenchView(leaf, this.promptService)
     );
+    this.registerView(
+      VIEW_TYPE_ASSETS,
+      (leaf) => new AssetsView(leaf, this.assetService)
+    );
 
     this.addRibbonIcon("notebook", "Seiton ホームを開く", () => {
       void this.coordinator.openHome();
@@ -201,6 +210,7 @@ export default class SeitonNextPlugin extends Plugin {
           indexService: this.indexService,
           memoService: this.memoService,
           openAddBook: (isbn) => this.coordinator.openAddBook(isbn),
+          openAssets: () => this.coordinator.openAssets(),
           openBookDetail: (record) => this.coordinator.openBookDetail(record),
           openBookshelf: () => this.coordinator.openBookshelf(),
           openHome: () => this.coordinator.openHome(),
@@ -266,6 +276,7 @@ export default class SeitonNextPlugin extends Plugin {
       openActiveWebClipPreview: () =>
         this.coordinator.openActiveWebClipPreview(),
       openAddBook: () => this.coordinator.openAddBook(),
+      openAssets: () => this.coordinator.openAssets(),
       openBarcodeScanner: () => this.coordinator.openBarcodeScanner(),
       openBases: () => this.coordinator.openBases(),
       openBookshelf: () => this.coordinator.openBookshelf(),
@@ -299,6 +310,7 @@ export default class SeitonNextPlugin extends Plugin {
       VIEW_TYPE_BOOKSHELF,
       VIEW_TYPE_PROJECTS,
       VIEW_TYPE_PROMPT,
+      VIEW_TYPE_ASSETS,
     ]) {
       this.app.workspace.detachLeavesOfType(type);
     }

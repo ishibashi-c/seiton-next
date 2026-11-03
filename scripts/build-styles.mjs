@@ -10,6 +10,7 @@ const FILES = [
   "src/styles/views/prompt.css",
   "src/styles/modals.css",
   "src/styles/views/books.css",
+  "src/styles/views/assets.css",
   "src/styles/views/migration.css",
   "src/styles/responsive.css",
   "src/styles/cards/01-library-tools.css",
