@@ -298,21 +298,6 @@
   margin-left: auto;
 }
 
-/* Memo log as a card */
-
-.seiton-home .seiton-home-memo-details {
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--st-radius-lg);
-  margin-top: 40px;
-  padding: 0;
-}
-
-.seiton-home .seiton-home-memo-details > summary {
-  font-size: var(--st-text-sm);
-  font-weight: 550;
-  padding: 16px 20px;
-}
 
 @media (max-width: 760px) {
   .seiton-zone {

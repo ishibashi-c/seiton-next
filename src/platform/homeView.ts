@@ -25,13 +25,13 @@ import type { VaultIndexService } from "../services/vaultIndex";
 import { HomeCapture } from "./home/capture";
 import { HomeSections } from "./home/sections";
 import { HomeShortcuts } from "./home/shortcuts";
-import { HomeTimeline } from "./home/timeline";
 import { MemoCaptureModal } from "./memoCaptureModal";
 import { NewNoteModal } from "./newNoteModal";
 import { SeitonProjectsView } from "./projectsView";
 import { PromptWorkbenchView } from "./promptView";
 import { openSeitonView } from "./seitonNav";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
+import { showToast } from "./ui/toast";
 
 const LONG_DATE_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -51,7 +51,6 @@ export class SeitonHomeView extends ItemView {
   private readonly capture: HomeCapture;
   private readonly shortcuts: HomeShortcuts;
   private readonly sections: HomeSections;
-  private readonly timeline: HomeTimeline;
   private refreshing = false;
   private refreshAgain = false;
   private refreshTimer: number | null = null;
@@ -97,13 +96,6 @@ export class SeitonHomeView extends ItemView {
       onCleared: () => this.shortcuts.clear(),
       onRefresh: () => this.refresh(),
     });
-    this.timeline = new HomeTimeline({
-      app: this.app,
-      component: this,
-      openWeekFile: (path) => {
-        void this.openWeekFile(path);
-      },
-    });
   }
 
   override getViewType(): string {
@@ -146,7 +138,6 @@ export class SeitonHomeView extends ItemView {
           kind: "icon",
           label: "再読み込み",
           onClick: () => {
-            this.timeline.setStatus("", "idle");
             void this.refresh();
           },
         },
@@ -189,7 +180,6 @@ export class SeitonHomeView extends ItemView {
     this.eventRefs = [];
     this.contentEl.empty();
     this.capture.reset();
-    this.timeline.reset();
     this.starterEl = null;
     this.sections.reset();
     this.shortcuts.reset();
@@ -210,10 +200,6 @@ export class SeitonHomeView extends ItemView {
           sessions: [],
         })),
       ]);
-      if (!this.timeline.isMounted()) {
-        return;
-      }
-      this.timeline.render(result.items, result.problems);
       if (this.starterEl) {
         const isEmpty =
           index.notes.length === 0 &&
@@ -227,7 +213,7 @@ export class SeitonHomeView extends ItemView {
       this.sections.renderFavorites(index);
       this.sections.renderRecent(index);
     } catch (error) {
-      this.timeline.setStatus(userMessageOf(error), "error");
+      showToast(userMessageOf(error));
     } finally {
       this.refreshing = false;
       if (this.refreshAgain) {
@@ -365,8 +351,6 @@ export class SeitonHomeView extends ItemView {
       resumeCount,
       resumeSection,
     });
-
-    this.timeline.mount(content);
   }
 
   private renderQuick(parent: HTMLElement): void {
@@ -438,12 +422,5 @@ export class SeitonHomeView extends ItemView {
       this.refreshTimer = null;
       void this.refresh();
     }, 250);
-  }
-
-  private async openWeekFile(path: string): Promise<void> {
-    if (path === "") {
-      return;
-    }
-    await this.app.workspace.openLinkText(path, "", true);
   }
 }
