@@ -13,7 +13,6 @@ export type LibraryFilter =
   | "prompt"
   | "idea"
   | "article"
-  | "inbox"
   | "review"
   | "archived"
   | "pinned";
@@ -47,7 +46,7 @@ export function hitsForQuery(
 ): IndexItem[] {
   let kinds: string[] | undefined;
   let status: "review" | "archived" | "pinned" | undefined;
-  let tags: string[] | undefined = state.tagFilter
+  const tags: string[] | undefined = state.tagFilter
     ? [state.tagFilter]
     : undefined;
   if (state.filter === "memo") {
@@ -66,8 +65,6 @@ export function hitsForQuery(
     kinds = ["idea"];
   } else if (state.filter === "article") {
     kinds = ["article"];
-  } else if (state.filter === "inbox") {
-    tags = [...(tags ?? []), "受信箱"];
   } else if (
     state.filter === "review" ||
     state.filter === "archived" ||

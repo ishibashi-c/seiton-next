@@ -18,7 +18,6 @@ const TYPE_FILTERS: Array<{ id: LibraryFilter; label: string }> = [
 ];
 
 const STATUS_FILTERS: Array<{ id: LibraryFilter; label: string }> = [
-  { id: "inbox", label: "受信箱" },
   { id: "review", label: "整理トレイ" },
   { id: "pinned", label: "ピン" },
   { id: "archived", label: "アーカイブ" },
@@ -31,7 +30,6 @@ export const FILTER_LABELS: Record<string, string> = {
   book: "本",
   class: "授業",
   idea: "アイデア",
-  inbox: "受信箱",
   memo: "メモ",
   other: "ノート",
   pinned: "ピン",
@@ -191,7 +189,6 @@ export class LibraryIndex {
       book: activeNotes.filter((note) => note.kind === "book").length,
       class: activeNotes.filter((note) => note.kind === "class").length,
       idea: activeNotes.filter((note) => note.kind === "idea").length,
-      inbox: activeNotes.filter((note) => note.tags.includes("受信箱")).length,
       memo: index.memos.filter((memo) => memo.state !== "deleted").length,
       other: activeNotes.filter((note) => OTHER_KINDS.includes(note.kind))
         .length,
