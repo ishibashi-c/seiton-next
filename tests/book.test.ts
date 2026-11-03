@@ -3,8 +3,6 @@ import {
   assertReadingStatus,
   BOOK_COVERS_FOLDER,
   BookError,
-  bookCandidateFromOpenBd,
-  bookCandidateFromOpenLibrary,
   bookCoverPath,
   bookDuplicateKey,
   bookFileName,
@@ -12,39 +10,46 @@ import {
   bookNotePath,
   buildBookDocument,
   buildBookFrontmatterFields,
+  isBookOwnership,
+  isReadingStatus,
+  parseBookRating,
+  parseReadingStatus,
+  replaceBookBody,
+} from "../src/domain/book";
+import {
   calilCheckUrl,
   calilContinuePending,
   calilLibrariesFromPayload,
   calilSession,
   calilSessionUrl,
   calilStatusLabel,
+  normalizeCalilSystemIds,
+  parseCalilPayload,
+} from "../src/domain/calil";
+import {
+  bodyAfterFrontmatter,
+  frontmatterField,
+} from "../src/domain/frontmatter";
+import {
   canonicalIsbn,
-  isBookOwnership,
   isbn10CheckDigit,
   isbn10ToIsbn13,
   isbn13CheckDigit,
   isbn13ToIsbn10,
   isbnDuplicateKey,
-  isReadingStatus,
   isValidIsbn,
   isValidIsbn10,
   isValidIsbn13,
-  normalizeCalilSystemIds,
   normalizeIsbn,
-  openBdLookupUrl,
+} from "../src/domain/isbn";
+import { bookCandidateFromOpenBd, openBdLookupUrl } from "../src/domain/openBd";
+import {
+  bookCandidateFromOpenLibrary,
   openLibraryAuthorKeys,
   openLibraryAuthorUrl,
   openLibraryCoverUrl,
   openLibraryEditionUrl,
-  parseBookRating,
-  parseCalilPayload,
-  parseReadingStatus,
-  replaceBookBody,
-} from "../src/domain/book";
-import {
-  bodyAfterFrontmatter,
-  frontmatterField,
-} from "../src/domain/frontmatter";
+} from "../src/domain/openLibrary";
 
 describe("ISBNの正規化", () => {
   it("ハイフン・空白・ラベルを除去し、文字列のまま返す", () => {
@@ -771,7 +776,7 @@ describe("表紙の埋め込み", () => {
 
   it("本文の先頭に1行だけ入れる", async () => {
     const { embedCoverInDocument, hasCoverEmbed } = await import(
-      "../src/domain/book"
+      "../src/domain/bookCoverEmbed"
     );
     const result = embedCoverInDocument(base, cover);
     expect(result).toContain(`![[${cover}|240]]\n\n感想`);
@@ -779,7 +784,9 @@ describe("表紙の埋め込み", () => {
   });
 
   it("二度実行しても増えない", async () => {
-    const { embedCoverInDocument } = await import("../src/domain/book");
+    const { embedCoverInDocument } = await import(
+      "../src/domain/bookCoverEmbed"
+    );
     const once = embedCoverInDocument(base, cover);
     expect(embedCoverInDocument(once, cover)).toBe(once);
   });
@@ -790,18 +797,18 @@ describe("メモ欄から表紙を除く", () => {
   const body = `![[${cover}|240]]\n\n感想\n`;
 
   it("読み込み時に表紙行を落とす", async () => {
-    const { stripCoverEmbed } = await import("../src/domain/book");
+    const { stripCoverEmbed } = await import("../src/domain/bookCoverEmbed");
     expect(stripCoverEmbed(body, cover)).toBe("感想");
   });
 
   it("保存時に表紙行を戻す", async () => {
-    const { withCoverEmbed } = await import("../src/domain/book");
+    const { withCoverEmbed } = await import("../src/domain/bookCoverEmbed");
     expect(withCoverEmbed("感想", cover)).toBe(`![[${cover}|240]]\n\n感想`);
   });
 
   it("表紙が無ければ何もしない", async () => {
     const { stripCoverEmbed, withCoverEmbed } = await import(
-      "../src/domain/book"
+      "../src/domain/bookCoverEmbed"
     );
     expect(stripCoverEmbed("感想", "")).toBe("感想");
     expect(withCoverEmbed("感想", "")).toBe("感想");

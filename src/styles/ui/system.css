@@ -12,7 +12,7 @@ buttons and toasts.
 .st-modal.st-modal{
   background: var(--background-primary);
   border: 1px solid var(--st-hairline);
-  border-radius: 10px;
+  border-radius: var(--st-radius-lg);
   box-shadow: 0 16px 48px rgb(0 0 0 / 18%);
   display: flex;
   flex-direction: column;
@@ -250,7 +250,7 @@ for the long forms in the book and migration modals. */
   align-items: center;
   background: none;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--st-radius-sm);
   color: var(--st-ink);
   cursor: pointer;
   display: flex;
@@ -318,7 +318,7 @@ for the long forms in the book and migration modals. */
   align-items: center;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border-hover);
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   display: inline-flex;
   flex: none;
   height: 18px;
@@ -490,7 +490,7 @@ and the two-choice list. */
 
 @media (max-width: 640px){
   .st-modal.st-modal {
-    border-radius: 12px;
+    border-radius: var(--st-radius-lg);
     width: min(100%, 560px);
   }
 
@@ -541,7 +541,7 @@ and the two-choice list. */
 
   /* A select on a phone opens as a sheet, not a small popup. */
   .st-select-pop.is-sheet {
-    border-radius: 14px 14px 0 0;
+    border-radius: var(--st-radius-lg) var(--st-radius-lg) 0 0;
     bottom: 0;
     left: 0;
     max-height: 60vh;

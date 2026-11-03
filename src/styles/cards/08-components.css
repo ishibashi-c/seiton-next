@@ -22,7 +22,7 @@
 .seiton-starter {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 16px;
+  border-radius: var(--st-radius-lg);
   margin-top: 4px;
   padding: 20px 22px;
 }
@@ -71,7 +71,7 @@
   align-items: center;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 16px;
+  border-radius: var(--st-radius-lg);
   display: none;
   gap: 16px;
   margin-top: 16px;
@@ -96,7 +96,7 @@
   align-items: center;
   background: none;
   border: 1px solid var(--background-modifier-border-hover);
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   color: var(--text-normal);
   display: inline-flex;
   flex: none;
@@ -249,7 +249,7 @@ body.theme-dark .seiton-prompt-root {
     align-items: center;
     background: none;
     border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
+    border-radius: var(--st-radius-sm);
     color: var(--text-muted);
     display: inline-flex;
     flex: none;
@@ -312,22 +312,23 @@ body.theme-dark .seiton-prompt-root {
   align-items: center;
   background: none;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   color: var(--text-muted);
-  display: none;
+  display: inline-flex;
   font-size: var(--st-text-base);
   height: 30px;
   justify-content: center;
   padding: 0 10px;
 }
 
+/* Only 新規 and 履歴をコピー stay in the header; the rest live in ⋯. */
+.seiton-prompt-header .seiton-page-actions > .seiton-prompt-action.is-menu-only {
+  display: none;
+}
+
 @media (max-width: 760px) {
   .seiton-prompt-header .seiton-prompt-action {
     display: none;
-  }
-
-  .seiton-prompt-more {
-    display: inline-flex;
   }
 }
 
@@ -355,9 +356,9 @@ body.theme-dark .seiton-prompt-root {
   align-items: center;
   background: none;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   color: var(--text-muted);
-  display: none;
+  display: inline-flex;
   font-size: var(--st-text-base);
   height: 30px;
   justify-content: center;
@@ -365,10 +366,6 @@ body.theme-dark .seiton-prompt-root {
 }
 
 @media (max-width: 760px) {
-  .seiton-prompt-root button.seiton-prompt-more {
-    display: inline-flex;
-  }
-
   .seiton-prompt-header .seiton-page-actions {
     justify-content: flex-end;
   }

@@ -398,21 +398,27 @@ export class PromptWorkbenchView extends ItemView {
 
     const actions = this.headerEl.createDiv({ cls: "seiton-page-actions" });
     this.headerAction(actions, "新規", () => this.openNewSession());
-    this.headerAction(actions, "一覧", () => this.openPicker());
+    this.headerAction(actions, "一覧", () => this.openPicker(), true);
     this.headerAction(actions, "履歴をコピー", () => {
       void this.exportHistory();
     });
-    this.headerAction(actions, "選択をまとめる", () => {
-      if (this.session) {
-        this.history?.openHandoff(this.session);
-      }
-    });
+    this.headerAction(
+      actions,
+      "選択をまとめる",
+      () => {
+        if (this.session) {
+          this.history?.openHandoff(this.session);
+        }
+      },
+      true
+    );
     this.headerAction(
       actions,
       this.isOpenSession ? "セッションを終了" : "セッションを再開",
       () => {
         void this.toggleState();
-      }
+      },
+      true
     );
 
     const more = actions.createEl("button", {
@@ -448,10 +454,13 @@ export class PromptWorkbenchView extends ItemView {
   private headerAction(
     parent: HTMLElement,
     label: string,
-    action: () => void
+    action: () => void,
+    menuOnly = false
   ): void {
     const button = parent.createEl("button", {
-      cls: "seiton-prompt-action",
+      cls: menuOnly
+        ? "seiton-prompt-action is-menu-only"
+        : "seiton-prompt-action",
       text: label,
     });
     button.type = "button";

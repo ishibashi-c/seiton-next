@@ -12,9 +12,7 @@
 .st-toasts,
 .st-select-pop,
 .st-ui {
-  --st-max-home: 1060px;
-  --st-max-library: 1120px;
-  --st-max-projects: 1060px;
+  --st-max-frame: 1080px;
   --st-max-prompt: 1180px;
   --st-gap-1: 4px;
   --st-gap-2: 8px;
@@ -45,7 +43,8 @@
   --st-accent-ink: var(--background-primary);
   --st-hover: var(--background-modifier-hover);
   --st-radius-sm: 4px;
-  --st-radius-md: 7px;
+  --st-radius-md: 6px;
+  --st-radius-lg: 10px;
   --st-transition: 120ms ease;
   color: var(--st-ink);
   font-family: var(--font-interface);

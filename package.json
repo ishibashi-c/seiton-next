@@ -1,6 +1,6 @@
 {
   "name": "seiton-next",
-  "version": "0.4.16",
+  "version": "0.4.17",
   "description": "Seiton Next - personal capture and rediscovery plugin for Obsidian",
   "private": true,
   "type": "module",
@@ -15,6 +15,7 @@
     "lint:fix": "biome check --write src tests scripts",
     "styles:build": "node scripts/build-styles.mjs",
     "styles:check": "node scripts/build-styles.mjs --check",
+    "frames:check": "node scripts/check-frames.mjs",
     "publish:public": "node scripts/publish-public.mjs"
   },
   "keywords": [

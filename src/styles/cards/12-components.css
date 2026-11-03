@@ -7,7 +7,7 @@
 }
 
 .seiton-project-list .seiton-project-item .seiton-item-actions {
-  margin-top: auto;
+  margin-top: 12px;
 }
 
 .seiton-book-card-body {
@@ -65,7 +65,7 @@
 .seiton-vocab-chip {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   color: var(--text-muted);
   font-size: var(--st-text-xs);
   padding: 3px 8px;

@@ -1,9 +1,9 @@
-import {
-  type CalilLibraryHit,
-  calilStatusLabel,
-  isbn13ToIsbn10,
-  normalizeIsbn,
-} from "./book";
+import { canonicalIsbn, isbn13ToIsbn10, normalizeIsbn } from "./isbn";
+
+export const CALIL_CHECK_BASE = "https://api.calil.jp/check";
+
+export const CALIL_TIME_DEPENDENT_NOTICE =
+  "カーリルの蔵書状況は取得時点の情報です。時間依存データのため、最新の状況はカーリルで確認してください。";
 
 export const CALIL_LIBRARY_BASE = "https://api.calil.jp/library";
 export const CALIL_BOOK_BASE = "https://calil.jp/book";
@@ -32,6 +32,17 @@ export interface CalilBranch {
   systemname: string;
 }
 
+export interface CalilLibraryHit {
+  /** 図書館名 → 貸出状態。 */
+  availability: Record<string, string>;
+  /** 設定した自治体・システムに一致するか。 */
+  configured: boolean;
+  reserveUrl: string;
+  status: string;
+  systemid: string;
+  systemname: string;
+}
+
 export interface CalilLibrarySelection {
   /** systemid（小文字） -> 表示対象のlibid。空なら全館。 */
   branchIds: Record<string, string[]>;
@@ -39,6 +50,35 @@ export interface CalilLibrarySelection {
   display: string;
   /** APIへ渡すsystemid。libidは含めない。 */
   systems: string[];
+}
+
+/** JSONP（`callback({...});`）なら中身だけを取り出す。 */
+export function stripJsonp(text: string): string {
+  const trimmed = text.trim();
+  const match = /^[A-Za-z_$][\w$.]*\s*\(([\s\S]*)\)\s*;?$/u.exec(trimmed);
+  return match?.[1]?.trim() ?? trimmed;
+}
+
+/** カーリルの応答（JSON/JSONP）をパースする。解釈できなければ null。 */
+export function parseCalilPayload(text: string): unknown {
+  const body = stripJsonp(text);
+  if (body === "") {
+    return null;
+  }
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+/** カンマ区切りのsystemidを、前後の空白を落として正規化する。 */
+export function normalizeCalilSystemIds(value: string): string {
+  return value
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "")
+    .join(",");
 }
 
 /**
@@ -99,6 +139,14 @@ function textOf(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function fieldOf(value: unknown, key: string): unknown {
+  return asObject(value)?.[key];
+}
+
+function textField(value: unknown, key: string): string {
+  return textOf(fieldOf(value, key));
+}
+
 function keysOf(value: unknown): string[] {
   if (typeof value === "string") {
     return [value.trim()].filter((item) => item !== "");
@@ -107,6 +155,206 @@ function keysOf(value: unknown): string[] {
     return value.map((item) => textOf(item)).filter((item) => item !== "");
   }
   return [];
+}
+
+function configuredMatch(
+  systemid: string,
+  systemname: string,
+  configuredLibrary: string
+): boolean {
+  const targets = configuredLibrary
+    .normalize("NFKC")
+    .split(",")
+    .map((part) => part.trim().split(":")[0]?.trim() ?? "")
+    .filter((part) => part !== "");
+  if (targets.length === 0) {
+    return false;
+  }
+  const lowerSystemId = systemid.toLowerCase();
+  return targets.some(
+    (target) =>
+      lowerSystemId === target.toLowerCase() ||
+      (systemname !== "" && systemname.includes(target))
+  );
+}
+
+function calilHit(
+  entry: unknown,
+  configuredLibrary: string
+): CalilLibraryHit | null {
+  const record = asObject(entry);
+  if (!record) {
+    return null;
+  }
+  const availability: Record<string, string> = {};
+  for (const [name, value] of Object.entries(asObject(record.libkey) ?? {})) {
+    if (typeof value === "string" && value.trim() !== "") {
+      availability[name] = value;
+    }
+  }
+  const systemid = textField(record, "systemid");
+  const systemname = textField(record, "systemname") || systemid;
+  if (
+    systemid === "" &&
+    systemname === "" &&
+    Object.keys(availability).length === 0
+  ) {
+    return null;
+  }
+  return {
+    availability,
+    configured: configuredMatch(systemid, systemname, configuredLibrary),
+    reserveUrl: textField(record, "reserveurl"),
+    status: textField(record, "status"),
+    systemid,
+    systemname,
+  };
+}
+
+function calilBookEntries(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  const record = asObject(value);
+  if (!record) {
+    return value === undefined || value === null ? [] : [value];
+  }
+  if (
+    "systemid" in record ||
+    "status" in record ||
+    "libkey" in record ||
+    "reserveurl" in record
+  ) {
+    return [record];
+  }
+  const entries: unknown[] = [];
+  for (const [systemid, entry] of Object.entries(record)) {
+    const nested = asObject(entry);
+    if (!nested) {
+      continue;
+    }
+    entries.push({
+      ...nested,
+      systemid: textField(nested, "systemid") || systemid,
+    });
+  }
+  return entries;
+}
+
+/**
+ * カーリル `/check` の応答から図書館ごとの状態を組み立てる。
+ * `books` 形式と、ISBNをトップレベルに持つ旧形式の両方を受け付ける。
+ * 同じシステムが重複した場合は最初の1件だけ残す。
+ */
+export function calilLibrariesFromPayload(
+  payload: unknown,
+  isbnValue: string,
+  configuredLibrary = ""
+): CalilLibraryHit[] {
+  const root = asObject(payload);
+  if (!root) {
+    return [];
+  }
+  const normalized = normalizeIsbn(isbnValue);
+  const canonical = canonicalIsbn(normalized);
+  const matches = (key: string): boolean => {
+    const keyIsbn = normalizeIsbn(key);
+    if (keyIsbn === "") {
+      return false;
+    }
+    return (
+      keyIsbn === normalized ||
+      keyIsbn === canonical ||
+      (canonical !== "" && canonicalIsbn(keyIsbn) === canonical)
+    );
+  };
+
+  const entries: unknown[] = [];
+  const books = asObject(root.books);
+  if (books) {
+    for (const [key, value] of Object.entries(books)) {
+      if (matches(key)) {
+        entries.push(...calilBookEntries(value));
+      }
+    }
+  }
+  for (const [key, value] of Object.entries(root)) {
+    if (matches(key)) {
+      entries.push(...calilBookEntries(value));
+    }
+  }
+
+  const hits = new Map<string, CalilLibraryHit>();
+  for (const entry of entries) {
+    const hit = calilHit(entry, configuredLibrary);
+    if (!hit) {
+      continue;
+    }
+    const mapKey = `${hit.systemid}\u0000${hit.systemname}`;
+    if (!hits.has(mapKey)) {
+      hits.set(mapKey, hit);
+    }
+  }
+
+  return [...hits.values()].sort((left, right) => {
+    if (left.configured !== right.configured) {
+      return left.configured ? -1 : 1;
+    }
+    return left.systemname.localeCompare(right.systemname, "ja");
+  });
+}
+
+export function calilContinuePending(payload: unknown): boolean {
+  const value = fieldOf(payload, "continue");
+  return value === 1 || value === "1";
+}
+
+export function calilSession(payload: unknown): string {
+  return textField(payload, "session");
+}
+
+export function calilStatusLabel(status: string): string {
+  switch (status.toUpperCase()) {
+    case "OK":
+      return "蔵書あり";
+    case "CACHE":
+      return "蔵書あり";
+    case "MAINTENANCE":
+      return "メンテナンス中";
+    case "ERROR":
+      return "エラー";
+    case "RUNNING":
+      return "検索中";
+    default:
+      return status === "" ? "状態不明" : status;
+  }
+}
+
+export function calilCheckUrl(
+  isbnValue: string,
+  appKey: string,
+  systemId: string
+): string {
+  const isbn = canonicalIsbn(isbnValue) || normalizeIsbn(isbnValue);
+  const params = new URLSearchParams({
+    appkey: appKey,
+    callback: "no",
+    format: "json",
+    isbn,
+    systemid: systemId,
+  });
+  return `${CALIL_CHECK_BASE}?${params.toString()}`;
+}
+
+/** カーリルの検索継続（ポーリング）用URL。 */
+export function calilSessionUrl(session: string, appKey: string): string {
+  const params = new URLSearchParams({
+    appkey: appKey,
+    callback: "no",
+    format: "json",
+    session,
+  });
+  return `${CALIL_CHECK_BASE}?${params.toString()}`;
 }
 
 /** カーリルの `/library` 応答を図書館メタデータへ変換する。 */

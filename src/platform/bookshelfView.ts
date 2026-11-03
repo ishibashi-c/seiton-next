@@ -341,10 +341,14 @@ export class SeitonBookshelfView extends ItemView {
       image.loading = "lazy";
       image.addEventListener("error", () => {
         image.remove();
-        renderBookCoverFallback(cover, item.title, bookStateOf(item));
+        renderBookCoverFallback(
+          cover,
+          item.title,
+          "表紙を取得できませんでした"
+        );
       });
     } else {
-      renderBookCoverFallback(cover, item.title, bookStateOf(item));
+      renderBookCoverFallback(cover, item.title, "表紙を取得できませんでした");
     }
     cover.addEventListener("click", () => this.host.openBook(record));
 
@@ -438,10 +442,4 @@ function toItem(record: NoteRecord): BookShelfItem {
     title: record.title,
     updated: record.mtime,
   };
-}
-
-function bookStateOf(item: BookShelfItem): string {
-  return [item.author, bookStatusLabel(item.status)]
-    .filter(Boolean)
-    .join(" · ");
 }

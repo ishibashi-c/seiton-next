@@ -1,14 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   type CalilLibraryHit,
-  calilLibrariesFromPayload,
-} from "../src/domain/book";
-import {
   calilAvailableCount,
   calilBestBranch,
   calilBookUrl,
   calilBranchesFromLibraries,
   calilHoldingCount,
+  calilLibrariesFromPayload,
   calilLibraryInfoFromPayload,
   calilLibraryPageUrl,
   calilMapUrl,

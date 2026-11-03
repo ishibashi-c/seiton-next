@@ -72,7 +72,7 @@
 
   .seiton-home .seiton-capture-textarea {
     font-size: var(--st-text-md);
-    min-height: 96px;
+    min-height: 64px;
   }
 
   .seiton-home button.seiton-save-button {
@@ -410,7 +410,7 @@
 }
 
 .seiton-home .seiton-home-quick textarea.seiton-capture-textarea {
-  height: 64px;
-  min-height: 64px;
+  height: auto;
+  min-height: 48px;
 }
 

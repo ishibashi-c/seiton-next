@@ -5,6 +5,7 @@
 }
 
 .seiton-project-list {
+  align-items: start;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -13,10 +14,10 @@
 .seiton-project-list .seiton-project-item {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 16px;
+  border-radius: var(--st-radius-lg);
   display: flex;
   flex-direction: column;
-  min-height: 120px;
+  min-height: 96px;
   padding: 16px;
   transition: border-color 120ms ease;
 }
@@ -53,14 +54,14 @@
 }
 
 .seiton-project-list .seiton-item-actions {
-  margin-top: auto;
-  padding-top: 12px;
+  margin-top: 12px;
+  padding-top: 0;
 }
 
 .seiton-project-overview {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 16px;
+  border-radius: var(--st-radius-lg);
   padding: 22px 24px;
 }
 
@@ -73,7 +74,7 @@
 .seiton-related-item {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 16px;
+  border-radius: var(--st-radius-lg);
   padding: 16px;
 }
 

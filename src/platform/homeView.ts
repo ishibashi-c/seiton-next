@@ -15,6 +15,7 @@ import {
 } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { weekIdOf } from "../domain/isoWeek";
+import { dateKeyOf } from "../domain/time";
 import type { LinkListService } from "../services/linkListService";
 import type { MemoService } from "../services/memoService";
 import type { NoteService } from "../services/noteService";
@@ -45,6 +46,8 @@ export class SeitonHomeView extends ItemView {
   private readonly promptService: PromptService;
   private readonly notes: NoteService;
   private starterEl: HTMLElement | null = null;
+  private sublineEl: HTMLElement | null = null;
+  private sublineText = "";
   private readonly capture: HomeCapture;
   private readonly shortcuts: HomeShortcuts;
   private readonly sections: HomeSections;
@@ -117,7 +120,8 @@ export class SeitonHomeView extends ItemView {
 
   override async onOpen(): Promise<void> {
     const week = weekIdOf(new Date());
-    const { body: content } = mountTabShell(this, {
+    const subline = `${LONG_DATE_FORMATTER.format(new Date())} · ${week}`;
+    const { body: content, header } = mountTabShell(this, {
       actions: [
         {
           kind: "text",
@@ -158,11 +162,13 @@ export class SeitonHomeView extends ItemView {
           }).open();
         },
       },
-      subline: `${LONG_DATE_FORMATTER.format(new Date())} · ${week}`,
+      subline,
       tab: "home",
       title: "今日",
     });
     content.addClass("seiton-home-content");
+    this.sublineEl = header.sublineEl;
+    this.sublineText = subline;
 
     this.renderHomeBody(content);
 
@@ -216,6 +222,7 @@ export class SeitonHomeView extends ItemView {
         this.starterEl.style.display = isEmpty ? "" : "none";
       }
       void this.shortcuts.reload();
+      this.setDayCount(result.items);
       this.sections.renderResume(index, sessionList.sessions);
       this.sections.renderFavorites(index);
       this.sections.renderRecent(index);
@@ -227,6 +234,30 @@ export class SeitonHomeView extends ItemView {
         this.refreshAgain = false;
         void this.refresh();
       }
+    }
+  }
+
+  /** 今日のメモ件数を、補足行の右に1つだけ色付きで出す。 */
+  private setDayCount(
+    items: Array<{ entry: { at: string; state: string } }>
+  ): void {
+    const subline = this.sublineEl;
+    if (!subline) {
+      return;
+    }
+    const now = new Date();
+    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const count = items.filter(
+      (item) =>
+        item.entry.state !== "deleted" && dateKeyOf(item.entry.at) === key
+    ).length;
+    subline.empty();
+    subline.createSpan({ text: this.sublineText });
+    if (count > 0) {
+      subline.createSpan({
+        cls: "seiton-page-count",
+        text: `今日 ${count}件`,
+      });
     }
   }
 
@@ -245,7 +276,7 @@ export class SeitonHomeView extends ItemView {
     this.renderQuick(content);
 
     const shortcutsSection = content.createDiv({
-      cls: "seiton-zone seiton-shortcuts-zone",
+      cls: "seiton-zone seiton-shortcuts-zone is-minor",
     });
     shortcutsSection.createEl("h2", { text: "ショートカット" });
     const shortcutsEl = shortcutsSection.createDiv({
@@ -299,8 +330,18 @@ export class SeitonHomeView extends ItemView {
       cls: "seiton-home-section-body seiton-resume",
     });
 
+    const recentSection = content.createDiv({
+      cls: "seiton-zone seiton-home-section seiton-home-recent",
+    });
+    const recentHead = recentSection.createDiv({ cls: "seiton-zone-head" });
+    recentHead.createEl("h2", { text: "最近の記録" });
+    const recentCount = recentHead.createSpan({ cls: "seiton-zone-count" });
+    const recentBody = recentSection.createDiv({
+      cls: "seiton-home-section-body seiton-home-cards",
+    });
+
     const favoritesSection = content.createDiv({
-      cls: "seiton-zone seiton-home-section seiton-home-favorites",
+      cls: "seiton-zone seiton-home-section seiton-home-favorites is-minor",
     });
     const favoritesHead = favoritesSection.createDiv({
       cls: "seiton-zone-head",
@@ -310,16 +351,6 @@ export class SeitonHomeView extends ItemView {
       cls: "seiton-zone-count",
     });
     const favoritesBody = favoritesSection.createDiv({
-      cls: "seiton-home-section-body seiton-home-cards",
-    });
-
-    const recentSection = content.createDiv({
-      cls: "seiton-zone seiton-home-section seiton-home-recent",
-    });
-    const recentHead = recentSection.createDiv({ cls: "seiton-zone-head" });
-    recentHead.createEl("h2", { text: "最近の記録" });
-    const recentCount = recentHead.createSpan({ cls: "seiton-zone-count" });
-    const recentBody = recentSection.createDiv({
       cls: "seiton-home-section-body seiton-home-cards",
     });
 

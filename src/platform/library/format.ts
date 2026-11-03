@@ -1,5 +1,3 @@
-import type { NoteRecord } from "../../services/vaultIndex";
-
 export const KIND_LABELS: Record<string, string> = {
   article: "記事",
   book: "本",
@@ -31,12 +29,6 @@ export function memoPreview(body: string): string {
     .replace(/```[\s\S]*?```/gu, " ")
     .replace(/\s+/gu, " ")
     .trim();
-}
-
-export function bookFallbackMeta(note: NoteRecord): string {
-  return [note.book.book_author, readingStatusLabel(note.book.reading_status)]
-    .filter(Boolean)
-    .join(" · ");
 }
 
 export function readingStatusLabel(status: string | null | undefined): string {

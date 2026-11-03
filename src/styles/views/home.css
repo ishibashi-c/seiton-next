@@ -9,13 +9,12 @@
 .seiton-home-content {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 0;
   min-width: 0;
 }
 
 .seiton-home-section {
-  border-top: 1px solid var(--st-hairline);
-  padding-top: 14px;
+  padding-top: 0;
 }
 
 .seiton-home-section > h2 {
@@ -30,8 +29,7 @@
 }
 
 .seiton-home-memo-details {
-  border-top: 1px solid var(--st-hairline);
-  padding-top: 12px;
+  padding-top: 0;
 }
 
 .seiton-home-memo-details > summary {
@@ -60,9 +58,8 @@
 }
 
 @media (max-width: 640px) {
-
-  .seiton-home-section {
-    padding-top: 12px;
+  .seiton-zone {
+    margin-top: 32px;
   }
 }
 .seiton-week-count {
@@ -77,15 +74,15 @@
 }
 
 .seiton-capture {
-  border-bottom: 1px solid var(--st-hairline);
-  border-top: 1px solid var(--st-hairline);
-  margin-bottom: 34px;
-  padding: 16px 0 8px;
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-bottom: 24px;
+  padding: 12px 14px 8px;
   transition: border-color var(--st-transition);
 }
 
 .seiton-capture:focus-within {
-  border-bottom-color: var(--st-accent);
+  border-color: var(--st-ink);
 }
 
 .seiton-capture-label {
@@ -106,7 +103,7 @@
 
 .seiton-home-quick .seiton-capture-textarea,
 .seiton-home-quick textarea.seiton-capture-textarea {
-  min-height: 64px;
+  min-height: 48px;
 }
 
 .seiton-home .seiton-capture-textarea,
@@ -261,7 +258,7 @@
   gap: 16px;
   grid-template-columns: 52px minmax(0, 1fr);
   position: relative;
-  padding: 14px 0 12px;
+  padding: 12px 0;
   transition: none;
 }
 

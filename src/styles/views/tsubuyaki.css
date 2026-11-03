@@ -4,13 +4,12 @@
 
 .seiton-tsubuyaki-content {
   margin-top: 18px;
-  max-width: 760px;
 }
 
 .seiton-tsubuyaki-compose {
   background: var(--background-primary);
   border: 1px solid var(--st-hairline);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   padding: 12px 14px 10px;
 }
 
@@ -41,13 +40,19 @@
 .seiton-tsubuyaki-compose-foot {
   align-items: center;
   display: flex;
-  gap: 10px;
-  justify-content: space-between;
+  gap: 12px;
+  justify-content: flex-end;
   margin-top: 8px;
 }
 
 .seiton-tsubuyaki-save {
   min-height: 30px;
+}
+
+.seiton-tsubuyaki-save:disabled {
+  background: var(--background-modifier-border);
+  color: var(--st-muted);
+  opacity: 1;
 }
 
 .seiton-tsubuyaki-status {
@@ -91,7 +96,7 @@
 .seiton-tsubuyaki-tag {
   background: transparent;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   box-shadow: none;
   color: var(--st-muted);
   flex: 0 0 auto;
@@ -166,22 +171,25 @@
 }
 
 .seiton-tsubuyaki-month {
-  margin-top: 28px;
+  margin-top: 40px;
+}
+
+.seiton-tsubuyaki-month:first-child {
+  margin-top: 24px;
 }
 
 .seiton-tsubuyaki-month-head {
   align-items: baseline;
-  border-bottom: 1px solid var(--st-hairline);
   display: flex;
   gap: 8px;
   justify-content: space-between;
-  padding-bottom: 7px;
+  padding-bottom: 4px;
 }
 
 .seiton-tsubuyaki-month-head h2 {
-  color: var(--st-ink);
-  font-size: var(--st-text-sm);
-  font-weight: 600;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 560;
   letter-spacing: 0;
   margin: 0;
 }
@@ -197,16 +205,20 @@
   margin-top: 16px;
 }
 
+.seiton-tsubuyaki-day + .seiton-tsubuyaki-day {
+  margin-top: 28px;
+}
+
 .seiton-tsubuyaki-day-head {
   align-items: baseline;
   display: flex;
   gap: 8px;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 .seiton-tsubuyaki-day-head h3 {
   color: var(--st-ink);
-  font-size: var(--st-text-md);
+  font-size: var(--st-text-sm);
   font-weight: 600;
   letter-spacing: 0;
   margin: 0;
@@ -214,18 +226,18 @@
 
 .seiton-tsubuyaki-day-badge {
   background: var(--background-secondary);
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   color: var(--st-muted);
   font-size: var(--st-text-2xs);
   padding: 1px 5px;
 }
 
 .seiton-tsubuyaki-row {
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   display: grid;
   gap: 16px;
   grid-template-columns: 52px minmax(0, 1fr);
-  padding: 12px 6px 12px 0;
+  padding: 10px 6px 10px 0;
   position: relative;
 }
 
@@ -253,9 +265,9 @@
 
 .seiton-tsubuyaki-body {
   font-family: var(--font-text);
-  font-size: var(--st-text-md);
-  line-height: var(--st-leading-relaxed);
-  max-width: 700px;
+  font-size: var(--st-text-base);
+  line-height: var(--st-leading-normal);
+  max-width: 820px;
   overflow-wrap: anywhere;
 }
 
@@ -293,6 +305,10 @@
   border-radius: var(--st-radius-sm);
   max-height: 260px;
   max-width: 100%;
+}
+
+.seiton-tsubuyaki-promoted a {
+  margin-left: 6px;
 }
 
 .seiton-tsubuyaki-promoted {
@@ -379,7 +395,22 @@
 .seiton-tsubuyaki-footer {
   display: flex;
   justify-content: center;
-  padding: 24px 0 8px;
+  padding: 28px 0 8px;
+}
+
+.seiton-tsubuyaki-footer button {
+  background: transparent;
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  height: 32px;
+  padding: 0 16px;
+}
+
+.seiton-tsubuyaki-footer button:hover {
+  background: var(--st-hover);
+  border-color: var(--background-modifier-border-hover);
 }
 
 @media (max-width: 640px) {
@@ -423,12 +454,12 @@
     opacity: 1;
   }
 
-  .seiton-tsubuyaki-day-head h3 {
-    font-size: var(--st-text-md);
+  .seiton-tsubuyaki-month {
+    margin-top: 32px;
   }
 
-  .seiton-tsubuyaki-month {
-    margin-top: 24px;
+  .seiton-tsubuyaki-row {
+    padding: 10px 0;
   }
 }
 

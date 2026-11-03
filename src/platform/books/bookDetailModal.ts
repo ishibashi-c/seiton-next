@@ -1,9 +1,3 @@
-import { showToast } from "./ui/toast";
-/**
- * 本棚（BOOK）のUI。Obsidian標準の Modal / Setting / ButtonComponent だけを使う。
- * 見た目は `seiton-book-*` クラスを付けるのみで、styles.css は変更しない。
- */
-
 import type { App } from "obsidian";
 import { Modal, TFile } from "obsidian";
 import {
@@ -11,49 +5,46 @@ import {
   BOOK_OWNERSHIPS,
   type BookInfo,
   bookInfoFromFrontmatter,
-  CALIL_TIME_DEPENDENT_NOTICE,
-  isValidIsbn,
-  normalizeIsbn,
   parseReadingStatus,
   READING_STATUS_LABELS,
   READING_STATUSES,
   type ReadingStatus,
   replaceBookBody,
-  stripCoverEmbed,
   trimBookBody,
-  withCoverEmbed,
-} from "../domain/book";
+} from "../../domain/book";
+import { stripCoverEmbed, withCoverEmbed } from "../../domain/bookCoverEmbed";
 import {
+  CALIL_TIME_DEPENDENT_NOTICE,
   type CalilBranch,
   calilBestBranch,
   calilBookUrl,
   calilLibraryPageUrl,
   calilMapUrl,
-} from "../domain/calil";
+} from "../../domain/calil";
 import {
   type CalilSummary,
   calilBadgeText,
   calilCheckedLabel,
   calilSummaryFromFrontmatter,
   summarizeCalil,
-} from "../domain/calilStatus";
-import { userMessageOf } from "../domain/errors";
-import { bodyAfterFrontmatter } from "../domain/frontmatter";
-import { isAllowedRemoteUrl } from "../domain/network";
+} from "../../domain/calilStatus";
+import { userMessageOf } from "../../domain/errors";
+import { bodyAfterFrontmatter } from "../../domain/frontmatter";
+import { isValidIsbn } from "../../domain/isbn";
+import { isAllowedRemoteUrl } from "../../domain/network";
 import type {
   BookPatch,
   BookService,
   CalilSearchResult,
-  CreateBookResult,
-} from "../services/bookService";
-import type { NoteRecord } from "../services/vaultIndex";
-import { markSeitonModal } from "./ui/modal";
+} from "../../services/bookService";
+import type { NoteRecord } from "../../services/vaultIndex";
+import { markSeitonModal } from "../ui/modal";
 import {
   ButtonComponent,
   Setting,
   type TextAreaComponent,
-  type TextComponent,
-} from "./ui/setting";
+} from "../ui/setting";
+import { showToast } from "../ui/toast";
 
 const RATING_NONE = "";
 
@@ -64,303 +55,6 @@ function ratingStars(value: number | null): string {
 function coverNameOf(path: string): string {
   const index = path.lastIndexOf("/");
   return index < 0 ? path : path.slice(index + 1);
-}
-
-// ---------------------------------------------------------------------------
-// 追加
-// ---------------------------------------------------------------------------
-
-export interface AddBookModalOptions {
-  initialIsbn?: string;
-  onCreated?: (result: CreateBookResult) => void;
-}
-
-export class AddBookModal extends Modal {
-  private readonly bookService: BookService;
-  private readonly options: AddBookModalOptions;
-  private isbn: string;
-  private title = "";
-  private authors = "";
-  private publisher = "";
-  private category = "";
-  private status: ReadingStatus = "tbr";
-  private coverUrl = "";
-  private statusEl: HTMLElement | null = null;
-  private isbnText: TextComponent | null = null;
-  private titleText: TextComponent | null = null;
-  private authorsText: TextComponent | null = null;
-  private publisherText: TextComponent | null = null;
-  private categoryText: TextComponent | null = null;
-  private lookupButton: ButtonComponent | null = null;
-  private saveButton: ButtonComponent | null = null;
-  private busy = false;
-
-  constructor(
-    app: App,
-    bookService: BookService,
-    options: AddBookModalOptions = {}
-  ) {
-    super(app);
-    this.bookService = bookService;
-    this.options = options;
-    this.isbn = options.initialIsbn ?? "";
-  }
-
-  override onOpen(): void {
-    markSeitonModal(this);
-    this.modalEl.addClass("seiton-book-modal");
-    this.modalEl.addClass("seiton-book-add-modal");
-    this.setTitle("本を追加");
-
-    this.contentEl.createEl("p", {
-      cls: "seiton-book-hint",
-      text: "ISBNは先頭ゼロを保った文字列として保存します。書誌を取得できなくても、タイトルだけで登録できます。",
-    });
-
-    const isbnSetting = new Setting(this.contentEl)
-      .setName("ISBN")
-      .setDesc("ハイフン付きでも構いません。照会は任意です。");
-    isbnSetting.settingEl.addClass("seiton-book-field");
-    isbnSetting.addText((text) => {
-      this.isbnText = text;
-      text.inputEl.addClass("seiton-book-isbn");
-      text.setPlaceholder("978-4-7741-9242-1");
-      text.setValue(this.isbn);
-      text.onChange((value) => {
-        this.isbn = value;
-        this.coverUrl = "";
-        this.setStatus("");
-      });
-    });
-    isbnSetting.addButton((button) => {
-      this.lookupButton = button;
-      button.setButtonText("照会").onClick(() => {
-        void this.lookup();
-      });
-    });
-
-    const titleSetting = new Setting(this.contentEl)
-      .setName("タイトル")
-      .setDesc("必須");
-    titleSetting.settingEl.addClass("seiton-book-field");
-    titleSetting.addText((text) => {
-      this.titleText = text;
-      text.inputEl.addClass("seiton-book-title");
-      text.setPlaceholder("本のタイトル");
-      text.onChange((value) => {
-        this.title = value;
-        this.setStatus("");
-      });
-    });
-
-    const authorsSetting = new Setting(this.contentEl).setName("著者");
-    authorsSetting.settingEl.addClass("seiton-book-field");
-    authorsSetting.addText((text) => {
-      this.authorsText = text;
-      text.setPlaceholder("複数は「 / 」区切り");
-      text.onChange((value) => {
-        this.authors = value;
-      });
-    });
-
-    const publisherSetting = new Setting(this.contentEl).setName("出版社");
-    publisherSetting.settingEl.addClass("seiton-book-field");
-    publisherSetting.addText((text) => {
-      this.publisherText = text;
-      text.setPlaceholder("出版社");
-      text.onChange((value) => {
-        this.publisher = value;
-      });
-    });
-
-    const categorySetting = new Setting(this.contentEl).setName("カテゴリ");
-    categorySetting.settingEl.addClass("seiton-book-field");
-    categorySetting.addText((text) => {
-      this.categoryText = text;
-      text.setPlaceholder("例: 技術書");
-      text.onChange((value) => {
-        this.category = value;
-      });
-    });
-
-    const statusSetting = new Setting(this.contentEl)
-      .setName("読書状態")
-      .setDesc("積読・読書中・読了を保存します。");
-    statusSetting.settingEl.addClass("seiton-book-field");
-    statusSetting.addDropdown((dropdown) => {
-      for (const value of READING_STATUSES) {
-        dropdown.addOption(value, READING_STATUS_LABELS[value]);
-      }
-      dropdown.setValue(this.status);
-      dropdown.onChange((value) => {
-        this.status = parseReadingStatus(value) ?? "tbr";
-      });
-    });
-
-    this.statusEl = this.contentEl.createDiv({
-      cls: "seiton-book-modal-status",
-    });
-
-    const footer = this.contentEl.createDiv({
-      cls: "seiton-book-modal-footer",
-    });
-    new ButtonComponent(footer)
-      .setButtonText("キャンセル")
-      .onClick(() => this.close());
-    this.saveButton = new ButtonComponent(footer)
-      .setButtonText("保存")
-      .setCta()
-      .onClick(() => {
-        void this.save();
-      });
-
-    this.scope.register(["Mod"], "Enter", (event) => {
-      event.preventDefault();
-      void this.save();
-      return false;
-    });
-
-    window.setTimeout(() => {
-      this.isbnText?.inputEl.focus();
-    }, 60);
-  }
-
-  override onClose(): void {
-    this.isbnText = null;
-    this.titleText = null;
-    this.authorsText = null;
-    this.publisherText = null;
-    this.categoryText = null;
-    this.lookupButton = null;
-    this.saveButton = null;
-    this.statusEl = null;
-    this.busy = false;
-  }
-
-  private setStatus(message: string, isError = false): void {
-    if (!this.statusEl) {
-      return;
-    }
-    this.statusEl.setText(message);
-    this.statusEl.toggleClass("is-error", isError);
-  }
-
-  private setBusy(busy: boolean): void {
-    this.busy = busy;
-    this.lookupButton?.setDisabled(busy);
-    this.saveButton?.setDisabled(busy);
-    this.isbnText?.setDisabled(busy);
-  }
-
-  private async lookup(): Promise<void> {
-    if (this.busy) {
-      return;
-    }
-    const isbn = normalizeIsbn(this.isbn);
-    if (!isValidIsbn(isbn)) {
-      this.setStatus(
-        "ISBNの形式が正しくありません。ハイフンやチェックディジットを確認してください。",
-        true
-      );
-      this.isbnText?.inputEl.focus();
-      return;
-    }
-
-    this.coverUrl = "";
-    this.setBusy(true);
-    this.setStatus("書誌を照会中…");
-    try {
-      const result = await this.bookService.lookupIsbn(isbn);
-      const candidate = result.candidate;
-      if (!candidate) {
-        const reasons = result.attempts
-          .filter((attempt) => attempt.status !== "ok")
-          .map((attempt) => attempt.message)
-          .join(" / ");
-        this.setStatus(
-          `書誌を取得できませんでした。${reasons} タイトルを入力して登録できます。`,
-          true
-        );
-        return;
-      }
-
-      if (this.title.trim() === "") {
-        this.title = candidate.title;
-        this.titleText?.setValue(candidate.title);
-      }
-      if (this.authors.trim() === "" && candidate.authors.length > 0) {
-        this.authors = candidate.authors.join(" / ");
-        this.authorsText?.setValue(this.authors);
-      }
-      if (this.publisher.trim() === "" && candidate.publisher !== "") {
-        this.publisher = candidate.publisher;
-        this.publisherText?.setValue(candidate.publisher);
-      }
-      if (this.category.trim() === "" && candidate.category !== "") {
-        this.category = candidate.category;
-        this.categoryText?.setValue(candidate.category);
-      }
-      if (candidate.isbn !== "") {
-        this.isbn = candidate.isbn;
-        this.isbnText?.setValue(candidate.isbn);
-      }
-      this.coverUrl = candidate.coverUrl;
-
-      const source =
-        candidate.source === "openbd"
-          ? "openBD"
-          : candidate.source === "googlebooks"
-            ? "Google Books"
-            : "Open Library";
-      this.setStatus(
-        `書誌を取得しました（${source}）。内容を確認して保存してください。`
-      );
-    } catch (error) {
-      this.setStatus(userMessageOf(error), true);
-    } finally {
-      this.setBusy(false);
-    }
-  }
-
-  private async save(): Promise<void> {
-    if (this.busy) {
-      return;
-    }
-    const title = this.title.trim();
-    if (title === "") {
-      this.setStatus("タイトルを入力してください。", true);
-      this.titleText?.inputEl.focus();
-      return;
-    }
-
-    this.setBusy(true);
-    this.setStatus("保存中…");
-    try {
-      const result = await this.bookService.createBook({
-        authors: this.authors.trim() === "" ? null : this.authors,
-        category: this.category.trim() === "" ? null : this.category,
-        coverUrl: this.coverUrl.trim() === "" ? null : this.coverUrl,
-        isbn: this.isbn.trim() === "" ? null : this.isbn,
-        publisher: this.publisher.trim() === "" ? null : this.publisher,
-        readingStatus: this.status,
-        title,
-      });
-      try {
-        this.options.onCreated?.(result);
-      } catch (error) {
-        console.error("[Seiton] book created callback failed", error);
-      }
-      const message =
-        result.coverError === null
-          ? `本を追加しました: ${result.title}`
-          : `本を追加しました（表紙は未保存: ${result.coverError}）`;
-      showToast(message);
-      this.close();
-    } catch (error) {
-      this.setBusy(false);
-      this.setStatus(userMessageOf(error), true);
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1060,185 +754,4 @@ export class BookDetailModal extends Modal {
 
 export interface BookBulkEditModalOptions {
   onApplied?: (updated: number, failed: number) => void;
-}
-
-export class BookBulkEditModal extends Modal {
-  private readonly bookService: BookService;
-  private readonly records: NoteRecord[];
-  private readonly options: BookBulkEditModalOptions;
-  private status: ReadingStatus | "" = "";
-  private category = "";
-  private categoryEnabled = false;
-  private statusEl: HTMLElement | null = null;
-  private categoryText: TextComponent | null = null;
-  private applyButton: ButtonComponent | null = null;
-  private busy = false;
-
-  constructor(
-    app: App,
-    bookService: BookService,
-    records: NoteRecord[],
-    options: BookBulkEditModalOptions = {}
-  ) {
-    super(app);
-    this.bookService = bookService;
-    this.records = records;
-    this.options = options;
-  }
-
-  override onOpen(): void {
-    markSeitonModal(this);
-    this.modalEl.addClass("seiton-book-modal");
-    this.modalEl.addClass("seiton-book-bulk-modal");
-    this.setTitle("表示中の本を一括編集");
-
-    this.contentEl.createEl("p", {
-      cls: "seiton-book-bulk-summary",
-      text: `表示中の${this.records.length}冊が対象です。変更する項目だけを指定してください。`,
-    });
-
-    const titles = this.contentEl.createDiv({
-      cls: "seiton-book-bulk-titles",
-    });
-    for (const record of this.records.slice(0, 8)) {
-      titles.createDiv({
-        cls: "seiton-book-bulk-title",
-        text: record.title,
-      });
-    }
-    if (this.records.length > 8) {
-      titles.createDiv({
-        cls: "seiton-book-bulk-more",
-        text: `ほか ${this.records.length - 8} 冊`,
-      });
-    }
-
-    const statusSetting = new Setting(this.contentEl).setName("読書状態");
-    statusSetting.settingEl.addClass("seiton-book-field");
-    statusSetting.addDropdown((dropdown) => {
-      dropdown.addOption("", "変更しない");
-      for (const value of READING_STATUSES) {
-        dropdown.addOption(value, READING_STATUS_LABELS[value]);
-      }
-      dropdown.setValue("");
-      dropdown.onChange((value) => {
-        this.status = value === "" ? "" : (parseReadingStatus(value) ?? "");
-        this.setStatus("");
-      });
-    });
-
-    const categoryToggle = new Setting(this.contentEl)
-      .setName("カテゴリを変更する")
-      .setDesc("空にするとカテゴリを削除します。");
-    categoryToggle.settingEl.addClass("seiton-book-field");
-    categoryToggle.addToggle((toggle) => {
-      toggle.setValue(false).onChange((value) => {
-        this.categoryEnabled = value;
-        this.categoryText?.setDisabled(!value);
-        this.setStatus("");
-      });
-    });
-
-    const categorySetting = new Setting(this.contentEl).setName("カテゴリ");
-    categorySetting.settingEl.addClass("seiton-book-field");
-    categorySetting.addText((text) => {
-      this.categoryText = text;
-      text.setPlaceholder("例: 技術書");
-      text.setDisabled(true);
-      text.onChange((value) => {
-        this.category = value;
-      });
-    });
-
-    this.statusEl = this.contentEl.createDiv({
-      cls: "seiton-book-modal-status",
-    });
-
-    const footer = this.contentEl.createDiv({
-      cls: "seiton-book-modal-footer",
-    });
-    new ButtonComponent(footer)
-      .setButtonText("キャンセル")
-      .onClick(() => this.close());
-    this.applyButton = new ButtonComponent(footer)
-      .setButtonText(`${this.records.length}冊を一括変更`)
-      .setCta()
-      .onClick(() => {
-        void this.apply();
-      });
-  }
-
-  override onClose(): void {
-    this.statusEl = null;
-    this.categoryText = null;
-    this.applyButton = null;
-    this.busy = false;
-  }
-
-  private setStatus(message: string, isError = false): void {
-    if (!this.statusEl) {
-      return;
-    }
-    this.statusEl.setText(message);
-    this.statusEl.toggleClass("is-error", isError);
-  }
-
-  private async apply(): Promise<void> {
-    if (this.busy) {
-      return;
-    }
-    if (this.status === "" && !this.categoryEnabled) {
-      this.setStatus("変更する項目を選んでください。", true);
-      return;
-    }
-
-    const patch: BookPatch = {};
-    if (this.status !== "") {
-      patch.readingStatus = this.status;
-    }
-    if (this.categoryEnabled) {
-      patch.category = this.category;
-    }
-
-    this.busy = true;
-    this.applyButton?.setDisabled(true);
-    this.setStatus(
-      `${this.records.length}冊を一括変更中…（1冊ずつ保存します）`
-    );
-
-    let updated = 0;
-    const failures: string[] = [];
-    for (const record of this.records) {
-      try {
-        await this.bookService.updateBook(record.path, patch);
-        updated += 1;
-      } catch (error) {
-        failures.push(`${record.title}: ${userMessageOf(error)}`);
-      }
-    }
-
-    this.busy = false;
-    try {
-      this.options.onApplied?.(updated, failures.length);
-    } catch (error) {
-      console.error("[Seiton] book bulk callback failed", error);
-    }
-
-    if (failures.length > 0) {
-      this.applyButton?.setDisabled(false);
-      this.setStatus(
-        `${updated}冊を更新し、${failures.length}冊は失敗しました。${failures
-          .slice(0, 3)
-          .join(" / ")}`,
-        true
-      );
-      showToast(
-        `一括変更: ${updated}冊を更新、${failures.length}冊は失敗しました。`
-      );
-      return;
-    }
-
-    showToast(`${updated}冊を一括変更しました。`);
-    this.close();
-  }
 }

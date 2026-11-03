@@ -24,7 +24,7 @@
 .seiton-bookshelf input.seiton-library-search {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   font-family: var(--font-interface);
   font-size: var(--st-text-sm);
   height: 32px;
@@ -212,7 +212,7 @@
   align-items: center;
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   display: flex;
   flex-wrap: wrap;
   font-size: var(--st-text-sm);
@@ -275,7 +275,7 @@
 
 .seiton-cover-stat {
   background: var(--background-secondary);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   padding: 12px;
 }
 
@@ -381,7 +381,7 @@
 .seiton-bulk-input {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   font-family: var(--font-interface);
   font-size: var(--st-text-sm);
   line-height: 1.6;
@@ -461,7 +461,7 @@
 .seiton-empty-suggestion {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   color: var(--text-normal);
   font-size: var(--st-text-sm);
   padding: 5px 10px;
@@ -612,7 +612,7 @@
 
 .seiton-calil-details {
   background: var(--background-secondary);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   margin: 0 0 10px 26px;
   padding: 8px 10px;
 }

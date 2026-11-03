@@ -2,8 +2,8 @@
 
 .seiton-home-inner {
   margin: 0 auto;
-  max-width: 1360px;
-  padding: 28px 32px 72px;
+  max-width: var(--st-max-frame);
+  padding: 24px 32px 64px;
 }
 
 .seiton-prompt-root {
@@ -77,10 +77,6 @@
 
 .seiton-home .seiton-zone:first-of-type {
   margin-top: 0;
-}
-
-.seiton-prompt-body {
-  max-width: 920px;
 }
 
 @media (max-width: 760px) {

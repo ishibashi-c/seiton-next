@@ -9,15 +9,13 @@
 
 .seiton-shortcuts {
   align-items: flex-start;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-lg);
   display: flex;
   flex-wrap: wrap;
   gap: 14px 18px;
-}
-
-.seiton-shortcuts-empty {
-  color: var(--seiton-meta);
-  flex-basis: 100%;
-  font-size: var(--st-text-sm);
+  padding: 14px 16px;
 }
 
 .seiton-shortcut {
@@ -25,7 +23,13 @@
   width: 76px;
 }
 
-.seiton-shortcut-main {
+/* The add tile ends the shelf; it follows the last tile instead of floating. */
+.seiton-shortcuts > .seiton-empty.is-compact {
+  align-self: center;
+  flex: 1 1 auto;
+}
+
+.seiton-home .seiton-shortcut-main {
   align-items: center;
   background: none;
   border: 0;
@@ -68,11 +72,16 @@
 
 .seiton-shortcut-label {
   color: var(--text-muted);
+  display: -webkit-box;
   font-size: var(--st-text-xs);
+  line-height: 1.25;
+  min-height: 30px;
   overflow: hidden;
+  overflow-wrap: anywhere;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
   width: 100%;
 }
 
@@ -177,7 +186,7 @@
 .seiton-add-choice-item {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   padding: 12px 14px;
   text-align: left;
 }

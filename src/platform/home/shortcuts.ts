@@ -156,7 +156,7 @@ export class HomeShortcuts {
       const items = this.itemsOf(this.openGroup);
       if (items.length === 0) {
         host.createDiv({
-          cls: "seiton-shortcuts-empty",
+          cls: "seiton-empty is-compact",
           text: "このグループは空です。",
         });
       }
@@ -169,7 +169,7 @@ export class HomeShortcuts {
 
     if (groups.length === 0 && this.itemsOf(null).length === 0) {
       host.createDiv({
-        cls: "seiton-shortcuts-empty",
+        cls: "seiton-empty is-compact",
         text: "よく開くサイトやノートを追加できます。",
       });
     }

@@ -15,7 +15,6 @@ import { renderBookCoverFallback, resolveCover } from "../bookCover";
 import { makeCardClickable } from "../cardClick";
 import { addCardAction, type ItemAction, renderItemCard } from "./cards";
 import {
-  bookFallbackMeta,
   KIND_LABELS,
   memoPreview,
   readingStatusLabel,
@@ -170,10 +169,18 @@ export class LibraryList {
       image.loading = "lazy";
       image.addEventListener("error", () => {
         image.remove();
-        renderBookCoverFallback(coverWrap, note.title, bookFallbackMeta(note));
+        renderBookCoverFallback(
+          coverWrap,
+          note.title,
+          "表紙を取得できませんでした"
+        );
       });
     } else {
-      renderBookCoverFallback(coverWrap, note.title, bookFallbackMeta(note));
+      renderBookCoverFallback(
+        coverWrap,
+        note.title,
+        "表紙を取得できませんでした"
+      );
     }
     coverWrap.setAttribute("role", "button");
     coverWrap.tabIndex = 0;
@@ -376,7 +383,6 @@ export class LibraryList {
       date: shortDateTime(memo.at),
       kind: "memo",
       kindLabel: "メモ",
-      meta: memo.week,
       onOpen: () => void this.options.openPath(memo.path, memo.line),
       state: memo.promotedTo ? "ノート化" : "",
       title: memoPreview(memo.body) || "（空のメモ）",

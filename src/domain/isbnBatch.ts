@@ -1,4 +1,4 @@
-import { canonicalIsbn, isValidIsbn, normalizeIsbn } from "./book";
+import { canonicalIsbn, isValidIsbn, normalizeIsbn } from "./isbn";
 
 export interface IsbnParseResult {
   duplicates: string[];

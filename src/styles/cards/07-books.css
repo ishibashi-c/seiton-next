@@ -17,7 +17,7 @@
   aspect-ratio: 2 / 3;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   cursor: pointer;
   overflow: hidden;
   position: relative;
@@ -41,7 +41,7 @@
 }
 
 .seiton-book-cover-fallback {
-  align-items: center;
+  align-items: stretch;
   background: var(--background-secondary);
   display: flex;
   flex-direction: column;
@@ -50,6 +50,7 @@
   justify-content: center;
   padding: 16px;
   text-align: center;
+  white-space: normal;
 }
 
 .seiton-book-cover-fallback-title {
@@ -59,13 +60,16 @@
   font-weight: 600;
   line-height: 1.5;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  width: 100%;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 4;
 }
 
 .seiton-book-cover-fallback-note {
   color: var(--text-faint);
   font-size: var(--st-text-2xs);
+  width: 100%;
 }
 
 .seiton-book-card-body {
@@ -112,7 +116,7 @@
 .seiton-book-detail-modal .seiton-book-cover {
   aspect-ratio: 2 / 3;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
+  border-radius: var(--st-radius-md);
   margin: 4px auto 18px;
   max-width: 220px;
   min-height: 0;

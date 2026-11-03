@@ -10,26 +10,9 @@
   padding: 30px 34px 64px;
 }
 
+/* Same header as every other tab; only the actions wrap. */
 .seiton-prompt-header {
-  align-items: flex-start;
-  border-bottom: 1px solid var(--st-hairline);
-  display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
-}
-
-.seiton-prompt-header h1 {
-  color: var(--st-ink);
-  font-family: var(--font-text);
-  font-size: 24px;
-  font-weight: 620;
-  letter-spacing: -0.025em;
-  line-height: 1.3;
-  margin: 3px 0 4px;
-  overflow-wrap: anywhere;
 }
 
 .seiton-home button.seiton-prompt-action,

@@ -6,19 +6,6 @@
   background: var(--background-primary);
 }
 
-.seiton-home-inner {
-  margin: 0 auto;
-  max-width: var(--st-max-home);
-  padding: 44px 32px 88px;
-}
-
-.seiton-library .seiton-home-inner {
-  max-width: var(--st-max-library);
-}
-
-.seiton-projects .seiton-home-inner {
-  max-width: var(--st-max-projects);
-}
 .seiton-page-head {
   align-items: flex-start;
   display: flex;
@@ -98,10 +85,19 @@
 .seiton-home button.seiton-primary-text.seiton-primary-text,
 .seiton-projects button.seiton-primary-text {
   background: var(--st-primary);
-  border-radius: var(--st-radius-sm);
+  border-radius: var(--st-radius-md);
   color: var(--st-on-primary);
-  font-weight: 600;
-  padding: 5px 11px;
+  font-size: var(--st-text-sm);
+  font-weight: 560;
+  height: 32px;
+  padding: 0 14px;
+}
+
+.seiton-home button.mod-cta:disabled,
+.seiton-prompt-root button.mod-cta:disabled {
+  background: var(--background-modifier-border);
+  color: var(--st-muted);
+  opacity: 1;
 }
 
 .seiton-home button.mod-cta:hover,
@@ -207,11 +203,30 @@
   color: var(--st-muted);
   font-size: var(--st-text-base);
   line-height: var(--st-leading-normal);
-  padding: 42px 0;
+  padding: 40px 0;
+}
+
+/* The empty line inside a dense grid (the shortcut tiles) sits tighter. */
+.seiton-empty.is-compact {
+  flex-basis: 100%;
+  font-size: var(--st-text-sm);
+  padding: 10px 0;
+}
+
+/* Keyboard focus is one outline everywhere. */
+.seiton-item:focus-visible,
+.seiton-top-tab:focus-visible,
+.seiton-segmented button:focus-visible,
+.seiton-shortcut-main:focus-visible,
+.seiton-text-action:focus-visible,
+.seiton-primary-text:focus-visible,
+.seiton-empty-suggestion:focus-visible,
+.seiton-filter-more summary:focus-visible {
+  outline: 2px solid var(--st-ink);
+  outline-offset: 2px;
 }
 
 .seiton-section-empty {
-  border-top: 1px solid var(--st-hairline);
   color: var(--st-muted);
   font-size: var(--st-text-sm);
   padding: 18px 0;

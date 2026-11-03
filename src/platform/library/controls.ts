@@ -1,3 +1,4 @@
+import { setIcon } from "obsidian";
 import type { VaultIndex } from "../../services/vaultIndex";
 import { allCourses, allLists, allTags } from "../../services/vaultIndex";
 import { createSelect, type SelectControl } from "../ui/select";
@@ -120,7 +121,10 @@ export class LibraryControls {
     const more = parent.createEl("details", {
       cls: "seiton-filter-more",
     });
-    more.createEl("summary", { text: "タグ・リスト・プロジェクトで絞り込む" });
+    const summary = more.createEl("summary");
+    summary.createSpan({ text: "絞り込み" });
+    const caret = summary.createSpan({ cls: "seiton-filter-more-caret" });
+    setIcon(caret, "chevron-down");
     const selects = more.createDiv({ cls: "seiton-library-selects" });
     this.tagSelect = createSelect({
       choices: [],

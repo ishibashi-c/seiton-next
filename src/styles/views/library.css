@@ -176,15 +176,6 @@
   display: none;
 }
 
-.seiton-filter-more > summary::after {
-  content: "  ▾";
-  font-size: var(--st-text-2xs);
-}
-
-.seiton-filter-more[open] > summary::after {
-  content: "  ▴";
-}
-
 .seiton-library-selects {
   display: flex;
   flex-wrap: wrap;
@@ -221,7 +212,7 @@
   align-items: center;
   background: transparent;
   border: 1px solid var(--st-hairline);
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   color: var(--st-ink);
   display: inline-flex;
   font-size: var(--st-text-xs);
@@ -278,7 +269,7 @@
   gap: 20px;
   grid-template-columns: 72px minmax(0, 1fr) 180px;
   min-width: 0;
-  padding: 15px 0 13px;
+  padding: 12px 0;
   position: relative;
 }
 
@@ -291,7 +282,7 @@
 }
 
 .seiton-item-cover {
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   display: block;
   height: 70px;
   object-fit: cover;
@@ -305,7 +296,7 @@
 
 .seiton-video-cover {
   aspect-ratio: 16 / 9;
-  border-radius: 4px;
+  border-radius: var(--st-radius-sm);
   display: block;
   object-fit: cover;
   width: 100%;

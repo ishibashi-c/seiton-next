@@ -234,7 +234,7 @@ export class SeitonTsubuyakiView extends ItemView {
       this.metaEl.setText("");
       return;
     }
-    const parts = [`${meta.visible}件`];
+    const parts: string[] = [];
     if (meta.deleted > 0 && !this.showDeleted) {
       parts.push(`削除済み${meta.deleted}件`);
     }
