@@ -222,9 +222,9 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  min-height: 96px;
+  min-height: 68px;
   min-width: 0;
-  padding: 16px;
+  padding: 12px 14px;
   position: relative;
   transition: border-color 120ms ease;
 }
@@ -239,8 +239,8 @@
   display: flex;
   font-size: var(--st-text-xs);
   gap: 8px;
-  margin-bottom: 10px;
-  min-height: 24px;
+  margin-bottom: 6px;
+  min-height: 20px;
 }
 
 .seiton-item-head .seiton-item-type {
@@ -294,17 +294,24 @@
 
 .seiton-card-grid:not(.is-list) .seiton-item-source,
 .seiton-card-grid:not(.is-list) .seiton-item-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   color: var(--text-muted);
   font-size: var(--st-text-sm);
   line-height: 1.5;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .seiton-card-grid:not(.is-list) .seiton-item-meta {
   color: var(--text-muted);
   font-size: var(--st-text-xs);
-  margin-top: 6px;
+  margin-top: 4px;
+}
+
+.seiton-card-grid:not(.is-list) .seiton-item-side:empty {
+  display: none;
 }
 
 .seiton-card-grid:not(.is-list) .seiton-item-side {
@@ -313,8 +320,8 @@
   flex-direction: row;
   gap: 8px;
   justify-content: space-between;
-  margin-top: 10px;
-  padding: 10px 30px 0 0;
+  margin-top: 6px;
+  padding: 2px 0 0 0;
   text-align: left;
 }
 
@@ -489,7 +496,7 @@
   }
 
   .seiton-card-grid:not(.is-list) .seiton-item {
-    min-height: 88px;
+    min-height: 64px;
   }
 
   .seiton-card-grid:not(.is-list) .seiton-item-actions {

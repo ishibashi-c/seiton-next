@@ -403,10 +403,14 @@
 
 .seiton-item-source {
   color: var(--st-muted);
+  display: -webkit-box;
   font-size: var(--st-text-sm);
   line-height: 1.55;
   margin-top: 3px;
+  overflow: hidden;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .seiton-item-excerpt {

@@ -66,8 +66,8 @@ export function renderItemCard(options: ItemCardOptions): HTMLElement {
     content.createDiv({ cls: "seiton-item-source", text: options.meta });
   }
 
-  const side = article.createDiv({ cls: "seiton-item-side" });
   if (options.state) {
+    const side = article.createDiv({ cls: "seiton-item-side" });
     side.createSpan({ cls: "seiton-item-state", text: options.state });
   }
   makeCardClickable(article, options.onOpen);
