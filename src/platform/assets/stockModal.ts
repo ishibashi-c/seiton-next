@@ -145,7 +145,7 @@ export class StockModal extends Modal {
     }
     const monthly = Math.round(amount / months);
     this.previewEl.setText(
-      `💡 月額償却費: 約 ¥${monthly.toLocaleString()} / 月 （${months}ヶ月かけて生活コストに均等計上）`
+      `月額償却費: 約 ¥${monthly.toLocaleString()} / 月 （${months}ヶ月かけて生活コストに均等計上）`
     );
   }
 

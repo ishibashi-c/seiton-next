@@ -372,7 +372,7 @@ export class SeitonBookshelfView extends ItemView {
       bookStatusLabel(item.status),
       item.category,
       item.owned ? bookOwnershipLabel(item.owned) : "",
-      item.rating ? `★${item.rating}` : "",
+      item.rating ? `評価 ${item.rating}` : "",
     ]
       .filter(Boolean)
       .join(" · ");

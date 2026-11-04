@@ -84,7 +84,7 @@ export class AddBookModal extends Modal {
     });
     isbnSetting.addButton((button) => {
       button
-        .setButtonText("📷 スキャン")
+        .setButtonText("スキャン")
         .setTooltip("バーコードをカメラで読み取る")
         .onClick(() => {
           new BarcodeScannerModal(this.app, this.bookService, {

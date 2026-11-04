@@ -64,7 +64,7 @@
 }
 
 .seiton-resume {
-  align-items: start;
+  align-items: stretch;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -76,7 +76,7 @@
 }
 
 .seiton-home-cards {
-  align-items: start;
+  align-items: stretch;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -310,21 +310,16 @@
 
   .seiton-resume {
     display: flex;
-    gap: 12px;
-    margin: 0 -16px;
-    overflow-x: auto;
-    padding: 0 16px 4px;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-
-  .seiton-resume::-webkit-scrollbar {
-    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    overflow-x: visible;
+    padding: 0;
   }
 
   .seiton-resume > * {
-    flex: 0 0 84%;
-    scroll-snap-align: start;
+    flex: none;
+    width: 100%;
   }
 
   .seiton-resume > .is-featured {

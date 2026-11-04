@@ -71,7 +71,7 @@ export class ShortcutModal extends Modal {
       onChange: (value) => {
         this.target = value;
       },
-      placeholder: "https://example.com または [[ノート]]",
+      placeholder: "https://... または [[ノート名]]",
       value: this.target,
     });
     window.setTimeout(() => labelInput.focus(), 50);

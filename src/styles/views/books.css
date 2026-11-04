@@ -322,11 +322,11 @@
 }
 
 .seiton-scanner-status.is-success {
-  color: var(--st-green, #22c55e);
+  color: var(--text-success, #15803d);
 }
 
 .seiton-scanner-status.is-error {
-  color: var(--st-red, #ef4444);
+  color: var(--text-error, #b91c1c);
 }
 
 .seiton-scanner-manual {

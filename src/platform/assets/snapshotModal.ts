@@ -4,7 +4,7 @@
  * 期間中の収入の同時記録にも対応。
  */
 
-import { type App, Modal } from "obsidian";
+import { type App, Modal, setIcon } from "obsidian";
 import type {
   AssetDataset,
   AssetIncome,
@@ -193,7 +193,7 @@ export class SnapshotModal extends Modal {
     });
 
     const removeBtn = button(row, {
-      label: "✕",
+      label: "",
       onClick: () => {
         row.remove();
         this.pendingIncomes = this.pendingIncomes.filter((i) => i !== item);
@@ -201,6 +201,8 @@ export class SnapshotModal extends Modal {
       tone: "ghost",
     });
     removeBtn.addClass("seiton-asset-income-del-btn");
+    removeBtn.setAttribute("aria-label", "削除");
+    setIcon(removeBtn, "x");
 
     amountInput.addEventListener("input", () => {
       item.amount = Number(amountInput.value) || 0;

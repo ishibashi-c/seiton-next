@@ -3,9 +3,9 @@
    -------------------------------------------------------------------------- */
 
 .seiton-assets {
-  --st-asset-accent: #2563eb;
-  --st-asset-special: #7c3aed;
-  --st-asset-stock: #d97706;
+  --st-asset-accent: var(--interactive-accent, #1d5fbf);
+  --st-asset-special: var(--text-muted);
+  --st-asset-stock: var(--st-muted);
 }
 
 /* サブナビゲーション */
@@ -26,7 +26,7 @@
   font-size: var(--st-text-sm);
   font-weight: 500;
   padding: 6px 14px;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .seiton-asset-subtab:hover {
@@ -207,36 +207,37 @@
 
 .seiton-asset-badge {
   background: var(--background-modifier-border);
-  border-radius: 99px;
+  border-radius: var(--st-radius-sm);
   color: var(--st-muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 550;
   padding: 1px 7px;
 }
 
 .seiton-asset-badge.is-living {
-  background: rgba(37, 99, 235, 0.12);
-  color: #2563eb;
+  background: var(--background-modifier-hover);
+  color: var(--st-ink);
 }
 
 .seiton-asset-badge.is-special {
-  background: rgba(124, 58, 237, 0.12);
-  color: #7c3aed;
+  background: var(--background-modifier-border);
+  border: 1px solid var(--st-hairline);
+  color: var(--st-ink);
 }
 
 .seiton-asset-badge.is-repay {
-  background: rgba(217, 119, 6, 0.15);
-  color: #d97706;
+  background: var(--background-modifier-hover);
+  color: var(--text-warning, #b45309);
 }
 
 .seiton-asset-badge.is-completed {
-  background: rgba(34, 197, 94, 0.15);
-  color: #16a34a;
+  background: var(--background-modifier-hover);
+  color: var(--text-success, #15803d);
 }
 
 .seiton-asset-repay-btn {
   font-size: var(--st-text-xs);
-  padding: 4px 12px;
+  padding: 4px 10px;
 }
 
 .seiton-asset-stock-meta {
@@ -248,7 +249,7 @@
 }
 
 .seiton-asset-stock-repay-alert {
-  color: var(--st-red, #ef4444);
+  color: var(--text-error, #b91c1c);
   font-weight: 600;
 }
 
@@ -269,16 +270,17 @@
 }
 
 .seiton-asset-progress-amort {
-  background: rgba(124, 58, 237, 0.35);
+  background: var(--text-muted);
   height: 100%;
   left: 0;
+  opacity: 0.35;
   position: absolute;
   top: 0;
   transition: width 0.2s ease;
 }
 
 .seiton-asset-progress-repay {
-  background: var(--interactive-accent);
+  background: var(--interactive-accent, #1d5fbf);
   height: 100%;
   left: 0;
   position: absolute;
@@ -297,11 +299,11 @@
 }
 
 .seiton-asset-legend-item.is-amort {
-  color: #7c3aed;
+  color: var(--text-muted);
 }
 
 .seiton-asset-legend-item.is-repay {
-  color: var(--interactive-accent);
+  color: var(--interactive-accent, #1d5fbf);
   font-weight: 550;
 }
 
@@ -331,7 +333,7 @@
 
 .seiton-chart-line-total {
   fill: none;
-  stroke: var(--interactive-accent);
+  stroke: var(--interactive-accent, #1d5fbf);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.5;
@@ -345,16 +347,16 @@
 }
 
 .seiton-chart-dot {
-  fill: var(--interactive-accent);
+  fill: var(--interactive-accent, #1d5fbf);
 }
 
 .seiton-chart-bar-income {
-  fill: #22c55e;
+  fill: var(--text-success, #15803d);
   rx: 3;
 }
 
 .seiton-chart-bar-cost {
-  fill: #3b82f6;
+  fill: var(--interactive-accent, #1d5fbf);
   rx: 3;
 }
 
