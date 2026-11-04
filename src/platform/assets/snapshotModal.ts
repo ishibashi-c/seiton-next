@@ -12,7 +12,9 @@ import type {
 } from "../../domain/asset";
 import { sortSnapshots } from "../../domain/assetCalc";
 import type { AssetService } from "../../services/assetService";
+import { button, textField } from "../ui/field";
 import { buildSeitonModal } from "../ui/modal";
+import { createSelect } from "../ui/select";
 import { showToast } from "../ui/toast";
 
 export interface SnapshotModalOptions {
@@ -66,21 +68,15 @@ export class SnapshotModal extends Modal {
 
     // 1. 日付 & メモ
     const metaRow = container.createDiv({ cls: "st-field-row" });
-    const dateField = metaRow.createDiv({ cls: "st-field" });
-    dateField.createEl("label", { cls: "st-field-label", text: "記録日" });
-    this.dateInput = dateField.createEl("input", {
-      attr: { type: "date", value: todayStr },
-      cls: "st-field-input",
+    this.dateInput = textField(metaRow, {
+      label: "記録日",
+      type: "date",
+      value: todayStr,
     });
 
-    const noteField = metaRow.createDiv({ cls: "st-field" });
-    noteField.createEl("label", {
-      cls: "st-field-label",
-      text: "メモ（任意）",
-    });
-    this.noteInput = noteField.createEl("input", {
-      attr: { placeholder: "例: 給料日、月末締めなど", type: "text" },
-      cls: "st-field-input",
+    this.noteInput = textField(metaRow, {
+      label: "メモ（任意）",
+      placeholder: "例: 給料日、月末締めなど",
     });
 
     // 2. 口座一覧（生活資金 vs 特別資金）
@@ -120,7 +116,7 @@ export class SnapshotModal extends Modal {
             type: "number",
             value: String(prevBalance),
           },
-          cls: "st-field-input seiton-asset-number-input",
+          cls: "st-input seiton-asset-number-input",
         });
         this.balanceInputs.set(acc.id, input);
       }
@@ -141,12 +137,11 @@ export class SnapshotModal extends Modal {
       text: "期間中の収入（任意）",
     });
 
-    const addIncomeBtn = incomeHeader.createEl("button", {
-      attr: { type: "button" },
-      cls: "seiton-scanner-btn-mini",
-      text: "+ 収入を追加",
+    button(incomeHeader, {
+      label: "＋ 収入を追加",
+      onClick: () => this.addPendingIncomeRow(),
+      tone: "secondary",
     });
-    addIncomeBtn.addEventListener("click", () => this.addPendingIncomeRow());
 
     this.incomesContainerEl = incomeSection.createDiv({
       cls: "seiton-asset-pending-incomes",
@@ -164,40 +159,6 @@ export class SnapshotModal extends Modal {
     const todayStr =
       this.dateInput?.value || new Date().toISOString().slice(0, 10);
 
-    const categorySelect = row.createEl("select", { cls: "st-field-select" });
-    categorySelect.createEl("option", {
-      attr: { value: "salary" },
-      text: "給料（バイト代）",
-    });
-    categorySelect.createEl("option", {
-      attr: { value: "allowance" },
-      text: "お小遣い",
-    });
-    categorySelect.createEl("option", {
-      attr: { value: "gift" },
-      text: "お年玉・お祝い",
-    });
-    categorySelect.createEl("option", {
-      attr: { value: "other" },
-      text: "その他臨時収入",
-    });
-
-    const amountInput = row.createEl("input", {
-      attr: { inputmode: "numeric", placeholder: "金額 (円)", type: "number" },
-      cls: "st-field-input seiton-asset-income-amount",
-    });
-
-    const memoInput = row.createEl("input", {
-      attr: { placeholder: "メモ", type: "text" },
-      cls: "st-field-input seiton-asset-income-memo",
-    });
-
-    const removeBtn = row.createEl("button", {
-      attr: { type: "button" },
-      cls: "seiton-scanner-card-del",
-      text: "✕",
-    });
-
     const item: Omit<AssetIncome, "createdAt" | "id"> = {
       amount: 0,
       category: "salary",
@@ -206,35 +167,62 @@ export class SnapshotModal extends Modal {
     };
     this.pendingIncomes.push(item);
 
-    categorySelect.addEventListener("change", () => {
-      item.category = categorySelect.value as IncomeCategory;
+    const categorySelect = createSelect({
+      choices: [
+        { label: "給料（バイト代）", value: "salary" },
+        { label: "お小遣い", value: "allowance" },
+        { label: "お年玉・お祝い", value: "gift" },
+        { label: "その他臨時収入", value: "other" },
+      ],
+      onChange: (value) => {
+        item.category = value as IncomeCategory;
+      },
+      value: "salary",
     });
+    categorySelect.element.addClass("seiton-asset-inline-select");
+    row.append(categorySelect.element);
+
+    const amountInput = row.createEl("input", {
+      attr: { inputmode: "numeric", placeholder: "金額 (円)", type: "number" },
+      cls: "st-input seiton-asset-income-amount",
+    });
+
+    const memoInput = row.createEl("input", {
+      attr: { placeholder: "メモ", type: "text" },
+      cls: "st-input seiton-asset-income-memo",
+    });
+
+    const removeBtn = button(row, {
+      label: "✕",
+      onClick: () => {
+        row.remove();
+        this.pendingIncomes = this.pendingIncomes.filter((i) => i !== item);
+      },
+      tone: "ghost",
+    });
+    removeBtn.addClass("seiton-asset-income-del-btn");
+
     amountInput.addEventListener("input", () => {
       item.amount = Number(amountInput.value) || 0;
     });
     memoInput.addEventListener("input", () => {
       item.memo = memoInput.value.trim();
     });
-    removeBtn.addEventListener("click", () => {
-      row.remove();
-      this.pendingIncomes = this.pendingIncomes.filter((i) => i !== item);
-    });
   }
 
   private renderFooter(footer: HTMLElement): void {
-    const cancelBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
     });
-    cancelBtn.addEventListener("click", () => this.close());
 
-    const submitBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      cls: "mod-cta",
-      text: "スナップショットを保存",
-    });
-    submitBtn.addEventListener("click", () => {
-      void this.saveSnapshot();
+    button(footer, {
+      label: "スナップショットを保存",
+      onClick: () => {
+        void this.saveSnapshot();
+      },
+      tone: "primary",
     });
   }
 

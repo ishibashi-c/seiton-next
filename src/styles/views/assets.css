@@ -466,7 +466,12 @@
   align-items: center;
   display: flex;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.seiton-asset-inline-select {
+  flex-shrink: 0;
+  width: 150px;
 }
 
 .seiton-asset-income-amount {
@@ -476,6 +481,15 @@
 
 .seiton-asset-income-memo {
   flex: 1;
+}
+
+.seiton-asset-income-del-btn {
+  padding: 4px 8px;
+}
+
+.seiton-asset-repay-btn {
+  font-size: var(--st-text-xs);
+  padding: 4px 10px;
 }
 
 .seiton-scanner-btn-mini {
@@ -519,6 +533,12 @@
   border-radius: var(--st-radius-md);
   margin-bottom: 16px;
   padding: 12px 14px;
+}
+
+.seiton-asset-add-account-btn-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
 .seiton-asset-accounts-list-wrap {

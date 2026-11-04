@@ -5,7 +5,9 @@
 import { type App, Modal } from "obsidian";
 import type { AssetDataset } from "../../domain/asset";
 import type { AssetService } from "../../services/assetService";
+import { button, checkboxField, selectField, textField } from "../ui/field";
 import { buildSeitonModal } from "../ui/modal";
+import type { SelectControl } from "../ui/select";
 import { showToast } from "../ui/toast";
 
 export interface StockModalOptions {
@@ -20,9 +22,9 @@ export class StockModal extends Modal {
   private titleInput: HTMLInputElement | null = null;
   private amountInput: HTMLInputElement | null = null;
   private dateInput: HTMLInputElement | null = null;
-  private sourceSelect: HTMLSelectElement | null = null;
+  private sourceControl: SelectControl | null = null;
   private monthsInput: HTMLInputElement | null = null;
-  private repaymentCheckbox: HTMLInputElement | null = null;
+  private isRepaymentRequired = true;
   private memoInput: HTMLInputElement | null = null;
   private previewEl: HTMLElement | null = null;
 
@@ -56,76 +58,51 @@ export class StockModal extends Modal {
     const todayStr = new Date().toISOString().slice(0, 10);
 
     // 品名
-    const titleField = container.createDiv({ cls: "st-field" });
-    titleField.createEl("label", {
-      cls: "st-field-label",
-      text: "品名・内容 *",
-    });
-    this.titleInput = titleField.createEl("input", {
-      attr: { placeholder: "例: MacBook Pro M4、冷蔵庫など", type: "text" },
-      cls: "st-field-input",
+    this.titleInput = textField(container, {
+      label: "品名・内容 *",
+      placeholder: "例: MacBook Pro M4、冷蔵庫など",
     });
 
     // 金額 & 購入日
     const row1 = container.createDiv({ cls: "st-field-row" });
-    const amountField = row1.createDiv({ cls: "st-field" });
-    amountField.createEl("label", {
-      cls: "st-field-label",
-      text: "購入金額 (円) *",
+    this.amountInput = textField(row1, {
+      label: "購入金額 (円) *",
+      onChange: () => this.updatePreview(),
+      placeholder: "例: 240000",
+      type: "number",
     });
-    this.amountInput = amountField.createEl("input", {
-      attr: { inputmode: "numeric", placeholder: "例: 240000", type: "number" },
-      cls: "st-field-input",
-    });
-    this.amountInput.addEventListener("input", () => this.updatePreview());
 
-    const dateField = row1.createDiv({ cls: "st-field" });
-    dateField.createEl("label", { cls: "st-field-label", text: "購入日 *" });
-    this.dateInput = dateField.createEl("input", {
-      attr: { type: "date", value: todayStr },
-      cls: "st-field-input",
+    this.dateInput = textField(row1, {
+      label: "購入日 *",
+      type: "date",
+      value: todayStr,
     });
 
     // 支払元口座 & 償却月数
     const row2 = container.createDiv({ cls: "st-field-row" });
-    const sourceField = row2.createDiv({ cls: "st-field" });
-    sourceField.createEl("label", {
-      cls: "st-field-label",
-      text: "支払元口座 *",
-    });
-    this.sourceSelect = sourceField.createEl("select", {
-      cls: "st-field-select",
-    });
-
-    // 奨学金口座を優先選択
     const accounts = [...this.dataset.accounts].sort(
       (a, b) => a.order - b.order
     );
-    for (const acc of accounts) {
-      const opt = this.sourceSelect.createEl("option", {
-        attr: { value: acc.id },
-        text: `${acc.name} (${acc.group === "living" ? "生活資金" : "特別資金"})`,
-      });
-      if (acc.group === "special") {
-        opt.selected = true;
-      }
-    }
+    const initialSpecial = accounts.find((a) => a.group === "special");
+    const choices = accounts.map((acc) => ({
+      label: `${acc.name} (${acc.group === "living" ? "生活資金" : "特別資金"})`,
+      value: acc.id,
+    }));
 
-    const monthsField = row2.createDiv({ cls: "st-field" });
-    monthsField.createEl("label", {
-      cls: "st-field-label",
-      text: "償却期間 (月数) *",
+    this.sourceControl = selectField(row2, {
+      choices,
+      label: "支払元口座 *",
+      onChange: () => undefined,
+      value: initialSpecial?.id ?? accounts[0]?.id ?? "",
     });
-    this.monthsInput = monthsField.createEl("input", {
-      attr: {
-        inputmode: "numeric",
-        placeholder: "例: 24",
-        type: "number",
-        value: "24",
-      },
-      cls: "st-field-input",
+
+    this.monthsInput = textField(row2, {
+      label: "償却期間 (月数) *",
+      onChange: () => this.updatePreview(),
+      placeholder: "例: 24",
+      type: "number",
+      value: "24",
     });
-    this.monthsInput.addEventListener("input", () => this.updatePreview());
 
     // 償却プレビュー
     this.previewEl = container.createDiv({
@@ -137,12 +114,12 @@ export class StockModal extends Modal {
     const repayField = container.createDiv({
       cls: "seiton-asset-checkbox-field",
     });
-    const repayLabel = repayField.createEl("label");
-    this.repaymentCheckbox = repayLabel.createEl("input", {
-      attr: { checked: "true", type: "checkbox" },
-    });
-    repayLabel.createSpan({
-      text: " 奨学金口座への返済が必要（生活費から返済していく内部融資）",
+    checkboxField(repayField, {
+      checked: true,
+      label: "奨学金口座への返済が必要（生活費から返済していく内部融資）",
+      onChange: (checked) => {
+        this.isRepaymentRequired = checked;
+      },
     });
     repayField.createEl("p", {
       cls: "st-field-desc",
@@ -150,14 +127,9 @@ export class StockModal extends Modal {
     });
 
     // メモ
-    const memoField = container.createDiv({ cls: "st-field" });
-    memoField.createEl("label", {
-      cls: "st-field-label",
-      text: "メモ（任意）",
-    });
-    this.memoInput = memoField.createEl("input", {
-      attr: { placeholder: "購入理由やスペックなど", type: "text" },
-      cls: "st-field-input",
+    this.memoInput = textField(container, {
+      label: "メモ（任意）",
+      placeholder: "購入理由やスペックなど",
     });
   }
 
@@ -178,19 +150,18 @@ export class StockModal extends Modal {
   }
 
   private renderFooter(footer: HTMLElement): void {
-    const cancelBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
     });
-    cancelBtn.addEventListener("click", () => this.close());
 
-    const submitBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      cls: "mod-cta",
-      text: "ストック支出を登録",
-    });
-    submitBtn.addEventListener("click", () => {
-      void this.saveStock();
+    button(footer, {
+      label: "ストック支出を登録",
+      onClick: () => {
+        void this.saveStock();
+      },
+      tone: "primary",
     });
   }
 
@@ -199,9 +170,9 @@ export class StockModal extends Modal {
     const amount = Number(this.amountInput?.value) || 0;
     const purchaseDate =
       this.dateInput?.value || new Date().toISOString().slice(0, 10);
-    const sourceAccountId = this.sourceSelect?.value || "";
+    const sourceAccountId = this.sourceControl?.value() || "";
     const amortizationMonths = Number(this.monthsInput?.value) || 1;
-    const isRepaymentRequired = this.repaymentCheckbox?.checked ?? true;
+    const isRepaymentRequired = this.isRepaymentRequired;
     const memo = this.memoInput?.value.trim() || undefined;
 
     if (!title) {

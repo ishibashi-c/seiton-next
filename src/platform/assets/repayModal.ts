@@ -7,6 +7,7 @@ import { type App, Modal } from "obsidian";
 import type { StockExpense, StockRepayment } from "../../domain/asset";
 import { calculateStockStatus } from "../../domain/assetCalc";
 import type { AssetService } from "../../services/assetService";
+import { button, textField } from "../ui/field";
 import { buildSeitonModal } from "../ui/modal";
 import { showToast } from "../ui/toast";
 
@@ -84,11 +85,10 @@ export class RepayModal extends Modal {
     const form = body.createDiv({ cls: "seiton-asset-repay-form" });
 
     const row = form.createDiv({ cls: "st-field-row" });
-    const dateField = row.createDiv({ cls: "st-field" });
-    dateField.createEl("label", { cls: "st-field-label", text: "返済日 *" });
-    this.dateInput = dateField.createEl("input", {
-      attr: { type: "date", value: todayStr },
-      cls: "st-field-input",
+    this.dateInput = textField(row, {
+      label: "返済日 *",
+      type: "date",
+      value: todayStr,
     });
 
     const defaultRepayAmount = Math.max(
@@ -97,48 +97,31 @@ export class RepayModal extends Modal {
         ? status.repaymentBalance
         : status.monthlyAmortization
     );
-    const amountField = row.createDiv({ cls: "st-field" });
-    amountField.createEl("label", {
-      cls: "st-field-label",
-      text: "今回返済する金額 (円) *",
-    });
-    this.amountInput = amountField.createEl("input", {
-      attr: {
-        inputmode: "numeric",
-        placeholder: "例: 20000",
-        type: "number",
-        value: defaultRepayAmount > 0 ? String(defaultRepayAmount) : "",
-      },
-      cls: "st-field-input",
+    this.amountInput = textField(row, {
+      label: "今回返済する金額 (円) *",
+      placeholder: "例: 20000",
+      type: "number",
+      value: defaultRepayAmount > 0 ? String(defaultRepayAmount) : "",
     });
 
-    const memoField = form.createDiv({ cls: "st-field" });
-    memoField.createEl("label", {
-      cls: "st-field-label",
-      text: "メモ（任意）",
-    });
-    this.memoInput = memoField.createEl("input", {
-      attr: {
-        placeholder: "例: 11月バイト代から、お年玉からなど",
-        type: "text",
-      },
-      cls: "st-field-input",
+    this.memoInput = textField(form, {
+      label: "メモ（任意）",
+      placeholder: "例: 11月バイト代から、お年玉からなど",
     });
 
     // 3. フッター
-    const cancelBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
     });
-    cancelBtn.addEventListener("click", () => this.close());
 
-    const submitBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      cls: "mod-cta",
-      text: "返済を記録する",
-    });
-    submitBtn.addEventListener("click", () => {
-      void this.submitRepayment();
+    button(footer, {
+      label: "返済を記録する",
+      onClick: () => {
+        void this.submitRepayment();
+      },
+      tone: "primary",
     });
   }
 

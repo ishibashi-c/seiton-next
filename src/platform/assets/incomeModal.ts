@@ -5,7 +5,9 @@
 import { type App, Modal } from "obsidian";
 import type { IncomeCategory } from "../../domain/asset";
 import type { AssetService } from "../../services/assetService";
+import { button, selectField, textField } from "../ui/field";
 import { buildSeitonModal } from "../ui/modal";
+import type { SelectControl } from "../ui/select";
 import { showToast } from "../ui/toast";
 
 export interface IncomeModalOptions {
@@ -18,7 +20,7 @@ export class IncomeModal extends Modal {
 
   private amountInput: HTMLInputElement | null = null;
   private dateInput: HTMLInputElement | null = null;
-  private categorySelect: HTMLSelectElement | null = null;
+  private categoryControl: SelectControl | null = null;
   private memoInput: HTMLInputElement | null = null;
 
   constructor(
@@ -41,77 +43,54 @@ export class IncomeModal extends Modal {
     const form = body.createDiv({ cls: "seiton-asset-income-form" });
 
     const row1 = form.createDiv({ cls: "st-field-row" });
-    const categoryField = row1.createDiv({ cls: "st-field" });
-    categoryField.createEl("label", {
-      cls: "st-field-label",
-      text: "収入種別 *",
-    });
-    this.categorySelect = categoryField.createEl("select", {
-      cls: "st-field-select",
-    });
-    this.categorySelect.createEl("option", {
-      attr: { value: "salary" },
-      text: "給料（バイト代）",
-    });
-    this.categorySelect.createEl("option", {
-      attr: { value: "allowance" },
-      text: "お小遣い",
-    });
-    this.categorySelect.createEl("option", {
-      attr: { value: "gift" },
-      text: "お年玉・お祝い",
-    });
-    this.categorySelect.createEl("option", {
-      attr: { value: "other" },
-      text: "その他臨時収入",
+    this.categoryControl = selectField(row1, {
+      choices: [
+        { label: "給料（バイト代）", value: "salary" },
+        { label: "お小遣い", value: "allowance" },
+        { label: "お年玉・お祝い", value: "gift" },
+        { label: "その他臨時収入", value: "other" },
+      ],
+      label: "収入種別 *",
+      onChange: () => undefined,
+      value: "salary",
     });
 
-    const amountField = row1.createDiv({ cls: "st-field" });
-    amountField.createEl("label", {
-      cls: "st-field-label",
-      text: "金額 (円) *",
-    });
-    this.amountInput = amountField.createEl("input", {
-      attr: { inputmode: "numeric", placeholder: "例: 85000", type: "number" },
-      cls: "st-field-input",
+    this.amountInput = textField(row1, {
+      label: "金額 (円) *",
+      placeholder: "例: 85000",
+      type: "number",
     });
 
-    const dateField = form.createDiv({ cls: "st-field" });
-    dateField.createEl("label", { cls: "st-field-label", text: "入金日 *" });
-    this.dateInput = dateField.createEl("input", {
-      attr: { type: "date", value: todayStr },
-      cls: "st-field-input",
+    this.dateInput = textField(form, {
+      label: "入金日 *",
+      type: "date",
+      value: todayStr,
     });
 
-    const memoField = form.createDiv({ cls: "st-field" });
-    memoField.createEl("label", {
-      cls: "st-field-label",
-      text: "メモ（任意）",
-    });
-    this.memoInput = memoField.createEl("input", {
-      attr: { placeholder: "例: 〇〇カフェ10月分", type: "text" },
-      cls: "st-field-input",
+    this.memoInput = textField(form, {
+      label: "メモ（任意）",
+      placeholder: "例: 〇〇カフェ10月分",
     });
 
-    const cancelBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      text: "キャンセル",
+    button(footer, {
+      label: "キャンセル",
+      onClick: () => this.close(),
+      tone: "ghost",
     });
-    cancelBtn.addEventListener("click", () => this.close());
 
-    const submitBtn = footer.createEl("button", {
-      attr: { type: "button" },
-      cls: "mod-cta",
-      text: "収入を保存",
-    });
-    submitBtn.addEventListener("click", () => {
-      void this.submitIncome();
+    button(footer, {
+      label: "収入を保存",
+      onClick: () => {
+        void this.submitIncome();
+      },
+      tone: "primary",
     });
   }
 
   private async submitIncome(): Promise<void> {
     const amount = Number(this.amountInput?.value) || 0;
-    const category = (this.categorySelect?.value || "other") as IncomeCategory;
+    const category = (this.categoryControl?.value() ||
+      "other") as IncomeCategory;
     const date = this.dateInput?.value || new Date().toISOString().slice(0, 10);
     const memo = this.memoInput?.value.trim() || undefined;
 

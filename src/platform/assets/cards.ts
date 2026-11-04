@@ -9,6 +9,7 @@ import {
   type StockExpenseStatus,
   sortSnapshots,
 } from "../../domain/assetCalc";
+import { button } from "../ui/field";
 import { renderStockProgressBar } from "./charts";
 
 /**
@@ -149,12 +150,12 @@ export function renderStockCard(
 
   // 返済ボタン（要返済かつ未完済の場合）
   if (status.stock.isRepaymentRequired && !status.isRepaymentCompleted) {
-    const repayBtn = head.createEl("button", {
-      attr: { type: "button" },
-      cls: "seiton-asset-repay-btn mod-cta",
-      text: "返済する",
+    const repayBtn = button(head, {
+      label: "返済する",
+      onClick: onRepayClick,
+      tone: "secondary",
     });
-    repayBtn.addEventListener("click", onRepayClick);
+    repayBtn.addClass("seiton-asset-repay-btn");
   }
 
   // メタ情報グリッド
