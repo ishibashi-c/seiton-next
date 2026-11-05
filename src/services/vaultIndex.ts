@@ -4,12 +4,7 @@
  */
 
 import type { App, TFile } from "obsidian";
-import {
-  ARCHIVE_FOLDER,
-  LINKS_FILE,
-  MIGRATION_FOLDER,
-  TEMPLATES_FOLDER,
-} from "../config";
+import { MEMOS_FOLDER, PROMPTS_FOLDER, SYSTEM_FOLDER } from "../config";
 import {
   bodyAfterFrontmatter,
   frontmatterList,
@@ -508,15 +503,15 @@ export class VaultIndexService {
   }
 
   async build(): Promise<VaultIndex> {
-    const files = this.app.vault
-      .getMarkdownFiles()
-      .filter(
-        (file) =>
-          file.path !== LINKS_FILE &&
-          !file.path.startsWith(`${TEMPLATES_FOLDER}/`) &&
-          !file.path.startsWith(`${ARCHIVE_FOLDER}/`) &&
-          !file.path.startsWith(`${MIGRATION_FOLDER}/`)
+    const files = this.app.vault.getMarkdownFiles().filter((file) => {
+      if (!file.path.startsWith(`${SYSTEM_FOLDER}/`)) {
+        return true;
+      }
+      return (
+        file.path.startsWith(`${MEMOS_FOLDER}/`) ||
+        file.path.startsWith(`${PROMPTS_FOLDER}/`)
       );
+    });
     const notes: NoteRecord[] = [];
     const memos: MemoIndexItem[] = [];
     const prompts: PromptIndexItem[] = [];
@@ -597,6 +592,10 @@ export class VaultIndexService {
               path: file.path,
             });
           }
+          return;
+        }
+
+        if (file.path.startsWith(`${SYSTEM_FOLDER}/`)) {
           return;
         }
 
