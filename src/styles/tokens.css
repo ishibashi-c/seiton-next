@@ -2,12 +2,16 @@
    Obsidian theme variables only. No fixed palette, no shadows on content. */
 
 .seiton-home,
+.seiton-library,
+.seiton-bookshelf,
+.seiton-projects,
 .seiton-prompt-root,
 .seiton-capture-modal,
 .seiton-edit-modal,
 .seiton-promote-modal,
 .seiton-book-modal,
 .seiton-migration-modal,
+.seiton-filter-modal,
 .st-modal,
 .st-toasts,
 .st-select-backdrop,
@@ -52,12 +56,16 @@
 }
 
 .theme-dark .seiton-home,
+.theme-dark .seiton-library,
+.theme-dark .seiton-bookshelf,
+.theme-dark .seiton-projects,
 .theme-dark .seiton-prompt-root,
 .theme-dark .seiton-capture-modal,
 .theme-dark .seiton-edit-modal,
 .theme-dark .seiton-promote-modal,
 .theme-dark .seiton-book-modal,
 .theme-dark .seiton-migration-modal,
+.theme-dark .seiton-filter-modal,
 .theme-dark .st-modal,
 .theme-dark .st-toasts,
 .theme-dark .st-select-backdrop,

@@ -61,7 +61,12 @@ export class LibraryFilterModal extends Modal {
 
   override onOpen(): void {
     const { contentEl, modalEl } = this;
-    modalEl.addClass("seiton-modal", "seiton-filter-modal");
+    modalEl.addClass(
+      "seiton-modal",
+      "seiton-filter-modal",
+      "st-modal",
+      "st-ui"
+    );
     contentEl.empty();
 
     // 1. ヘッダー
