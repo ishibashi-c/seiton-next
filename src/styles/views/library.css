@@ -639,44 +639,49 @@
 /* 絞り込みトリガーボタン */
 button.seiton-filter-trigger-btn {
   align-items: center;
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--st-radius-md);
-  color: var(--text-normal);
+  appearance: none;
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-ink);
   cursor: pointer;
   display: inline-flex;
+  font-family: var(--font-interface);
   font-size: var(--st-text-sm);
   font-weight: 500;
   gap: 6px;
   height: 36px;
+  margin: 0;
   padding: 0 12px;
-  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 button.seiton-filter-trigger-btn:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
+  background: var(--st-hover);
+  border-color: var(--st-hairline);
 }
 
 button.seiton-filter-trigger-btn.has-active-filters {
-  background: var(--background-modifier-hover);
-  border-color: var(--interactive-accent);
+  background: var(--background-modifier-active-hover);
+  border-color: var(--st-accent);
+  color: var(--st-ink);
+  font-weight: 600;
 }
 
 .seiton-filter-trigger-btn .seiton-btn-icon {
-  color: var(--text-muted);
+  color: var(--st-muted);
   display: flex;
 }
 
 .seiton-filter-trigger-btn.has-active-filters .seiton-btn-icon {
-  color: var(--interactive-accent);
+  color: var(--st-ink);
 }
 
 .seiton-filter-badge {
-  background: var(--interactive-accent);
-  border-radius: var(--st-radius-full);
-  color: var(--text-on-accent);
-  font-size: var(--st-text-2xs);
+  background: var(--st-primary);
+  border-radius: 999px;
+  color: var(--st-on-primary);
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
   min-width: 18px;
@@ -708,65 +713,109 @@ button.seiton-filter-trigger-btn.has-active-filters {
 }
 
 /* --------------------------------------------------------------------------
-   Filter Modal / Drawer (Sheet Style)
+   Filter Modal / Drawer (Clean Slate Dialog)
    -------------------------------------------------------------------------- */
 
 .modal.seiton-filter-modal {
-  max-width: 580px;
-  padding: 0;
-  width: 90vw;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-lg);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 24%), 0 0 0 1px var(--st-hairline);
+  max-width: 560px;
+  overflow: hidden;
+  padding: 0 !important;
+  width: 92vw;
+}
+
+.modal.seiton-filter-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+}
+
+.modal.seiton-filter-modal .modal-close-button {
+  align-items: center;
+  color: var(--st-muted);
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  position: absolute;
+  right: 16px;
+  top: 14px;
+  width: 28px;
+}
+
+.modal.seiton-filter-modal .modal-close-button:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
 }
 
 .seiton-filter-modal-header {
   align-items: center;
-  border-bottom: 1px solid var(--background-modifier-border);
+  border-bottom: 1px solid var(--st-hairline);
   display: flex;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 16px 22px;
+  position: relative;
 }
 
 .seiton-filter-modal-title {
-  font-size: 18px;
+  color: var(--st-ink);
+  font-family: var(--font-interface);
+  font-size: 17px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   margin: 0;
 }
 
-.seiton-filter-reset-btn {
-  background: none;
-  border: 0;
-  color: var(--text-muted);
+button.seiton-filter-reset-btn {
+  align-items: center;
+  appearance: none;
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-muted);
   cursor: pointer;
-  font-size: var(--st-text-sm);
-  padding: 0;
-  text-decoration: underline;
+  display: inline-flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-weight: 500;
+  height: 26px;
+  margin: 0;
+  margin-right: 28px;
+  padding: 0 10px;
+  text-decoration: none !important;
 }
 
-.seiton-filter-reset-btn:hover {
-  color: var(--text-normal);
+button.seiton-filter-reset-btn:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
 }
 
 .seiton-filter-modal-body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-height: 65vh;
+  max-height: min(65vh, 520px);
   overflow-y: auto;
-  padding: 20px;
+  overscroll-behavior: contain;
+  padding: 22px;
 }
 
 .seiton-filter-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .seiton-filter-section h3 {
-  color: var(--text-muted);
-  font-size: var(--st-text-xs);
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  margin: 0;
+  letter-spacing: 0.06em;
+  margin: 0 0 2px;
   text-transform: uppercase;
 }
 
@@ -776,28 +825,50 @@ button.seiton-filter-trigger-btn.has-active-filters {
   justify-content: space-between;
 }
 
+/* タグ検索インプット */
 .seiton-filter-search-wrap {
+  align-items: center;
+  display: flex;
   height: 28px;
   position: relative;
-  width: 180px;
+  width: 170px;
 }
 
 .seiton-filter-search-wrap .seiton-search-icon {
-  color: var(--text-faint);
-  left: 6px;
+  align-items: center;
+  color: var(--st-faint);
+  display: flex;
+  height: 14px;
+  left: 8px;
   pointer-events: none;
   position: absolute;
-  top: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+}
+
+.seiton-filter-search-wrap .seiton-search-icon svg {
+  height: 14px;
+  width: 14px;
 }
 
 .seiton-filter-search-input {
+  appearance: none;
   background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--st-hairline);
   border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-ink);
+  font-family: var(--font-interface);
   font-size: var(--st-text-xs);
   height: 28px;
-  padding: 0 8px 0 24px;
+  outline: none;
+  padding: 0 8px 0 26px;
   width: 100%;
+}
+
+.seiton-filter-search-input:focus {
+  border-color: var(--st-accent);
 }
 
 /* ピルボタングリッド（種類・状態） */
@@ -809,146 +880,215 @@ button.seiton-filter-trigger-btn.has-active-filters {
 
 button.seiton-filter-pill {
   align-items: center;
+  appearance: none;
   background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--st-radius-md);
-  color: var(--text-normal);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-ink);
   cursor: pointer;
   display: inline-flex;
+  font-family: var(--font-interface);
   font-size: var(--st-text-xs);
+  font-weight: 500;
   gap: 6px;
   height: 32px;
-  padding: 0 12px;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  margin: 0;
+  padding: 0 10px;
 }
 
 button.seiton-filter-pill:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
+  background: var(--st-hover);
 }
 
 button.seiton-filter-pill.is-active {
-  background: var(--text-normal);
-  border-color: var(--text-normal);
-  color: var(--background-primary);
+  background: var(--st-primary);
+  border-color: var(--st-primary);
+  color: var(--st-on-primary);
   font-weight: 600;
 }
 
 .seiton-pill-count {
-  color: var(--text-muted);
+  background: var(--background-modifier-border);
+  border-radius: 999px;
+  color: var(--st-muted);
+  display: inline-block;
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
-  opacity: 0.8;
+  line-height: 1;
+  padding: 2px 5px;
 }
 
 button.seiton-filter-pill.is-active .seiton-pill-count {
-  color: var(--background-primary);
+  background: rgb(255 255 255 / 22%);
+  color: var(--st-on-primary);
 }
 
-/* タグチップグリッド */
+.theme-dark button.seiton-filter-pill.is-active .seiton-pill-count {
+  background: rgb(0 0 0 / 25%);
+  color: var(--st-on-primary);
+}
+
+/* タグトレイグリッド */
 .seiton-filter-tags-grid {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  max-height: 160px;
+  gap: 5px;
+  max-height: 150px;
   overflow-y: auto;
-  padding: 2px;
+  overscroll-behavior: contain;
+  padding: 8px;
 }
 
 button.seiton-filter-chip {
   align-items: center;
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
+  appearance: none;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
   border-radius: var(--st-radius-sm);
-  color: var(--text-normal);
+  box-shadow: none;
+  color: var(--st-ink);
   cursor: pointer;
   display: inline-flex;
+  font-family: var(--font-interface);
   font-size: var(--st-text-xs);
-  gap: 6px;
-  height: 28px;
-  padding: 0 10px;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  font-weight: 500;
+  gap: 5px;
+  height: 26px;
+  margin: 0;
+  padding: 0 8px;
 }
 
 button.seiton-filter-chip:hover {
-  background: var(--background-modifier-hover);
+  background: var(--st-hover);
 }
 
 button.seiton-filter-chip.is-active {
-  background: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-  color: var(--text-on-accent);
+  background: var(--st-primary);
+  border-color: var(--st-primary);
+  color: var(--st-on-primary);
   font-weight: 600;
 }
 
 button.seiton-filter-chip.is-clear {
   border-style: dashed;
-  color: var(--text-muted);
+  color: var(--st-muted);
 }
 
 .seiton-chip-count {
-  color: var(--text-faint);
+  color: var(--st-faint);
+  font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
 
 button.seiton-filter-chip.is-active .seiton-chip-count {
-  color: var(--text-on-accent);
-  opacity: 0.8;
+  color: var(--st-on-primary);
+  opacity: 0.85;
 }
 
 .seiton-filter-empty-text {
-  color: var(--text-faint);
+  color: var(--st-muted);
   font-size: var(--st-text-xs);
-  padding: 8px 0;
+  padding: 12px;
+  text-align: center;
+  width: 100%;
 }
 
 /* メタデータ行（プロジェクト・科目・リスト） */
 .seiton-filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
 .seiton-filter-col {
   display: flex;
-  flex: 1 1 160px;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .seiton-filter-select {
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="%23888888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>') no-repeat right 10px center;
+  border: 1px solid var(--st-hairline);
   border-radius: var(--st-radius-sm);
-  color: var(--text-normal);
+  box-shadow: none;
+  color: var(--st-ink);
+  cursor: pointer;
+  font-family: var(--font-interface);
   font-size: var(--st-text-xs);
-  height: 32px;
-  padding: 0 8px;
+  height: 34px;
+  outline: none;
+  padding: 0 28px 0 10px;
   width: 100%;
+}
+
+.seiton-filter-select:hover {
+  background-color: var(--st-hover);
+}
+
+.seiton-filter-select:focus {
+  border-color: var(--st-accent);
 }
 
 /* モーダルフッター */
 .seiton-filter-modal-footer {
   align-items: center;
-  border-top: 1px solid var(--background-modifier-border);
+  border-top: 1px solid var(--st-hairline);
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: flex-end;
-  padding: 16px 20px;
+  padding: 14px 22px;
 }
 
 button.seiton-filter-cancel-btn {
-  background: transparent;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--st-radius-md);
-  color: var(--text-normal);
+  align-items: center;
+  appearance: none;
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-ink);
   cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  font-weight: 500;
   height: 36px;
+  justify-content: center;
+  margin: 0;
   padding: 0 16px;
 }
 
+button.seiton-filter-cancel-btn:hover {
+  background: var(--st-hover);
+}
+
 button.seiton-filter-apply-btn {
+  align-items: center;
+  appearance: none;
+  background: var(--st-primary);
+  border: 0;
+  border-radius: var(--st-radius-sm);
+  box-shadow: none;
+  color: var(--st-on-primary);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
   height: 36px;
+  justify-content: center;
+  margin: 0;
   padding: 0 20px;
+}
+
+button.seiton-filter-apply-btn:hover {
+  opacity: 0.9;
 }
 
 @media (max-width: 640px) {
@@ -966,4 +1106,5 @@ button.seiton-filter-apply-btn {
     width: min(520px, calc(100vw - 28px));
   }
 }
+
 
