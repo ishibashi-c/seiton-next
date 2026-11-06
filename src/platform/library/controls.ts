@@ -1,68 +1,99 @@
 import { setIcon } from "obsidian";
-import type { VaultIndex } from "../../services/vaultIndex";
-import { allCourses, allLists, allTags } from "../../services/vaultIndex";
 import { createSelect, type SelectControl } from "../ui/select";
 import type { LibrarySort } from "./query";
 import type { LibrarySelection } from "./selection";
 
 export interface LibraryControlsOptions {
-  getCourse: () => string;
+  getActiveFilterCount: () => number;
   getLayout: () => "cards" | "list";
-  getList: () => string;
-  getProject: () => string;
+  getQuery: () => string;
   getSort: () => LibrarySort;
-  getTag: () => string;
-  onCourseChange: (value: string) => void;
   onLayoutChange: (layout: "cards" | "list") => void;
-  onListChange: (value: string) => void;
-  onProjectChange: (value: string) => void;
+  onOpenFilterModal: () => void;
+  onQueryChange: (query: string) => void;
   onRefresh: () => void;
   onSortChange: (sort: LibrarySort) => void;
-  onTagChange: (value: string) => void;
   selection: LibrarySelection;
-}
-
-function fillSelect(
-  control: SelectControl | null,
-  emptyLabel: string,
-  values: string[],
-  current: string
-): void {
-  if (!control) {
-    return;
-  }
-  control.setChoices([
-    { label: emptyLabel, value: "" },
-    ...values.map((value) => ({ label: value, value })),
-  ]);
-  control.setValue(current);
 }
 
 export class LibraryControls {
   private readonly options: LibraryControlsOptions;
-  private courseSelect: SelectControl | null = null;
-  private listSelect: SelectControl | null = null;
-  private projectSelect: SelectControl | null = null;
+  private searchInput: HTMLInputElement | null = null;
+  private filterBadge: HTMLElement | null = null;
+  private filterBtn: HTMLButtonElement | null = null;
   private sortSelect: SelectControl | null = null;
-  private tagSelect: SelectControl | null = null;
+  private searchTimer: number | null = null;
 
   constructor(options: LibraryControlsOptions) {
     this.options = options;
   }
 
   mount(parent: HTMLElement): void {
-    const controls = parent.createDiv({ cls: "seiton-library-controls" });
+    const toolbar = parent.createDiv({ cls: "seiton-library-toolbar" });
 
-    this.courseSelect = createSelect({
-      choices: [],
-      onChange: (value) => this.options.onCourseChange(value),
-      value: this.options.getCourse(),
+    // 1. 検索バー
+    const searchWrap = toolbar.createDiv({
+      cls: "seiton-search seiton-library-search-box",
     });
-    this.courseSelect.element.addClass("seiton-library-select");
-    this.courseSelect.element.addClass("is-quiet");
-    this.courseSelect.element.addClass("seiton-course-select");
-    controls.append(this.courseSelect.element);
+    const searchIcon = searchWrap.createSpan({ cls: "seiton-search-icon" });
+    setIcon(searchIcon, "search");
 
+    const search = searchWrap.createEl("input", {
+      attr: {
+        "aria-label": "ライブラリを検索",
+        placeholder: "ライブラリを検索...",
+        type: "search",
+      },
+      cls: "seiton-library-search",
+    });
+    this.searchInput = search;
+    search.value = this.options.getQuery();
+
+    search.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && search.value !== "") {
+        event.preventDefault();
+        search.value = "";
+        this.options.onQueryChange("");
+        this.options.onRefresh();
+      }
+    });
+
+    search.addEventListener("input", () => {
+      this.options.onQueryChange(search.value);
+      if (this.searchTimer !== null) {
+        window.clearTimeout(this.searchTimer);
+      }
+      this.searchTimer = window.setTimeout(() => {
+        this.searchTimer = null;
+        this.options.onRefresh();
+      }, 200);
+    });
+
+    // 2. アクションボタン群
+    const actions = toolbar.createDiv({ cls: "seiton-library-actions" });
+
+    // 絞り込みボタン
+    const filterBtn = actions.createEl("button", {
+      attr: {
+        "aria-label": "絞り込み条件を設定",
+        type: "button",
+      },
+      cls: "seiton-filter-trigger-btn",
+    });
+    this.filterBtn = filterBtn;
+    const filterIcon = filterBtn.createSpan({ cls: "seiton-btn-icon" });
+    setIcon(filterIcon, "sliders-horizontal");
+    filterBtn.createSpan({ cls: "seiton-btn-label", text: "絞り込み" });
+
+    this.filterBadge = filterBtn.createSpan({
+      cls: "seiton-filter-badge is-hidden",
+      text: "0",
+    });
+    filterBtn.addEventListener("click", () => {
+      this.options.onOpenFilterModal();
+    });
+
+    // 並び順
     this.sortSelect = createSelect({
       choices: [
         { label: "更新順", value: "updated" },
@@ -75,11 +106,11 @@ export class LibraryControls {
         ),
       value: this.options.getSort(),
     });
-    this.sortSelect.element.addClass("seiton-library-select");
-    this.sortSelect.element.addClass("is-quiet");
-    controls.append(this.sortSelect.element);
+    this.sortSelect.element.addClass("seiton-library-select", "is-quiet");
+    actions.append(this.sortSelect.element);
 
-    const layout = controls.createDiv({
+    // 表示切替（カード / リスト）
+    const layout = actions.createDiv({
       attr: { "aria-label": "表示", role: "group" },
       cls: "seiton-segmented",
     });
@@ -111,79 +142,40 @@ export class LibraryControls {
     cardsButton.addEventListener("click", () => applyLayout("cards"));
     listButton.addEventListener("click", () => applyLayout("list"));
 
-    const selectToggle = controls.createEl("button", {
+    // 選択ボタン
+    const selectToggle = actions.createEl("button", {
       attr: { type: "button" },
       cls: "seiton-text-action seiton-select-toggle",
       text: "選択",
     });
     this.options.selection.bindToggle(selectToggle);
 
-    const more = parent.createEl("details", {
-      cls: "seiton-filter-more",
-    });
-    const summary = more.createEl("summary");
-    summary.createSpan({ text: "絞り込み" });
-    const caret = summary.createSpan({ cls: "seiton-filter-more-caret" });
-    setIcon(caret, "chevron-down");
-    const selects = more.createDiv({ cls: "seiton-library-selects" });
-    this.tagSelect = createSelect({
-      choices: [],
-      onChange: (value) => this.options.onTagChange(value),
-      value: this.options.getTag(),
-    });
-    this.tagSelect.element.addClass("seiton-library-select");
-    this.tagSelect.element.addClass("is-quiet");
-    selects.append(this.tagSelect.element);
-    this.listSelect = createSelect({
-      choices: [],
-      onChange: (value) => this.options.onListChange(value),
-      value: this.options.getList(),
-    });
-    this.listSelect.element.addClass("seiton-library-select");
-    this.listSelect.element.addClass("is-quiet");
-    selects.append(this.listSelect.element);
-    this.projectSelect = createSelect({
-      choices: [],
-      onChange: (value) => this.options.onProjectChange(value),
-      value: this.options.getProject(),
-    });
-    this.projectSelect.element.addClass("seiton-library-select");
-    this.projectSelect.element.addClass("is-quiet");
-    selects.append(this.projectSelect.element);
+    this.updateFilterBadge();
   }
 
-  refreshOptions(index: VaultIndex): void {
-    fillSelect(
-      this.tagSelect,
-      "タグ: すべて",
-      allTags(index),
-      this.options.getTag()
-    );
-    fillSelect(
-      this.listSelect,
-      "リスト: すべて",
-      allLists(index),
-      this.options.getList()
-    );
-    fillSelect(
-      this.courseSelect,
-      "科目: すべて",
-      allCourses(index),
-      this.options.getCourse()
-    );
-    const projects = [
-      ...new Set(
-        index.notes
-          .filter((note) => note.kind === "project")
-          .map((note) => note.title)
-      ),
-    ].sort((left, right) => left.localeCompare(right, "ja"));
-    fillSelect(
-      this.projectSelect,
-      "プロジェクト: すべて",
-      projects,
-      this.options.getProject()
-    );
+  setQuery(query: string): void {
+    if (this.searchInput) {
+      this.searchInput.value = query;
+    }
+  }
+
+  focusSearch(): void {
+    this.searchInput?.focus();
+    this.searchInput?.select();
+  }
+
+  updateFilterBadge(): void {
+    const count = this.options.getActiveFilterCount();
+    if (this.filterBadge && this.filterBtn) {
+      if (count > 0) {
+        this.filterBadge.setText(String(count));
+        this.filterBadge.removeClass("is-hidden");
+        this.filterBtn.addClass("has-active-filters");
+      } else {
+        this.filterBadge.addClass("is-hidden");
+        this.filterBtn.removeClass("has-active-filters");
+      }
+    }
   }
 
   setSortState(sort: LibrarySort, searching: boolean): void {
@@ -198,10 +190,9 @@ export class LibraryControls {
   }
 
   reset(): void {
-    this.courseSelect = null;
-    this.listSelect = null;
-    this.projectSelect = null;
+    this.searchInput = null;
+    this.filterBadge = null;
+    this.filterBtn = null;
     this.sortSelect = null;
-    this.tagSelect = null;
   }
 }

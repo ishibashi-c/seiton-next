@@ -17,13 +17,14 @@ import type {
 import type { WebClipService } from "../services/webClipService";
 import { ConfirmModal } from "./confirmModal";
 import { LibraryControls } from "./library/controls";
+import { LibraryFilterModal } from "./library/filterModal";
 import {
   KIND_LABELS,
   memoPreview,
   shortDate,
   shortDateTime,
 } from "./library/format";
-import { FILTER_LABELS, LibraryIndex } from "./library/indexView";
+import { FILTER_LABELS } from "./library/indexView";
 import { LibraryList } from "./library/list";
 import {
   type LibraryFilter,
@@ -57,6 +58,7 @@ export class SeitonLibraryView extends ItemView {
   private readonly webClips: WebClipService | null;
 
   private filter: LibraryFilter = "all";
+  private statusFilter: "all" | "review" | "pinned" | "archived" = "all";
   private query = "";
   private sort: "updated" | "created" | "lecture" = "updated";
   private tagFilter = "";
@@ -77,7 +79,6 @@ export class SeitonLibraryView extends ItemView {
   private totalDataCount = 0;
   private layout: "cards" | "list" = "cards";
   private readonly controls: LibraryControls;
-  private readonly index: LibraryIndex;
   private readonly list: LibraryList;
   private readonly selection: LibrarySelection;
   private refreshTimer: number | null = null;
@@ -110,32 +111,19 @@ export class SeitonLibraryView extends ItemView {
       void this.refresh();
     });
     this.controls = new LibraryControls({
-      getCourse: () => this.courseFilter,
+      getActiveFilterCount: () => this.getActiveFilterCount(),
       getLayout: () => this.layout,
-      getList: () => this.listFilter,
-      getProject: () => this.projectFilter,
+      getQuery: () => this.query,
       getSort: () => this.sort,
-      getTag: () => this.tagFilter,
-      onCourseChange: (value) => {
-        this.courseFilter = value;
-        if (value && this.sort !== "lecture") {
-          this.sort = "lecture";
-        } else if (!value && this.sort === "lecture") {
-          this.sort = "updated";
-        }
-        void this.refresh();
-      },
       onLayoutChange: (layout) => {
         this.layout = layout;
         void this.refresh();
       },
-      onListChange: (value) => {
-        this.listFilter = value;
-        void this.refresh();
+      onOpenFilterModal: () => {
+        this.openFilterModal();
       },
-      onProjectChange: (value) => {
-        this.projectFilter = value;
-        void this.refresh();
+      onQueryChange: (query) => {
+        this.query = query;
       },
       onRefresh: () => {
         void this.refresh();
@@ -144,22 +132,7 @@ export class SeitonLibraryView extends ItemView {
         this.sort = sort;
         void this.refresh();
       },
-      onTagChange: (value) => {
-        this.tagFilter = value;
-        void this.refresh();
-      },
       selection: this.selection,
-    });
-    this.index = new LibraryIndex({
-      getFilter: () => this.filter,
-      getQuery: () => this.query,
-      onFilterChange: (filter) => this.setFilter(filter),
-      onQueryChange: (query) => {
-        this.query = query;
-      },
-      onRefresh: () => {
-        void this.refresh();
-      },
     });
 
     this.list = new LibraryList({
@@ -183,7 +156,7 @@ export class SeitonLibraryView extends ItemView {
       selection: this.selection,
       setQuery: (query) => {
         this.query = query;
-        this.index.setQuery(query);
+        this.controls.setQuery(query);
       },
       togglePinned: (note) => this.togglePinned(note),
     });
@@ -271,7 +244,6 @@ export class SeitonLibraryView extends ItemView {
     this.eventRefs = [];
     this.contentEl.empty();
     this.controls.reset();
-    this.index.reset();
     this.selection.reset();
     this.listEl = null;
     this.countEl = null;
@@ -304,9 +276,8 @@ export class SeitonLibraryView extends ItemView {
         index.notes.filter((note) => !note.archived).length +
         index.memos.filter((memo) => memo.state !== "deleted").length +
         index.prompts.length;
-      this.index.renderCounts(index);
-      this.controls.refreshOptions(index);
       this.controls.setSortState(this.sort, this.query.trim() !== "");
+      this.controls.updateFilterBadge();
       this.renderActiveFilters();
       this.currentIndex = index;
       this.vocabulary = {
@@ -317,25 +288,19 @@ export class SeitonLibraryView extends ItemView {
       const hits = this.queryHits(index);
       this.renderProblems(index.problems);
       this.renderHits(hits);
-      const filtered = Boolean(
-        this.query ||
-          this.filter !== "all" ||
-          this.tagFilter ||
-          this.listFilter ||
-          this.projectFilter ||
-          this.courseFilter
-      );
-      this.index.setTotal(
-        hits.length,
-        filtered ? `/ ${this.totalDataCount} アイテム` : "アイテム"
-      );
+      const filtered = this.hasActiveFilters();
       if (this.countEl) {
-        const limited = hits.length >= this.settings.maxSearchResults;
-        this.countEl.setText(
-          limited
-            ? `上限${this.settings.maxSearchResults}件まで表示しています。`
-            : ""
-        );
+        this.countEl.empty();
+        const text = filtered
+          ? `${hits.length} / ${this.totalDataCount} アイテム`
+          : `${this.totalDataCount} アイテム`;
+        this.countEl.createSpan({ cls: "seiton-library-count-text", text });
+        if (hits.length >= this.settings.maxSearchResults) {
+          this.countEl.createSpan({
+            cls: "seiton-library-count-limit",
+            text: `（上限${this.settings.maxSearchResults}件まで表示中）`,
+          });
+        }
       }
     } catch (error) {
       showToast(userMessageOf(error));
@@ -350,10 +315,6 @@ export class SeitonLibraryView extends ItemView {
   }
 
   private renderLibraryBody(body: HTMLElement): void {
-    const tool = body.createDiv({
-      cls: "seiton-tool-card seiton-library-tool",
-    });
-    this.index.mount(tool);
     this.controls.mount(body);
     this.selection.mount(body);
     this.activeFiltersEl = body.createDiv({
@@ -364,16 +325,48 @@ export class SeitonLibraryView extends ItemView {
     this.listEl = body.createDiv({ cls: "seiton-library-list" });
   }
 
-  private setFilter(filter: LibraryFilter): void {
-    this.filter = filter;
-    this.index.setActive(filter);
-    void this.refresh();
+  private openFilterModal(): void {
+    if (!this.currentIndex) {
+      return;
+    }
+    const currentStatus =
+      this.statusFilter === "all"
+        ? this.filter === "review" ||
+          this.filter === "pinned" ||
+          this.filter === "archived"
+          ? this.filter
+          : "all"
+        : this.statusFilter;
+
+    new LibraryFilterModal(
+      this.appRef,
+      this.currentIndex,
+      {
+        course: this.courseFilter,
+        kind: this.filter,
+        list: this.listFilter,
+        project: this.projectFilter,
+        status: currentStatus,
+        tag: this.tagFilter,
+      },
+      (nextState) => {
+        this.filter = nextState.kind;
+        this.statusFilter = nextState.status;
+        this.tagFilter = nextState.tag;
+        this.projectFilter = nextState.project;
+        this.courseFilter = nextState.course;
+        this.listFilter = nextState.list;
+        void this.refresh();
+      }
+    ).open();
   }
 
   private queryState(query: string): LibraryQueryState {
+    const effectiveFilter =
+      this.statusFilter === "all" ? this.filter : this.statusFilter;
     return {
       courseFilter: this.courseFilter,
-      filter: this.filter,
+      filter: effectiveFilter,
       listFilter: this.listFilter,
       projectFilter: this.projectFilter,
       query,
@@ -401,15 +394,20 @@ export class SeitonLibraryView extends ItemView {
   /** ホームなどから検索語を受け取って開く。 */
   async setSearch(query: string): Promise<void> {
     this.query = query;
-    this.index.setQuery(query);
+    this.controls.setQuery(query);
     await this.refresh();
     this.focusSearch();
+  }
+
+  focusSearch(): void {
+    this.controls.focusSearch();
   }
 
   private hasActiveFilters(): boolean {
     return Boolean(
       this.query ||
         this.filter !== "all" ||
+        this.statusFilter !== "all" ||
         this.tagFilter ||
         this.listFilter ||
         this.projectFilter ||
@@ -417,15 +415,39 @@ export class SeitonLibraryView extends ItemView {
     );
   }
 
+  private getActiveFilterCount(): number {
+    let count = 0;
+    if (this.filter !== "all") {
+      count += 1;
+    }
+    if (this.statusFilter !== "all") {
+      count += 1;
+    }
+    if (this.tagFilter) {
+      count += 1;
+    }
+    if (this.projectFilter) {
+      count += 1;
+    }
+    if (this.courseFilter) {
+      count += 1;
+    }
+    if (this.listFilter) {
+      count += 1;
+    }
+    return count;
+  }
+
   private clearAllFilters(): void {
     this.filter = "all";
+    this.statusFilter = "all";
     this.query = "";
     this.tagFilter = "";
     this.listFilter = "";
     this.projectFilter = "";
     this.courseFilter = "";
     this.sort = "updated";
-    this.index.setQuery("");
+    this.controls.setQuery("");
     void this.refresh();
   }
 
@@ -443,7 +465,7 @@ export class SeitonLibraryView extends ItemView {
       chips.push({
         clear: () => {
           this.query = "";
-          this.index.setQuery("");
+          this.controls.setQuery("");
         },
         label: `検索: ${this.query}`,
       });
@@ -454,6 +476,19 @@ export class SeitonLibraryView extends ItemView {
           this.filter = "all";
         },
         label: `種類: ${FILTER_LABELS[this.filter] ?? this.filter}`,
+      });
+    }
+    if (this.statusFilter !== "all") {
+      const statusLabels: Record<string, string> = {
+        archived: "アーカイブ",
+        pinned: "ピン",
+        review: "整理トレイ",
+      };
+      chips.push({
+        clear: () => {
+          this.statusFilter = "all";
+        },
+        label: `状態: ${statusLabels[this.statusFilter] ?? this.statusFilter}`,
       });
     }
     if (this.courseFilter) {
@@ -469,7 +504,7 @@ export class SeitonLibraryView extends ItemView {
         clear: () => {
           this.tagFilter = "";
         },
-        label: `タグ: ${this.tagFilter}`,
+        label: `タグ: #${this.tagFilter}`,
       });
     }
     if (this.listFilter) {
@@ -581,11 +616,8 @@ export class SeitonLibraryView extends ItemView {
   }
 
   showReview(): void {
-    this.setFilter("review");
-  }
-
-  focusSearch(): void {
-    this.index.focus();
+    this.statusFilter = "review";
+    void this.refresh();
   }
 
   private async openQuickSearch(): Promise<void> {
