@@ -5,7 +5,7 @@ import { showToast } from "./ui/toast";
  */
 
 import type { TAbstractFile, WorkspaceLeaf } from "obsidian";
-import { ItemView, MarkdownRenderer, setIcon, TFile } from "obsidian";
+import { ItemView, setIcon, TFile } from "obsidian";
 import { MEMOS_FOLDER, VIEW_TYPE_TSUBUYAKI } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { clockOf } from "../domain/time";
@@ -552,15 +552,7 @@ export class SeitonTsubuyakiView extends ItemView {
     const body = main.createDiv({
       cls: "seiton-tsubuyaki-body markdown-rendered",
     });
-    void MarkdownRenderer.render(
-      this.app,
-      entry.body,
-      body,
-      item.path,
-      this
-    ).catch(() => {
-      body.setText(entry.body);
-    });
+    this.renderMemoBodyFast(body, entry.body);
 
     if (entry.promotedTo) {
       const linkText = `[[${entry.promotedTo.replace(/\.md$/u, "")}]]`;
@@ -623,6 +615,97 @@ export class SeitonTsubuyakiView extends ItemView {
       }
       this.startEdit(item.entry.id);
     });
+  }
+
+  private renderMemoBodyFast(container: HTMLElement, rawText: string): void {
+    const paragraphs = rawText.split(/\n{2,}/u);
+    const tokenPattern =
+      /(`[^`\n]+`|\*\*[^*\n]+\*\*|\[\[([^\]|]+)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s)）」』]+)|(^|[\s(（「『【、])#([\p{L}\p{N}_/-]+))/gu;
+
+    for (const para of paragraphs) {
+      const p = container.createEl("p");
+      const lines = para.split("\n");
+      lines.forEach((line, lineIdx) => {
+        if (lineIdx > 0) {
+          p.createEl("br");
+        }
+        let lastIndex = 0;
+        for (const match of line.matchAll(tokenPattern)) {
+          const matchIndex = match.index ?? 0;
+          const full = match[0];
+          const prefix = match[7] ?? "";
+          const effectiveStart = matchIndex + prefix.length;
+
+          if (effectiveStart > lastIndex) {
+            p.appendText(line.slice(lastIndex, effectiveStart));
+          }
+
+          if (full.startsWith("`") && full.endsWith("`")) {
+            p.createEl("code", { text: full.slice(1, -1) });
+          } else if (full.startsWith("**") && full.endsWith("**")) {
+            p.createEl("strong", { text: full.slice(2, -2) });
+          } else if (match[2] !== undefined) {
+            const target = match[2].trim();
+            const label = (match[3] ?? target).trim();
+            const link = p.createEl("a", {
+              cls: "internal-link",
+              text: label,
+            });
+            link.addEventListener("click", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              void this.app.workspace.openLinkText(target, "", false);
+            });
+          } else if (match[4] !== undefined && match[5] !== undefined) {
+            const link = p.createEl("a", {
+              attr: {
+                href: match[5],
+                rel: "noopener noreferrer",
+                target: "_blank",
+              },
+              cls: "external-link",
+              text: match[4],
+            });
+            link.addEventListener("click", (event) => event.stopPropagation());
+          } else if (match[6] !== undefined) {
+            const link = p.createEl("a", {
+              attr: {
+                href: match[6],
+                rel: "noopener noreferrer",
+                target: "_blank",
+              },
+              cls: "external-link",
+              text: match[6],
+            });
+            link.addEventListener("click", (event) => event.stopPropagation());
+          } else if (match[8] !== undefined) {
+            const tagText = match[8];
+            if (/[^\d]/u.test(tagText)) {
+              const tagEl = p.createEl("a", {
+                cls: "tag",
+                text: `#${tagText}`,
+              });
+              tagEl.addEventListener("click", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const key = tagText.toLowerCase();
+                this.activeTag = this.activeTag === key ? "" : key;
+                this.limit = PAGE_SIZE;
+                this.renderTagChips();
+                this.renderList();
+              });
+            } else {
+              p.appendText(`#${tagText}`);
+            }
+          }
+
+          lastIndex = matchIndex + full.length;
+        }
+        if (lastIndex < line.length) {
+          p.appendText(line.slice(lastIndex));
+        }
+      });
+    }
   }
 
   private actionsFor(item: MemoListItem) {

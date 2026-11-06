@@ -1,3 +1,5 @@
+import { setIcon } from "obsidian";
+
 export interface CardMenuAction {
   danger?: boolean;
   label: string;
@@ -11,8 +13,8 @@ export function closeCardMenu(): void {
 }
 
 /**
- * カードの⋯に紐づく小さなメニュー。
- * ObsidianのMenuに依存せず、位置・外側クリック・Escをここで面倒みる。
+ * カードの⋯に紐づくメニュー。
+ * デスクトップではアンカー付近のポップオーバー、モバイル幅（<=640px）では画面中央軸のスマートダイアログとして即時表示する。
  */
 export function showCardMenu(
   anchor: HTMLElement,
@@ -22,24 +24,49 @@ export function showCardMenu(
   if (actions.length === 0) {
     return;
   }
+
+  const isDialog = window.innerWidth <= 640;
+  let backdropEl: HTMLElement | null = null;
+
+  if (isDialog) {
+    backdropEl = document.createElement("div");
+    backdropEl.className = "st-select-backdrop";
+    backdropEl.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeCardMenu();
+    });
+    document.body.appendChild(backdropEl);
+  }
+
   const menu = document.createElement("div");
-  menu.className = "seiton-card-menu";
+  menu.className = `seiton-card-menu${isDialog ? " is-dialog" : ""}`;
   menu.setAttribute("role", "menu");
-  // プラグインCSSが古い/未適用でも読めるよう、位置と見た目はインラインで持つ。
-  menu.style.cssText = [
-    "position:fixed",
-    "z-index:1000",
-    "min-width:150px",
-    "padding:4px",
-    "display:flex",
-    "flex-direction:column",
-    "box-sizing:border-box",
-    "background:var(--background-primary,#fff)",
-    "border:1px solid var(--background-modifier-border,#d9d9d9)",
-    "border-radius:10px",
-    "font-family:var(--font-interface,sans-serif)",
-  ].join(";");
-  menu.style.visibility = "hidden";
+
+  if (isDialog) {
+    const header = document.createElement("div");
+    header.className = "st-select-dialog-header";
+    const titleEl = document.createElement("span");
+    titleEl.className = "st-select-dialog-title";
+    titleEl.textContent = "操作を選択";
+    header.appendChild(titleEl);
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "st-select-dialog-close";
+    closeBtn.setAttribute("aria-label", "閉じる");
+    setIcon(closeBtn, "x");
+    closeBtn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeCardMenu();
+    });
+    header.appendChild(closeBtn);
+    menu.appendChild(header);
+  }
+
+  const listWrap = document.createElement("div");
+  listWrap.className = "seiton-card-menu-list";
   for (const action of actions) {
     const button = document.createElement("button");
     button.type = "button";
@@ -48,41 +75,36 @@ export function showCardMenu(
     }`;
     button.setAttribute("role", "menuitem");
     button.textContent = action.label;
-    button.style.cssText = [
-      "background:transparent",
-      "border:0",
-      "border-radius:6px",
-      "box-shadow:none",
-      "color:var(--text-normal,#222)",
-      "font-family:inherit",
-      "font-size:12px",
-      "padding:7px 10px",
-      "text-align:left",
-      "width:100%",
-    ].join(";");
     button.addEventListener("click", () => {
       closeCardMenu();
       action.run();
     });
-    menu.appendChild(button);
+    listWrap.appendChild(button);
+  }
+  menu.appendChild(listWrap);
+
+  if (!isDialog) {
+    menu.style.visibility = "hidden";
   }
   document.body.appendChild(menu);
 
-  const rect = anchor.getBoundingClientRect();
-  const width = menu.offsetWidth;
-  const height = menu.offsetHeight;
-  const left = Math.min(
-    window.innerWidth - width - 8,
-    Math.max(8, rect.right - width)
-  );
-  const below = rect.bottom + 4;
-  const top =
-    below + height > window.innerHeight - 8
-      ? Math.max(8, rect.top - height - 4)
-      : below;
-  menu.style.left = `${left}px`;
-  menu.style.top = `${top}px`;
-  menu.style.visibility = "visible";
+  if (!isDialog) {
+    const rect = anchor.getBoundingClientRect();
+    const width = menu.offsetWidth;
+    const height = menu.offsetHeight;
+    const left = Math.min(
+      window.innerWidth - width - 8,
+      Math.max(8, rect.right - width)
+    );
+    const below = rect.bottom + 4;
+    const top =
+      below + height > window.innerHeight - 8
+        ? Math.max(8, rect.top - height - 4)
+        : below;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.style.visibility = "visible";
+  }
 
   const onPointerDown = (event: PointerEvent): void => {
     if (event.target instanceof Node && !menu.contains(event.target)) {
@@ -101,6 +123,8 @@ export function showCardMenu(
     document.removeEventListener("keydown", onKeyDown);
     window.removeEventListener("resize", cleanup);
     window.removeEventListener("scroll", cleanup, true);
+    backdropEl?.remove();
+    backdropEl = null;
     menu.remove();
     activeCleanup = null;
   };
@@ -110,6 +134,8 @@ export function showCardMenu(
   }, 0);
   document.addEventListener("keydown", onKeyDown);
   window.addEventListener("resize", cleanup);
-  window.addEventListener("scroll", cleanup, true);
-  menu.querySelector<HTMLButtonElement>("button")?.focus();
+  if (!isDialog) {
+    window.addEventListener("scroll", cleanup, true);
+  }
+  listWrap.querySelector<HTMLButtonElement>("button")?.focus();
 }

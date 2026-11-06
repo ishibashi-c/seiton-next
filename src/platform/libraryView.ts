@@ -7,12 +7,13 @@ import type { NoteService } from "../services/noteService";
 import type { PropertyService } from "../services/propertyService";
 import type { SeitonSettings } from "../services/settings";
 import { TriageService } from "../services/triageService";
-import type {
-  IndexItem,
-  IndexProblem,
-  NoteRecord,
-  VaultIndex,
-  VaultIndexService,
+import {
+  buildWebClipMap,
+  type IndexItem,
+  type IndexProblem,
+  type NoteRecord,
+  type VaultIndex,
+  type VaultIndexService,
 } from "../services/vaultIndex";
 import type { WebClipService } from "../services/webClipService";
 import { ConfirmModal } from "./confirmModal";
@@ -264,14 +265,9 @@ export class SeitonLibraryView extends ItemView {
       if (!this.listEl) {
         return;
       }
-      if (this.webClips) {
-        try {
-          const clips = await this.webClips.listWebClips();
-          this.webClipByPath = new Map(clips.map((clip) => [clip.path, clip]));
-        } catch {
-          this.webClipByPath = new Map();
-        }
-      }
+      this.webClipByPath = this.webClips
+        ? buildWebClipMap(index.notes)
+        : new Map();
       this.totalDataCount =
         index.notes.filter((note) => !note.archived).length +
         index.memos.filter((memo) => memo.state !== "deleted").length +
@@ -697,11 +693,14 @@ export class SeitonLibraryView extends ItemView {
   }
 
   private registerVaultEvents(): void {
-    const handler = (file: TAbstractFile): void => {
+    const handler = (file: TAbstractFile, oldPath?: string): void => {
       if (!file.path.endsWith(".md")) {
         return;
       }
-      this.indexService.invalidate();
+      if (oldPath) {
+        this.indexService.invalidate(oldPath);
+      }
+      this.indexService.invalidate(file.path);
       if (this.refreshTimer !== null) {
         window.clearTimeout(this.refreshTimer);
       }
@@ -711,10 +710,10 @@ export class SeitonLibraryView extends ItemView {
       }, 450);
     };
     this.eventRefs.push(
-      this.appRef.vault.on("modify", handler),
-      this.appRef.vault.on("create", handler),
-      this.appRef.vault.on("delete", handler),
-      this.appRef.vault.on("rename", handler)
+      this.appRef.vault.on("modify", (file) => handler(file)),
+      this.appRef.vault.on("create", (file) => handler(file)),
+      this.appRef.vault.on("delete", (file) => handler(file)),
+      this.appRef.vault.on("rename", (file, oldPath) => handler(file, oldPath))
     );
     for (const ref of this.eventRefs) {
       this.registerEvent(ref);

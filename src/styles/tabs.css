@@ -85,47 +85,6 @@
   right: 0;
 }
 
-.seiton-top-nav.is-tab-transitioning .seiton-top-tab.is-active::after {
-  animation: seiton-tab-underline 160ms cubic-bezier(0.2, 0, 0, 1) both;
-  transform-origin: left center;
-}
-
-.seiton-tab-body.is-tab-entering {
-  animation: seiton-tab-in 150ms cubic-bezier(0.2, 0, 0, 1) both;
-}
-
-@keyframes seiton-tab-in {
-  from {
-    opacity: 0;
-    transform: translateX(var(--seiton-enter-x, 8px));
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes seiton-tab-underline {
-  from {
-    transform: scaleX(0);
-  }
-
-  to {
-    transform: scaleX(1);
-  }
-}
-
-@keyframes seiton-tab-fade {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
 .seiton-fab {
   align-items: center;
   background: var(--st-primary);
@@ -140,10 +99,6 @@
   padding: 0;
   pointer-events: none;
   position: fixed;
-  transform: translateY(6px);
-  transition:
-    opacity 120ms ease,
-    transform 120ms ease;
   width: 48px;
   z-index: 40;
 }
@@ -151,7 +106,6 @@
 .seiton-fab.is-visible {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
 }
 
 .seiton-fab:hover {
@@ -237,20 +191,6 @@
   .seiton-fab {
     height: 52px;
     width: 52px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .seiton-tab-body.is-tab-entering {
-    animation: seiton-tab-fade 80ms ease both;
-  }
-
-  .seiton-top-nav.is-tab-transitioning .seiton-top-tab.is-active::after {
-    animation: none;
-  }
-
-  .seiton-fab {
-    transition: none;
   }
 }
 

@@ -121,41 +121,6 @@
   font-weight: 600;
 }
 
-/* Refreshing: a quiet progress line under the index card */
-
-.seiton-tool-card {
-  position: relative;
-}
-
-.seiton-library.is-refreshing .seiton-tool-card::after {
-  animation: seiton-progress 1s ease-in-out infinite;
-  background: var(--text-faint);
-  bottom: 0;
-  content: "";
-  height: 2px;
-  left: 20px;
-  opacity: 0.4;
-  position: absolute;
-  right: 20px;
-}
-
-@keyframes seiton-progress {
-  0%,
-  100% {
-    opacity: 0.15;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .seiton-library.is-refreshing .seiton-tool-card::after {
-    animation: none;
-    opacity: 0.35;
-  }
-}
-
 /* Selection checkmark drawn in CSS (no glyph) */
 
 .seiton-select.is-selected::after {
@@ -239,40 +204,6 @@ body.theme-dark .seiton-prompt-root {
 .seiton-book-card-meta,
 .seiton-index-count {
   color: var(--seiton-meta);
-}
-
-/* Mobile: the index folds to one row */
-
-.seiton-index-toggle {
-  display: none;
-}
-
-@media (max-width: 760px) {
-  .seiton-library .seiton-index-toggle {
-    align-items: center;
-    background: none;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--st-radius-sm);
-    color: var(--text-muted);
-    display: inline-flex;
-    flex: none;
-    font-size: var(--st-text-sm);
-    height: 28px;
-    padding: 0 8px;
-  }
-
-  .seiton-index-labels,
-  .seiton-index-status {
-    display: none;
-  }
-
-  .seiton-index.is-expanded .seiton-index-labels {
-    display: flex;
-  }
-
-  .seiton-index.is-expanded .seiton-index-status {
-    display: flex;
-  }
 }
 
 /* Shelf selection */

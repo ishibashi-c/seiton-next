@@ -17,6 +17,11 @@ import { normalizeSourceUrl } from "../domain/network";
 import { parsePromptLog } from "../domain/promptLog";
 import { decodeHtmlEntities, normalizeNewlines } from "../domain/text";
 import { dateKeyOf } from "../domain/time";
+import {
+  webClipCardFromProperties,
+  webClipDuplicateKey,
+} from "../domain/webclip";
+import type { WebClipNote } from "./webClipService";
 
 export type IndexKind = "note" | "memo" | "prompt";
 
@@ -184,14 +189,25 @@ function noteFromFile(
       | Record<string, unknown>
       | undefined) ??
     {};
-  const scan = scanFrontmatter(content);
-  const frontmatter: Record<string, unknown> = { ...cached, ...scan.fields };
+  const hasCached = Object.keys(cached).length > 0;
+  const frontmatter: Record<string, unknown> = hasCached
+    ? cached
+    : { ...cached, ...scanFrontmatter(content).fields };
   const body = bodyAfterFrontmatter(content);
   const headingTitle = /^#[ \t]+(.+)$/mu.exec(body)?.[1]?.trim() ?? "";
   const bodyWithoutTitle = body.replace(/^#[ \t]+[^\n]*(?:\n|$)/u, "");
-  const rawProjects = frontmatterList(content, "projects");
-  const rawTags = frontmatterList(content, "tags");
-  const rawLists = frontmatterList(content, "lists");
+  const rawProjects =
+    hasCached && cached.projects !== undefined
+      ? []
+      : frontmatterList(content, "projects");
+  const rawTags =
+    hasCached && cached.tags !== undefined
+      ? []
+      : frontmatterList(content, "tags");
+  const rawLists =
+    hasCached && cached.lists !== undefined
+      ? []
+      : frontmatterList(content, "lists");
   const rawKind = stringValue(frontmatter.kind);
   const legacyType = stringValue(frontmatter.type);
   const kind = rawKind || (legacyType === "webclip" ? "webclip" : "note");
@@ -457,6 +473,15 @@ export function updatedAt(item: IndexItem): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+interface FileCacheEntry {
+  memos: MemoIndexItem[];
+  mtime: number;
+  notes: NoteRecord[];
+  problems: IndexProblem[];
+  prompts: PromptIndexItem[];
+  size: number;
+}
+
 /** 索引を構築・キャッシュする。Vault変更時はinvalidate()で捨てる。 */
 export class VaultIndexService {
   private readonly app: App;
@@ -464,6 +489,7 @@ export class VaultIndexService {
   private building: Promise<VaultIndex> | null = null;
   private buildingGeneration = -1;
   private generation = 0;
+  private readonly fileCache = new Map<string, FileCacheEntry>();
 
   constructor(app: App) {
     this.app = app;
@@ -473,9 +499,12 @@ export class VaultIndexService {
     return this.cache;
   }
 
-  invalidate(): void {
+  invalidate(changedPath?: string): void {
     this.generation += 1;
     this.cache = null;
+    if (changedPath !== undefined) {
+      this.fileCache.delete(changedPath);
+    }
   }
 
   async get(): Promise<VaultIndex> {
@@ -512,12 +541,30 @@ export class VaultIndexService {
         file.path.startsWith(`${PROMPTS_FOLDER}/`)
       );
     });
+    const seenPaths = new Set<string>();
     const notes: NoteRecord[] = [];
     const memos: MemoIndexItem[] = [];
     const prompts: PromptIndexItem[] = [];
     const problems: IndexProblem[] = [];
 
     await mapLimit(files, 24, async (file) => {
+      seenPaths.add(file.path);
+      const mtime = file.stat.mtime;
+      const size = file.stat.size;
+      const hit = this.fileCache.get(file.path);
+      if (hit && hit.mtime === mtime && hit.size === size) {
+        notes.push(...hit.notes);
+        memos.push(...hit.memos);
+        prompts.push(...hit.prompts);
+        problems.push(...hit.problems);
+        return;
+      }
+
+      const localNotes: NoteRecord[] = [];
+      const localMemos: MemoIndexItem[] = [];
+      const localPrompts: PromptIndexItem[] = [];
+      const localProblems: IndexProblem[] = [];
+
       try {
         const content = await this.app.vault.cachedRead(file);
         const cachedFrontmatter =
@@ -534,7 +581,7 @@ export class VaultIndexService {
           const parsed = parseMemoLog(content);
           const week = stringValue(frontmatter.week);
           for (const entry of parsed.entries) {
-            memos.push({
+            localMemos.push({
               at: entry.at,
               body: entry.body,
               entryId: entry.id,
@@ -551,17 +598,31 @@ export class VaultIndexService {
             (item) => item.severity === "error"
           );
           if (firstError) {
-            problems.push({
+            localProblems.push({
               message: `${firstError.line}行目: ${firstError.message}`,
               path: file.path,
             });
           }
+          this.fileCache.set(file.path, {
+            memos: localMemos,
+            mtime,
+            notes: localNotes,
+            problems: localProblems,
+            prompts: localPrompts,
+            size,
+          });
+          memos.push(...localMemos);
+          problems.push(...localProblems);
           return;
         }
 
         if (kind === "prompt-session") {
           const parsed = parsePromptLog(content);
-          const rawProjects = frontmatterList(content, "projects");
+          const rawProjects =
+            Object.keys(cachedFrontmatter).length > 0 &&
+            cachedFrontmatter.projects !== undefined
+              ? stringList(cachedFrontmatter.projects)
+              : frontmatterList(content, "projects");
           const rawProject = rawProjects[0] ?? "";
           const project = displayLink(rawProject);
           const projectKey = normalizeLink(rawProject);
@@ -569,7 +630,7 @@ export class VaultIndexService {
             .map((value) => normalizeLink(value))
             .filter((value) => value !== "");
           for (const prompt of parsed.prompts) {
-            prompts.push({
+            localPrompts.push({
               at: prompt.at,
               body: prompt.body,
               entryId: prompt.id,
@@ -587,15 +648,33 @@ export class VaultIndexService {
             (item) => item.severity === "error"
           );
           if (firstError) {
-            problems.push({
+            localProblems.push({
               message: `${firstError.line}行目: ${firstError.message}`,
               path: file.path,
             });
           }
+          this.fileCache.set(file.path, {
+            memos: localMemos,
+            mtime,
+            notes: localNotes,
+            problems: localProblems,
+            prompts: localPrompts,
+            size,
+          });
+          prompts.push(...localPrompts);
+          problems.push(...localProblems);
           return;
         }
 
         if (file.path.startsWith(`${SYSTEM_FOLDER}/`)) {
+          this.fileCache.set(file.path, {
+            memos: localMemos,
+            mtime,
+            notes: localNotes,
+            problems: localProblems,
+            prompts: localPrompts,
+            size,
+          });
           return;
         }
 
@@ -603,14 +682,30 @@ export class VaultIndexService {
         if (note.source !== "") {
           note.source = normalizeSourceUrl(note.source) ?? note.source;
         }
-        notes.push(note);
+        localNotes.push(note);
+        this.fileCache.set(file.path, {
+          memos: localMemos,
+          mtime,
+          notes: localNotes,
+          problems: localProblems,
+          prompts: localPrompts,
+          size,
+        });
+        notes.push(...localNotes);
       } catch (error) {
-        problems.push({
+        localProblems.push({
           message: error instanceof Error ? error.message : String(error),
           path: file.path,
         });
+        problems.push(...localProblems);
       }
     });
+
+    for (const cachedPath of this.fileCache.keys()) {
+      if (!seenPaths.has(cachedPath)) {
+        this.fileCache.delete(cachedPath);
+      }
+    }
 
     notes.sort((left, right) => right.mtime - left.mtime);
     memos.sort((left, right) => Date.parse(right.at) - Date.parse(left.at));
@@ -624,6 +719,48 @@ export class VaultIndexService {
       prompts,
     };
   }
+}
+
+export function buildWebClipMap(notes: NoteRecord[]): Map<string, WebClipNote> {
+  const clips: WebClipNote[] = [];
+  const counts = new Map<string, number>();
+
+  for (const note of notes) {
+    if (note.kind !== "webclip") {
+      continue;
+    }
+    const fm = note.frontmatter;
+    const source = note.source;
+    const title = note.title;
+    const description =
+      typeof fm.description === "string" ? fm.description : "";
+    const image = typeof fm.image === "string" ? fm.image : "";
+    const card = webClipCardFromProperties(source, title, description, image);
+    clips.push({
+      description,
+      domain: card.domain,
+      duplicates: 0,
+      image,
+      path: note.path,
+      source,
+      title,
+    });
+    if (source !== "") {
+      const key = webClipDuplicateKey(source);
+      if (key !== "") {
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+  }
+
+  const map = new Map<string, WebClipNote>();
+  for (const clip of clips) {
+    if (clip.source !== "") {
+      clip.duplicates = counts.get(webClipDuplicateKey(clip.source)) ?? 0;
+    }
+    map.set(clip.path, clip);
+  }
+  return map;
 }
 
 export function allTags(index: VaultIndex): string[] {

@@ -220,11 +220,14 @@ export class SeitonProjectsView extends ItemView {
   }
 
   private registerVaultEvents(): void {
-    const handler = (file: TAbstractFile): void => {
+    const handler = (file: TAbstractFile, oldPath?: string): void => {
       if (!file.path.endsWith(".md")) {
         return;
       }
-      this.indexService.invalidate();
+      if (oldPath) {
+        this.indexService.invalidate(oldPath);
+      }
+      this.indexService.invalidate(file.path);
       if (this.refreshTimer !== null) {
         window.clearTimeout(this.refreshTimer);
       }
@@ -234,10 +237,10 @@ export class SeitonProjectsView extends ItemView {
       }, 500);
     };
     this.eventRefs.push(
-      this.app.vault.on("modify", handler),
-      this.app.vault.on("create", handler),
-      this.app.vault.on("delete", handler),
-      this.app.vault.on("rename", handler)
+      this.app.vault.on("modify", (file) => handler(file)),
+      this.app.vault.on("create", (file) => handler(file)),
+      this.app.vault.on("delete", (file) => handler(file)),
+      this.app.vault.on("rename", (file, oldPath) => handler(file, oldPath))
     );
     for (const ref of this.eventRefs) {
       this.registerEvent(ref);

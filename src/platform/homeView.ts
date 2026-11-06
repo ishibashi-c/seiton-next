@@ -382,13 +382,16 @@ export class SeitonHomeView extends ItemView {
   }
 
   private registerVaultEvents(): void {
-    const onFileChange = (file: TAbstractFile): void => {
+    const onFileChange = (file: TAbstractFile, oldPath?: string): void => {
       if (
         file.path.startsWith(`${MEMOS_FOLDER}/`) ||
         file.path.startsWith(`${NOTES_FOLDER}/`) ||
         file.path.startsWith(`${PROMPTS_FOLDER}/`)
       ) {
-        this.indexService.invalidate();
+        if (oldPath) {
+          this.indexService.invalidate(oldPath);
+        }
+        this.indexService.invalidate(file.path);
         this.scheduleRefresh();
       }
     };
@@ -398,10 +401,12 @@ export class SeitonHomeView extends ItemView {
       }
     };
     this.eventRefs.push(
-      this.app.vault.on("modify", onFileChange),
-      this.app.vault.on("create", onFileChange),
-      this.app.vault.on("delete", onFileChange),
-      this.app.vault.on("rename", onFileChange),
+      this.app.vault.on("modify", (file) => onFileChange(file)),
+      this.app.vault.on("create", (file) => onFileChange(file)),
+      this.app.vault.on("delete", (file) => onFileChange(file)),
+      this.app.vault.on("rename", (file, oldPath) =>
+        onFileChange(file, oldPath)
+      ),
       this.app.workspace.on("file-open", onFileOpen)
     );
     for (const ref of this.eventRefs) {

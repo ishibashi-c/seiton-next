@@ -1,11 +1,15 @@
 /* Seiton Next — quiet workspace design system.
-   Obsidian theme variables only. No fixed palette, no shadows on content. */
+   Obsidian theme variables only. No fixed palette, no shadows on content.
+   Defined on body so every view, modal, popover, and dialog inherits tokens reliably. */
 
+body,
 .seiton-home,
 .seiton-library,
 .seiton-bookshelf,
 .seiton-projects,
 .seiton-prompt-root,
+.seiton-assets,
+.seiton-tsubuyaki,
 .seiton-capture-modal,
 .seiton-edit-modal,
 .seiton-promote-modal,
@@ -50,16 +54,39 @@
   --st-radius-sm: 4px;
   --st-radius-md: 6px;
   --st-radius-lg: 10px;
-  --st-transition: 120ms ease;
+  --st-transition: 0ms;
+  --seiton-meta: #6b6b6b;
+}
+
+.seiton-home,
+.seiton-library,
+.seiton-bookshelf,
+.seiton-projects,
+.seiton-prompt-root,
+.seiton-assets,
+.seiton-tsubuyaki,
+.seiton-capture-modal,
+.seiton-edit-modal,
+.seiton-promote-modal,
+.seiton-book-modal,
+.seiton-migration-modal,
+.seiton-filter-modal,
+.st-modal,
+.st-toasts,
+.st-select-pop,
+.st-ui {
   color: var(--st-ink);
   font-family: var(--font-interface);
 }
 
+body.theme-dark,
 .theme-dark .seiton-home,
 .theme-dark .seiton-library,
 .theme-dark .seiton-bookshelf,
 .theme-dark .seiton-projects,
 .theme-dark .seiton-prompt-root,
+.theme-dark .seiton-assets,
+.theme-dark .seiton-tsubuyaki,
 .theme-dark .seiton-capture-modal,
 .theme-dark .seiton-edit-modal,
 .theme-dark .seiton-promote-modal,
@@ -72,5 +99,5 @@
 .theme-dark .st-select-pop,
 .theme-dark .st-ui {
   --st-data: #7aa7ff;
+  --seiton-meta: #a9a9a3;
 }
-

@@ -107,4 +107,40 @@ describe("VaultIndexService.build()", () => {
     expect(indexedPaths).not.toContain("Seiton/System/Links.md");
     expect(indexedPaths).not.toContain("Seiton/System/Templates/Daily.md");
   });
+
+  it("mtime と size が変わらないファイルは cachedRead をスキップし、invalidate(path) で対象ファイルのみ再読み込みする", async () => {
+    let readCalls = 0;
+    const files: FileEntry[] = [
+      {
+        content: "# Note A\nBody A",
+        frontmatter: { title: "Note A" },
+        path: "Seiton/Notes/a.md",
+      },
+      {
+        content: "# Note B\nBody B",
+        frontmatter: { title: "Note B" },
+        path: "Seiton/Notes/b.md",
+      },
+    ];
+    const baseApp = createMockApp(files);
+    const origRead = baseApp.vault.cachedRead.bind(baseApp.vault);
+    baseApp.vault.cachedRead = async (file: TFile) => {
+      readCalls += 1;
+      return origRead(file);
+    };
+
+    const service = new VaultIndexService(baseApp);
+    await service.get();
+    expect(readCalls).toBe(2);
+
+    // 引数なし invalidate() でも mtime/size が同じなら cachedRead は 0 回
+    service.invalidate();
+    await service.get();
+    expect(readCalls).toBe(2);
+
+    // 特定パスのみ invalidate("Seiton/Notes/a.md") すると、その1ファイルだけ再読み込みされる
+    service.invalidate("Seiton/Notes/a.md");
+    await service.get();
+    expect(readCalls).toBe(3);
+  });
 });

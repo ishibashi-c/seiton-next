@@ -4,55 +4,87 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 16px;
-  margin-top: 24px;
+  gap: 8px 10px;
+  margin-top: 16px;
 }
 
 .seiton-bookshelf .seiton-search {
-  flex: none;
+  flex: 1 1 220px;
+  max-width: 340px;
   position: relative;
-  width: 260px;
 }
 
 .seiton-bookshelf .seiton-search-icon {
   color: var(--text-faint);
-  left: 10px;
+  left: 11px;
+  pointer-events: none;
   position: absolute;
-  top: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .seiton-bookshelf input.seiton-library-search {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: var(--st-radius-md);
+  border-radius: 999px;
+  box-shadow: none;
   font-family: var(--font-interface);
   font-size: var(--st-text-sm);
-  height: 32px;
-  padding: 0 10px 0 32px;
+  height: 34px;
+  padding: 0 12px 0 34px;
   width: 100%;
 }
 
-.seiton-bookshelf .seiton-library-select {
-  background: transparent;
-  border: 0;
-  color: var(--text-muted);
-  font-size: var(--st-text-sm);
-  height: 30px;
-  padding: 0 18px 0 0;
+.seiton-bookshelf input.seiton-library-search:focus {
+  border-color: var(--st-ink);
+  box-shadow: none;
+  outline: none;
 }
 
-.seiton-bookshelf .seiton-library-select:hover {
-  color: var(--text-normal);
+.seiton-bookshelf-filters-group {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.seiton-bookshelf .seiton-bookshelf-pill-select .st-select-trigger {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 999px;
+  color: var(--st-ink);
+  font-size: var(--st-text-xs);
+  font-weight: 500;
+  height: 32px;
+  padding: 0 11px 0 13px;
+}
+
+.seiton-bookshelf .seiton-bookshelf-pill-select .st-select-trigger:hover,
+.seiton-bookshelf
+  .seiton-bookshelf-pill-select
+  .st-select-trigger[aria-expanded="true"] {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+  color: var(--st-ink);
+}
+
+.seiton-bookshelf-subbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  margin-top: 10px;
 }
 
 .seiton-bookshelf-count {
   color: var(--seiton-meta);
-  font-size: var(--st-text-sm);
-  margin-left: auto;
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .seiton-bookshelf-body {
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .seiton-bookshelf .seiton-card-grid.is-shelf {
@@ -73,41 +105,36 @@
 
 @media (max-width: 760px) {
   .seiton-bookshelf-controls {
-    gap: 8px 12px;
-    margin-top: 18px;
+    gap: 8px;
+    margin-top: 14px;
   }
 
   .seiton-bookshelf .seiton-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .seiton-bookshelf-filters-group {
     width: 100%;
   }
-
-  .seiton-bookshelf-count {
-    margin-left: 0;
-  }
-}
-
-.seiton-bookshelf-filter {
-  align-items: center;
-  display: flex;
-  gap: 6px;
-}
-
-.seiton-bookshelf-filter-label {
-  color: var(--seiton-meta);
-  font-size: var(--st-text-xs);
 }
 
 /* Bookshelf tools */
 
 .seiton-bookshelf-tools {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 14px;
+  gap: 12px;
 }
 
 .seiton-bookshelf-tools .seiton-text-action {
-  font-size: var(--st-text-sm);
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-bookshelf-tools .seiton-text-action:hover {
+  color: var(--st-ink);
 }
 
 /* Bulk ISBN */

@@ -75,34 +75,83 @@
   padding: 24px 0;
 }
 
-/* Card action popover */
+/* Card action popover & center dialog */
 
 .seiton-card-menu {
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  border: 1px solid var(--st-hairline);
   border-radius: var(--st-radius-md);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 16%);
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  min-width: 150px;
+  font-family: var(--font-interface);
+  min-width: 168px;
   padding: 4px;
   position: fixed;
-  z-index: 1000;
+  z-index: 1200;
 }
 
-.seiton-card-menu-item {
-  background: none;
-  border: 0;
+.seiton-card-menu.is-dialog {
+  border-radius: var(--st-radius-lg);
+  box-shadow:
+    0 20px 48px rgb(0 0 0 / 28%),
+    0 0 0 1px var(--st-hairline);
+  left: 50%;
+  max-height: min(75vh, 480px);
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  padding: 0;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(320px, calc(100vw - 32px));
+  z-index: 1300;
+}
+
+.seiton-card-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seiton-card-menu.is-dialog .seiton-card-menu-list {
+  overflow-y: auto;
+  padding: 8px;
+}
+
+button.seiton-card-menu-item {
+  align-items: center;
+  appearance: none;
+  background: transparent !important;
+  border: 0 !important;
   border-radius: var(--st-radius-sm);
-  color: var(--text-normal);
+  box-shadow: none !important;
+  color: var(--st-ink);
+  cursor: pointer;
+  display: flex;
+  font-family: var(--font-interface);
   font-size: var(--st-text-sm);
-  padding: 7px 10px;
+  min-height: 34px;
+  padding: 6px 12px;
   text-align: left;
   width: 100%;
 }
 
-.seiton-card-menu-item:hover,
-.seiton-card-menu-item:focus-visible {
-  background: var(--background-secondary);
+.seiton-card-menu.is-dialog button.seiton-card-menu-item {
+  border-radius: var(--st-radius-md);
+  font-size: var(--st-text-base);
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+button.seiton-card-menu-item:hover,
+button.seiton-card-menu-item:focus-visible {
+  background: var(--st-hover) !important;
+  outline: none;
+}
+
+button.seiton-card-menu-item.is-danger {
+  color: var(--text-error) !important;
 }
 
 /* Web clip capture */

@@ -37,7 +37,7 @@ export interface BookshelfHost {
 }
 
 const STATUS_OPTIONS: Array<{ label: string; value: BookFilters["status"] }> = [
-  { label: "すべて", value: "all" },
+  { label: "状態: すべて", value: "all" },
   { label: "積読", value: "tbr" },
   { label: "読書中", value: "reading" },
   { label: "読了", value: "read" },
@@ -47,7 +47,7 @@ const OWNERSHIP_OPTIONS: Array<{
   label: string;
   value: BookFilters["owned"];
 }> = [
-  { label: "すべて", value: "all" },
+  { label: "所有: すべて", value: "all" },
   { label: "所持", value: "owned" },
   { label: "未所持", value: "unowned" },
 ];
@@ -124,8 +124,8 @@ export class SeitonBookshelfView extends ItemView {
       tab: "bookshelf",
       title: "本棚",
     });
-    this.renderTools(body);
     this.renderControls(body);
+    this.renderTools(body);
     this.gridEl = body.createDiv({ cls: "seiton-bookshelf-body" });
     this.registerVaultEvents();
     finishTabShell(this, VIEW_TYPE_BOOKSHELF);
@@ -168,7 +168,9 @@ export class SeitonBookshelfView extends ItemView {
   }
 
   private renderTools(parent: HTMLElement): void {
-    const tools = parent.createDiv({ cls: "seiton-bookshelf-tools" });
+    const subbar = parent.createDiv({ cls: "seiton-bookshelf-subbar" });
+    this.countEl = subbar.createDiv({ cls: "seiton-bookshelf-count" });
+    const tools = subbar.createDiv({ cls: "seiton-bookshelf-tools" });
     this.renderTool(tools, "一括ISBN", () => this.host.bulkIsbn());
     this.renderTool(tools, "カーリル一括検索", () =>
       this.host.calilBulk(this.records)
@@ -200,7 +202,7 @@ export class SeitonBookshelfView extends ItemView {
     this.searchInput = search.createEl("input", {
       attr: {
         "aria-label": "本棚を検索",
-        placeholder: "書名・著者で検索",
+        placeholder: "書名・著者で検索...",
         type: "search",
       },
       cls: "seiton-library-search",
@@ -210,32 +212,34 @@ export class SeitonBookshelfView extends ItemView {
       this.render();
     });
 
+    const filtersGroup = controls.createDiv({
+      cls: "seiton-bookshelf-filters-group",
+    });
+
     this.categorySelect = this.createSelect(
-      controls,
+      filtersGroup,
       "カテゴリ",
-      [{ label: "すべて", value: "all" }],
+      [{ label: "カテゴリ: すべて", value: "all" }],
       (value) => {
         this.filters.category = value;
         this.render();
       }
     );
 
-    this.createSelect(controls, "読書状態", STATUS_OPTIONS, (value) => {
+    this.createSelect(filtersGroup, "読書状態", STATUS_OPTIONS, (value) => {
       this.filters.status = value as BookFilters["status"];
       this.render();
     });
 
-    this.createSelect(controls, "所有", OWNERSHIP_OPTIONS, (value) => {
+    this.createSelect(filtersGroup, "所有", OWNERSHIP_OPTIONS, (value) => {
       this.filters.owned = value as BookFilters["owned"];
       this.render();
     });
 
-    this.createSelect(controls, "並び順", SORT_OPTIONS, (value) => {
+    this.createSelect(filtersGroup, "並び順", SORT_OPTIONS, (value) => {
       this.filters.sort = value as BookFilters["sort"];
       this.render();
     });
-
-    this.countEl = controls.createDiv({ cls: "seiton-bookshelf-count" });
   }
 
   private createSelect(
@@ -244,8 +248,6 @@ export class SeitonBookshelfView extends ItemView {
     options: Array<{ label: string; value: string }>,
     onChange: (value: string) => void
   ): SelectControl {
-    const wrap = parent.createEl("label", { cls: "seiton-bookshelf-filter" });
-    wrap.createSpan({ cls: "seiton-bookshelf-filter-label", text: label });
     const control = createUiSelect({
       choices: options,
       onChange,
@@ -253,8 +255,9 @@ export class SeitonBookshelfView extends ItemView {
       value: options[0]?.value ?? "",
     });
     control.element.addClass("seiton-library-select");
+    control.element.addClass("seiton-bookshelf-pill-select");
     control.element.addClass("is-quiet");
-    wrap.append(control.element);
+    parent.append(control.element);
     return control;
   }
 
@@ -289,7 +292,7 @@ export class SeitonBookshelfView extends ItemView {
     const categories = bookCategories(this.records.map(toItem));
     const current = this.filters.category;
     this.categorySelect.setChoices([
-      { label: "すべて", value: "all" },
+      { label: "カテゴリ: すべて", value: "all" },
       ...categories.map((category) => ({ label: category, value: category })),
     ]);
     if (current !== "all" && !categories.includes(current)) {
@@ -411,8 +414,11 @@ export class SeitonBookshelfView extends ItemView {
   }
 
   private registerVaultEvents(): void {
-    const handler = (): void => {
-      this.indexService.invalidate();
+    const handler = (file: { path: string }, oldPath?: string): void => {
+      if (oldPath) {
+        this.indexService.invalidate(oldPath);
+      }
+      this.indexService.invalidate(file.path);
       if (this.refreshTimer !== null) {
         window.clearTimeout(this.refreshTimer);
       }
@@ -422,10 +428,10 @@ export class SeitonBookshelfView extends ItemView {
       }, 500);
     };
     this.eventRefs.push(
-      this.app.vault.on("create", handler),
-      this.app.vault.on("delete", handler),
-      this.app.vault.on("modify", handler),
-      this.app.vault.on("rename", handler)
+      this.app.vault.on("create", (file) => handler(file)),
+      this.app.vault.on("delete", (file) => handler(file)),
+      this.app.vault.on("modify", (file) => handler(file)),
+      this.app.vault.on("rename", (file, oldPath) => handler(file, oldPath))
     );
     for (const ref of this.eventRefs) {
       this.registerEvent(ref);

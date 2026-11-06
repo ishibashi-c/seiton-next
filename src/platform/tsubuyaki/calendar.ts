@@ -63,7 +63,9 @@ export class CalendarPicker {
   private labelEl: HTMLElement | null = null;
   private clearBtn: HTMLElement | null = null;
   private popoverEl: HTMLElement | null = null;
+  private backdropEl: HTMLElement | null = null;
   private outsideClickListener: ((e: PointerEvent) => void) | null = null;
+  private keydownListener: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(options: CalendarPickerOptions) {
     this.options = options;
@@ -202,13 +204,24 @@ export class CalendarPicker {
 
     this.outsideClickListener = (event: PointerEvent) => {
       const target = event.target as Node | null;
-      if (target && !this.wrapEl?.contains(target)) {
+      if (
+        target &&
+        !this.wrapEl?.contains(target) &&
+        !this.popoverEl?.contains(target)
+      ) {
+        this.closePopover();
+      }
+    };
+    this.keydownListener = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
         this.closePopover();
       }
     };
     window.addEventListener("pointerdown", this.outsideClickListener, {
       capture: true,
     });
+    window.addEventListener("keydown", this.keydownListener);
   }
 
   private closePopover(): void {
@@ -223,6 +236,14 @@ export class CalendarPicker {
       });
       this.outsideClickListener = null;
     }
+    if (this.keydownListener) {
+      window.removeEventListener("keydown", this.keydownListener);
+      this.keydownListener = null;
+    }
+    if (this.backdropEl) {
+      this.backdropEl.remove();
+      this.backdropEl = null;
+    }
     if (this.popoverEl) {
       this.popoverEl.remove();
       this.popoverEl = null;
@@ -233,13 +254,58 @@ export class CalendarPicker {
     if (!this.wrapEl) {
       return;
     }
-    if (!this.popoverEl) {
-      this.popoverEl = this.wrapEl.createDiv({
-        cls: "seiton-calendar-popover",
+    const isDialog = window.innerWidth <= 640;
+
+    if (isDialog && !this.backdropEl) {
+      this.backdropEl = document.body.createDiv({ cls: "st-select-backdrop" });
+      this.backdropEl.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closePopover();
+      });
+    } else if (!isDialog && this.backdropEl) {
+      this.backdropEl.remove();
+      this.backdropEl = null;
+    }
+
+    if (this.popoverEl) {
+      this.popoverEl.classList.toggle("is-dialog", isDialog);
+    } else {
+      this.popoverEl = document.body.createDiv({
+        cls: `seiton-calendar-popover${isDialog ? " is-dialog" : ""}`,
       });
     }
     const popover = this.popoverEl;
     popover.empty();
+
+    if (isDialog) {
+      popover.style.left = "";
+      popover.style.top = "";
+      const dialogHead = popover.createDiv({ cls: "st-select-dialog-header" });
+      dialogHead.createSpan({
+        cls: "st-select-dialog-title",
+        text: "期間を選択",
+      });
+      const closeBtn = dialogHead.createEl("button", {
+        attr: { "aria-label": "閉じる", type: "button" },
+        cls: "st-select-dialog-close",
+      });
+      setIcon(closeBtn, "x");
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.closePopover();
+      });
+    } else if (this.triggerBtn) {
+      const rect = this.triggerBtn.getBoundingClientRect();
+      const popWidth = 286;
+      const left = Math.min(
+        window.innerWidth - popWidth - 12,
+        Math.max(12, rect.left)
+      );
+      const top = Math.min(window.innerHeight - 360, rect.bottom + 6);
+      popover.style.left = `${left}px`;
+      popover.style.top = `${Math.max(12, top)}px`;
+    }
 
     // 1. ヘッダー（月送りナビゲーション）
     const header = popover.createDiv({ cls: "seiton-calendar-header" });
