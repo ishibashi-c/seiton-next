@@ -10,6 +10,7 @@
 .seiton-migration-modal,
 .st-modal,
 .st-toasts,
+.st-select-backdrop,
 .st-select-pop,
 .st-ui {
   --st-max-frame: 1080px;
@@ -59,6 +60,7 @@
 .theme-dark .seiton-migration-modal,
 .theme-dark .st-modal,
 .theme-dark .st-toasts,
+.theme-dark .st-select-backdrop,
 .theme-dark .st-select-pop,
 .theme-dark .st-ui {
   --st-data: #7aa7ff;

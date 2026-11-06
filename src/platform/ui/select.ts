@@ -1,7 +1,7 @@
 /**
  * 自前のセレクト。ネイティブの `<select>` を置き換える。
  * 一覧は body 直下に fixed で出すので、モーダルのスクロールで切れない。
- * 狭い画面では画面下からのシートになる。
+ * 狭い画面では画面中央を軸にスマートなダイアログとしてポップイン表示する。
  */
 
 import { setIcon } from "obsidian";
@@ -24,13 +24,14 @@ export interface SelectControl {
   value(): string;
 }
 
-const SHEET_MAX_WIDTH = 640;
+const DIALOG_MAX_WIDTH = 640;
 
 export function createSelect(options: SelectOptions): SelectControl {
   let choices = [...options.choices];
   let value = options.value;
   let open = false;
   let pop: HTMLElement | null = null;
+  let backdrop: HTMLElement | null = null;
   let active = -1;
 
   const root = document.createElement("div");
@@ -65,6 +66,8 @@ export function createSelect(options: SelectOptions): SelectControl {
     }
     open = false;
     trigger.setAttribute("aria-expanded", "false");
+    backdrop?.remove();
+    backdrop = null;
     pop?.remove();
     pop = null;
     active = -1;
@@ -97,7 +100,7 @@ export function createSelect(options: SelectOptions): SelectControl {
   };
 
   const onReposition = (): void => {
-    if (pop && !pop.hasClass("is-sheet")) {
+    if (pop && !pop.hasClass("is-dialog") && !pop.hasClass("is-sheet")) {
       place();
     }
   };
@@ -151,8 +154,8 @@ export function createSelect(options: SelectOptions): SelectControl {
     const list = document.createElement("div");
     list.className = "st-select-pop";
     list.setAttribute("role", "listbox");
-    if (window.innerWidth <= SHEET_MAX_WIDTH) {
-      list.addClass("is-sheet");
+    if (window.innerWidth <= DIALOG_MAX_WIDTH) {
+      list.addClass("is-dialog");
     }
     for (const choice of choices) {
       const item = document.createElement("button");
@@ -179,10 +182,15 @@ export function createSelect(options: SelectOptions): SelectControl {
     open = true;
     trigger.setAttribute("aria-expanded", "true");
     pop = build();
+    const isMobileDialog = pop.hasClass("is-dialog");
+    if (isMobileDialog) {
+      backdrop = document.createElement("div");
+      backdrop.className = "st-select-backdrop";
+      backdrop.addEventListener("pointerdown", () => close(false));
+      document.body.append(backdrop);
+    }
     document.body.append(pop);
-    if (pop.hasClass("is-sheet")) {
-      pop.style.left = "0";
-    } else {
+    if (!isMobileDialog) {
       place();
     }
     const current = choices.findIndex((choice) => choice.value === value);
@@ -251,10 +259,19 @@ export function createSelect(options: SelectOptions): SelectControl {
       choices = [...next];
       if (open) {
         pop?.remove();
+        backdrop?.remove();
+        backdrop = null;
         pop = build();
         if (pop) {
+          const isMobileDialog = pop.hasClass("is-dialog");
+          if (isMobileDialog) {
+            backdrop = document.createElement("div");
+            backdrop.className = "st-select-backdrop";
+            backdrop.addEventListener("pointerdown", () => close(false));
+            document.body.append(backdrop);
+          }
           document.body.append(pop);
-          if (!pop.hasClass("is-sheet")) {
+          if (!isMobileDialog) {
             place();
           }
         }

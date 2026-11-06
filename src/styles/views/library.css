@@ -950,3 +950,40 @@ button.seiton-filter-apply-btn {
   height: 36px;
   padding: 0 20px;
 }
+
+@keyframes seiton-modal-center-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .is-phone .modal.seiton-filter-modal,
+  .modal.seiton-filter-modal {
+    animation: seiton-modal-center-pop 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    border-radius: var(--st-radius-lg);
+    bottom: auto;
+    left: 50%;
+    margin: 0;
+    max-height: min(85vh, 600px);
+    position: fixed;
+    right: auto;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    transform-origin: center center;
+    width: min(520px, calc(100vw - 28px));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .is-phone .modal.seiton-filter-modal,
+    .modal.seiton-filter-modal {
+      animation: none;
+    }
+  }
+}
+

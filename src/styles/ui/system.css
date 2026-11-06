@@ -232,7 +232,39 @@ for the long forms in the book and migration modals. */
 }.st-select-caret svg{
   height: 14px;
   width: 14px;
-}.st-select-pop.st-select-pop{
+}/* Select Backdrop & Dialog (Center Pop-in) -------------------------------- */
+
+.st-select-backdrop {
+  animation: st-select-fade-in 140ms ease-out forwards;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  inset: 0;
+  position: fixed;
+  z-index: 1200;
+}
+
+@keyframes st-select-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes st-select-pop-center {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.st-select-pop.st-select-pop{
   background: var(--background-primary);
   border: 1px solid var(--st-hairline);
   border-radius: var(--st-radius-md);
@@ -539,17 +571,40 @@ and the two-choice list. */
     max-width: none;
   }
 
-  /* A select on a phone opens as a sheet, not a small popup. */
+  /* A select on a phone opens centered with a smart pop-in, not a bottom sheet. */
+  .st-select-pop.is-dialog,
   .st-select-pop.is-sheet {
-    border-radius: var(--st-radius-lg) var(--st-radius-lg) 0 0;
-    bottom: 0;
-    left: 0;
-    max-height: 60vh;
-    padding: 10px 10px calc(12px + env(safe-area-inset-bottom));
-    right: 0;
+    animation: st-select-pop-center 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    border-radius: var(--st-radius-lg);
+    bottom: auto;
+    box-shadow: 0 16px 40px rgb(0 0 0 / 28%), 0 0 0 1px var(--st-hairline);
+    left: 50%;
+    max-height: min(72vh, 460px);
+    max-width: calc(100vw - 36px);
+    overscroll-behavior: contain;
+    padding: 8px;
+    position: fixed;
+    right: auto;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    transform-origin: center center;
+    width: min(340px, calc(100vw - 36px));
+    z-index: 1210;
   }
 
+  .st-select-pop.is-dialog .st-select-item,
   .st-select-pop.is-sheet .st-select-item {
+    border-radius: var(--st-radius-md);
+    font-size: var(--st-text-base);
     height: 44px;
+    padding: 0 14px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .st-select-backdrop,
+    .st-select-pop.is-dialog,
+    .st-select-pop.is-sheet {
+      animation: none;
+    }
   }
 }
