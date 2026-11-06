@@ -249,6 +249,7 @@ export class SeitonBookshelfView extends ItemView {
     const control = createUiSelect({
       choices: options,
       onChange,
+      title: label,
       value: options[0]?.value ?? "",
     });
     control.element.addClass("seiton-library-select");

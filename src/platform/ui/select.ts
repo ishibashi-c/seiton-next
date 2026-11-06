@@ -1,7 +1,7 @@
 /**
  * 自前のセレクト。ネイティブの `<select>` を置き換える。
  * 一覧は body 直下に fixed で出すので、モーダルのスクロールで切れない。
- * 狭い画面では画面中央を軸にスマートなダイアログとしてポップイン表示する。
+ * 狭い画面やスマートフォンでは画面中央を軸にスマートなダイアログとして即座に表示する。
  */
 
 import { setIcon } from "obsidian";
@@ -14,6 +14,7 @@ export interface SelectChoice {
 export interface SelectOptions {
   choices: SelectChoice[];
   onChange: (value: string) => void;
+  title?: string;
   value: string;
 }
 
@@ -154,24 +155,49 @@ export function createSelect(options: SelectOptions): SelectControl {
     const list = document.createElement("div");
     list.className = "st-select-pop";
     list.setAttribute("role", "listbox");
-    if (window.innerWidth <= DIALOG_MAX_WIDTH) {
+    const isMobile =
+      window.innerWidth <= DIALOG_MAX_WIDTH ||
+      document.body.hasClass("is-phone");
+    if (isMobile) {
       list.addClass("is-dialog");
+
+      const header = document.createElement("div");
+      header.className = "st-select-dialog-header";
+
+      const titleEl = document.createElement("span");
+      titleEl.className = "st-select-dialog-title";
+      titleEl.setText(options.title ?? "選択");
+
+      const closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "st-select-dialog-close";
+      closeBtn.setAttribute("aria-label", "閉じる");
+      setIcon(closeBtn, "x");
+      closeBtn.addEventListener("click", () => close(true));
+
+      header.append(titleEl, closeBtn);
+      list.append(header);
     }
+
+    const itemsWrap = document.createElement("div");
+    itemsWrap.className = "st-select-items-wrap";
     for (const choice of choices) {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "st-select-item";
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", String(choice.value === value));
-      item.createSpan({ text: choice.label });
+      item.createSpan({ cls: "st-select-item-text", text: choice.label });
       if (choice.value === value) {
         const check = document.createElement("span");
+        check.className = "st-select-item-check";
         setIcon(check, "check");
         item.append(check);
       }
       item.addEventListener("click", () => select(choice.value));
-      list.append(item);
+      itemsWrap.append(item);
     }
+    list.append(itemsWrap);
     return list;
   };
 

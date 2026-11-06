@@ -210,6 +210,7 @@ export class SeitonTsubuyakiView extends ItemView {
         this.renderTagChips();
         this.renderList();
       },
+      title: "状態",
       value: this.status,
     });
     this.statusSelect.element.addClass("seiton-tsubuyaki-select");
@@ -226,6 +227,7 @@ export class SeitonTsubuyakiView extends ItemView {
         this.limit = PAGE_SIZE;
         this.renderList();
       },
+      title: "並び順",
       value: this.sortOrder,
     });
     this.sortSelect.element.addClass("seiton-tsubuyaki-select");

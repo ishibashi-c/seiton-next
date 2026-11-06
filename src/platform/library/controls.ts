@@ -104,6 +104,7 @@ export class LibraryControls {
         this.options.onSortChange(
           value === "created" || value === "lecture" ? value : "updated"
         ),
+      title: "並び順",
       value: this.options.getSort(),
     });
     this.sortSelect.element.addClass("seiton-library-select", "is-quiet");

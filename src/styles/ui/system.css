@@ -232,36 +232,13 @@ for the long forms in the book and migration modals. */
 }.st-select-caret svg{
   height: 14px;
   width: 14px;
-}/* Select Backdrop & Dialog (Center Pop-in) -------------------------------- */
+}/* Select Backdrop & Dialog (Instant Center Modal) ------------------------- */
 
 .st-select-backdrop {
-  animation: st-select-fade-in 140ms ease-out forwards;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.48);
   inset: 0;
   position: fixed;
-  z-index: 1200;
-}
-
-@keyframes st-select-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes st-select-pop-center {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+  z-index: 1290;
 }
 
 .st-select-pop.st-select-pop{
@@ -271,38 +248,141 @@ for the long forms in the book and migration modals. */
   box-shadow: 0 14px 34px rgb(0 0 0 / 16%);
   display: flex;
   flex-direction: column;
-  gap: 1px;
   max-height: 280px;
   min-width: 180px;
   overflow: auto;
-  padding: 5px;
+  padding: 4px;
   position: fixed;
   z-index: 1200;
-}.st-select-item.st-select-item{
+}
+
+/* モバイル／狭幅時の中央軸スマートダイアログ（アニメーションなし・即時表示） */
+.st-select-pop.is-dialog {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-lg);
+  box-shadow: 0 20px 48px rgb(0 0 0 / 28%), 0 0 0 1px var(--st-hairline);
+  display: flex;
+  flex-direction: column;
+  left: 50%;
+  max-height: min(75vh, 480px);
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  padding: 0;
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(340px, calc(100vw - 32px));
+  z-index: 1300;
+}
+
+.st-select-dialog-header {
   align-items: center;
-  background: none;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.st-select-dialog-title {
+  color: var(--st-ink);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-base);
+  font-weight: 600;
+}
+
+button.st-select-dialog-close {
+  align-items: center;
+  appearance: none;
+  background: none !important;
+  border: 0 !important;
+  border-radius: var(--st-radius-sm);
+  box-shadow: none !important;
+  color: var(--st-muted);
+  cursor: pointer;
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  width: 28px;
+}
+
+button.st-select-dialog-close:hover {
+  background: var(--st-hover) !important;
+  color: var(--st-ink);
+}
+
+button.st-select-dialog-close svg {
+  height: 16px;
+  width: 16px;
+}
+
+.st-select-items-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+}
+
+button.st-select-item.st-select-item{
+  align-items: center;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
   border: 0;
   border-radius: var(--st-radius-sm);
+  box-shadow: none;
   color: var(--st-ink);
   cursor: pointer;
   display: flex;
   font-family: var(--font-interface);
   font-size: var(--st-text-sm);
   gap: 8px;
-  height: 32px;
+  height: 36px;
   justify-content: space-between;
-  padding: 0 9px;
+  margin: 0;
+  outline: none;
+  padding: 0 12px;
   text-align: left;
   width: 100%;
-}.st-select-item:hover,
-.st-select-item.is-active{
+}
+
+.st-select-pop.is-dialog button.st-select-item.st-select-item {
+  border-radius: var(--st-radius-md);
+  font-size: var(--st-text-base);
+  height: 44px;
+  padding: 0 14px;
+}
+
+button.st-select-item:hover,
+button.st-select-item.is-active{
   background: var(--st-hover);
-}.st-select-item[aria-selected="true"]{
-  font-weight: 600;
-}.st-select-item svg{
+}
+
+button.st-select-item[aria-selected="true"]{
+  background: var(--background-modifier-active-hover);
   color: var(--st-ink);
-  height: 14px;
-  width: 14px;
+  font-weight: 600;
+}
+
+.st-select-item-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-select-item-check svg,
+.st-select-item svg{
+  color: var(--st-ink);
+  flex: none;
+  height: 16px;
+  width: 16px;
 }/* Switch ----------------------------------------------------------------- */
 
 .st-switch.st-switch{
@@ -571,40 +651,28 @@ and the two-choice list. */
     max-width: none;
   }
 
-  /* A select on a phone opens centered with a smart pop-in, not a bottom sheet. */
-  .st-select-pop.is-dialog,
+  /* A select on a phone opens centered with a smart dialog, not a bottom sheet. */
   .st-select-pop.is-sheet {
-    animation: st-select-pop-center 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     border-radius: var(--st-radius-lg);
     bottom: auto;
-    box-shadow: 0 16px 40px rgb(0 0 0 / 28%), 0 0 0 1px var(--st-hairline);
+    box-shadow: 0 20px 48px rgb(0 0 0 / 28%), 0 0 0 1px var(--st-hairline);
     left: 50%;
-    max-height: min(72vh, 460px);
-    max-width: calc(100vw - 36px);
-    overscroll-behavior: contain;
-    padding: 8px;
+    max-height: min(75vh, 480px);
+    max-width: calc(100vw - 32px);
+    overflow: hidden;
+    padding: 0;
     position: fixed;
     right: auto;
     top: 50%;
-    transform: translate(-50%, -50%) scale(1);
-    transform-origin: center center;
-    width: min(340px, calc(100vw - 36px));
-    z-index: 1210;
+    transform: translate(-50%, -50%);
+    width: min(340px, calc(100vw - 32px));
+    z-index: 1300;
   }
 
-  .st-select-pop.is-dialog .st-select-item,
   .st-select-pop.is-sheet .st-select-item {
     border-radius: var(--st-radius-md);
     font-size: var(--st-text-base);
     height: 44px;
     padding: 0 14px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .st-select-backdrop,
-    .st-select-pop.is-dialog,
-    .st-select-pop.is-sheet {
-      animation: none;
-    }
   }
 }
