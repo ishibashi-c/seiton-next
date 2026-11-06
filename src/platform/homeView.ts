@@ -164,8 +164,8 @@ export class SeitonHomeView extends ItemView {
     this.renderHomeBody(content);
 
     this.registerVaultEvents();
-    await this.refresh();
     finishTabShell(this, VIEW_TYPE_HOME);
+    void this.refresh();
   }
 
   override async onClose(): Promise<void> {
@@ -192,8 +192,7 @@ export class SeitonHomeView extends ItemView {
     }
     this.refreshing = true;
     try {
-      const [result, index, sessionList] = await Promise.all([
-        this.memoService.listAll(),
+      const [index, sessionList] = await Promise.all([
         this.indexService.get(),
         this.promptService.listSessions().catch(() => ({
           problems: [],
@@ -203,12 +202,11 @@ export class SeitonHomeView extends ItemView {
       if (this.starterEl) {
         const isEmpty =
           index.notes.length === 0 &&
-          result.items.filter((item) => item.entry.state !== "deleted")
-            .length === 0;
+          index.memos.filter((item) => item.state !== "deleted").length === 0;
         this.starterEl.style.display = isEmpty ? "" : "none";
       }
       void this.shortcuts.reload();
-      this.setDayCount(result.items);
+      this.setDayCount(index.memos);
       this.sections.renderResume(index, sessionList.sessions);
       this.sections.renderFavorites(index);
       this.sections.renderRecent(index);
@@ -224,9 +222,7 @@ export class SeitonHomeView extends ItemView {
   }
 
   /** 今日のメモ件数を、補足行の右に1つだけ色付きで出す。 */
-  private setDayCount(
-    items: Array<{ entry: { at: string; state: string } }>
-  ): void {
+  private setDayCount(items: Array<{ at: string; state: string }>): void {
     const subline = this.sublineEl;
     if (!subline) {
       return;
@@ -234,8 +230,7 @@ export class SeitonHomeView extends ItemView {
     const now = new Date();
     const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const count = items.filter(
-      (item) =>
-        item.entry.state !== "deleted" && dateKeyOf(item.entry.at) === key
+      (item) => item.state !== "deleted" && dateKeyOf(item.at) === key
     ).length;
     subline.empty();
     subline.createSpan({ text: this.sublineText });
@@ -421,6 +416,6 @@ export class SeitonHomeView extends ItemView {
     this.refreshTimer = window.setTimeout(() => {
       this.refreshTimer = null;
       void this.refresh();
-    }, 250);
+    }, 500);
   }
 }

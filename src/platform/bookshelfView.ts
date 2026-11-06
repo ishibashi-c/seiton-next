@@ -128,8 +128,8 @@ export class SeitonBookshelfView extends ItemView {
     this.renderControls(body);
     this.gridEl = body.createDiv({ cls: "seiton-bookshelf-body" });
     this.registerVaultEvents();
-    await this.refresh();
     finishTabShell(this, VIEW_TYPE_BOOKSHELF);
+    void this.refresh();
   }
 
   override async onClose(): Promise<void> {
@@ -418,7 +418,7 @@ export class SeitonBookshelfView extends ItemView {
       this.refreshTimer = window.setTimeout(() => {
         this.refreshTimer = null;
         void this.refresh();
-      }, 400);
+      }, 500);
     };
     this.eventRefs.push(
       this.app.vault.on("create", handler),

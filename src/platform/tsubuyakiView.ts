@@ -149,8 +149,8 @@ export class SeitonTsubuyakiView extends ItemView {
     this.listEl = body.createDiv({ cls: "seiton-tsubuyaki-list" });
 
     this.registerVaultEvents();
-    await this.refresh();
     finishTabShell(this, VIEW_TYPE_TSUBUYAKI);
+    void this.refresh();
   }
 
   override async onClose(): Promise<void> {
@@ -800,6 +800,6 @@ export class SeitonTsubuyakiView extends ItemView {
     this.refreshTimer = window.setTimeout(() => {
       this.refreshTimer = null;
       void this.refresh();
-    }, 250);
+    }, 500);
   }
 }

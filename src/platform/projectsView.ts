@@ -98,8 +98,8 @@ export class SeitonProjectsView extends ItemView {
     body.addClass("seiton-projects-body");
     this.bodyEl = body;
     this.registerVaultEvents();
-    await this.refresh();
     finishTabShell(this, VIEW_TYPE_PROJECTS);
+    void this.refresh();
   }
 
   override async onClose(): Promise<void> {
@@ -231,7 +231,7 @@ export class SeitonProjectsView extends ItemView {
       this.refreshTimer = window.setTimeout(() => {
         this.refreshTimer = null;
         void this.refresh();
-      }, 450);
+      }, 500);
     };
     this.eventRefs.push(
       this.app.vault.on("modify", handler),

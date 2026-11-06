@@ -258,13 +258,15 @@ export class PromptWorkbenchView extends ItemView {
 
   override async onOpen(): Promise<void> {
     this.renderShell();
-    const latest = await this.promptService.latestSession();
-    if (latest) {
-      await this.openSession(latest.path);
-    } else {
-      this.renderEmpty();
-    }
     finishTabShell(this, VIEW_TYPE_PROMPT);
+    void (async () => {
+      const latest = await this.promptService.latestSession();
+      if (latest) {
+        await this.openSession(latest.path);
+      } else {
+        this.renderEmpty();
+      }
+    })();
   }
 
   /** プラグインから特定セッションを開く。 */

@@ -50,7 +50,7 @@ export class AssetsView extends ItemView {
   }
 
   override async onOpen(): Promise<void> {
-    await this.renderView();
+    void this.renderView();
   }
 
   override async onClose(): Promise<void> {

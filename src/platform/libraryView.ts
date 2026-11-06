@@ -254,8 +254,8 @@ export class SeitonLibraryView extends ItemView {
     });
     this.renderLibraryBody(body);
     this.registerVaultEvents();
-    await this.refresh();
     finishTabShell(this, VIEW_TYPE_LIBRARY);
+    void this.refresh();
   }
 
   override async onClose(): Promise<void> {
