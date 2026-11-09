@@ -14,8 +14,7 @@ import {
 import type { AssetService } from "../services/assetService";
 import { AccountSettingsModal } from "./assets/accountSettingsModal";
 import {
-  renderBsCards,
-  renderPlCard,
+  renderAssetIndex,
   renderSnapshotsHistory,
   renderStockCard,
 } from "./assets/cards";
@@ -130,7 +129,7 @@ export class AssetsView extends ItemView {
     const subNav = container.createDiv({ cls: "seiton-asset-subnav" });
     const tabs: Array<{ id: "charts" | "history" | "summary"; label: string }> =
       [
-        { id: "summary", label: "ダッシュボード" },
+        { id: "summary", label: "台帳サマリー" },
         { id: "charts", label: "推移グラフ" },
         { id: "history", label: "残高履歴" },
       ];
@@ -172,18 +171,15 @@ export class AssetsView extends ItemView {
     const currentMonth = today.toISOString().slice(0, 7);
     const pl = calculateMonthlyPl(currentMonth, this.dataset);
 
-    // B/S 資産サマリー
-    renderBsCards(container, bs);
-
-    // P/L 生活コストサマリー
-    renderPlCard(container, pl);
+    // 資産インデックス（Ledger Index: B/S・P/L統合サマリー）
+    renderAssetIndex(container, bs, pl, this.dataset);
 
     // ストック支出＆返済トラッカーセクション
     const stockSection = container.createDiv({ cls: "seiton-asset-section" });
     const stockHead = stockSection.createDiv({
       cls: "seiton-asset-section-head",
     });
-    stockHead.createEl("h3", { text: "ストック支出・返済状況" });
+    stockHead.createEl("h3", { text: "ストック支出・返済台帳" });
 
     const activeStocks = this.dataset.stocks.filter(
       (s) => s.purchaseDate <= bs.asOfDate
@@ -203,16 +199,21 @@ export class AssetsView extends ItemView {
           this.dataset.repayments,
           bs.asOfDate
         );
-        renderStockCard(stockList, status, () => {
-          if (!this.dataset) {
-            return;
-          }
-          new RepayModal(this.app, this.assetService, {
-            allRepayments: this.dataset.repayments,
-            onSaved: () => void this.renderView(),
-            stock,
-          }).open();
-        });
+        renderStockCard(
+          stockList,
+          status,
+          () => {
+            if (!this.dataset) {
+              return;
+            }
+            new RepayModal(this.app, this.assetService, {
+              allRepayments: this.dataset.repayments,
+              onSaved: () => void this.renderView(),
+              stock,
+            }).open();
+          },
+          this.dataset
+        );
       }
     }
   }

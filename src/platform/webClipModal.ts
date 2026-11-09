@@ -146,7 +146,7 @@ export class WebClipPreviewModal extends Modal {
       });
       const submitBtn = inputRow.createEl("button", {
         attr: { type: "button" },
-        cls: "st-btn mod-cta seiton-webclip-memo-btn",
+        cls: "st-btn is-primary seiton-webclip-memo-btn",
         text: "つぶやきに記録",
       });
 
@@ -373,7 +373,7 @@ function addClipAction(
   action: () => void
 ): void {
   const button = parent.createEl("button", {
-    cls: "seiton-item-action",
+    cls: "st-btn is-secondary seiton-item-action",
     text: label,
   });
   button.type = "button";

@@ -1,152 +1,208 @@
 /* --------------------------------------------------------------------------
-   Assets View (資産・家計台帳)
+   Assets View (資産・家計台帳: Achromatic Ledger)
    -------------------------------------------------------------------------- */
 
 .seiton-assets {
-  --st-asset-accent: var(--interactive-accent, #1d5fbf);
-  --st-asset-special: var(--text-muted);
-  --st-asset-stock: var(--st-muted);
+  /* 無彩色台帳哲学: 独自のビビッドなアクセント色を排除 */
 }
 
-/* サブナビゲーション */
+/* サブナビゲーション（静かなアンダーラインテキストタブ） */
 .seiton-asset-subnav {
   border-bottom: 1px solid var(--st-hairline);
   display: flex;
-  gap: 6px;
-  margin-bottom: 20px;
-  padding-bottom: 8px;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding-bottom: 0;
 }
 
 .seiton-asset-subtab {
   background: transparent;
   border: 0;
-  border-radius: var(--st-radius-sm);
+  border-radius: 0;
+  box-shadow: none;
   color: var(--st-muted);
   cursor: pointer;
+  font-family: var(--font-interface);
   font-size: var(--st-text-sm);
   font-weight: 500;
-  padding: 6px 14px;
-  transition: background 0.15s ease, color 0.15s ease;
+  padding: 6px 2px 10px;
+  position: relative;
+  transition: none;
 }
 
 .seiton-asset-subtab:hover {
-  background: var(--st-hover);
+  background: transparent;
   color: var(--st-ink);
 }
 
 .seiton-asset-subtab.is-active {
-  background: var(--background-secondary);
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--st-ink);
   color: var(--st-ink);
   font-weight: 600;
 }
 
-/* B/S カードグリッド */
-.seiton-asset-bs-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  margin-bottom: 24px;
+/* --------------------------------------------------------------------------
+   資産インデックス（Ledger Index: 無彩色台帳構造）
+   -------------------------------------------------------------------------- */
+.seiton-asset-index {
+  margin-bottom: 28px;
 }
 
-.seiton-asset-stat-card {
-  background: var(--background-secondary);
-  border: 1px solid var(--st-hairline);
-  border-radius: var(--st-radius-md);
-  box-sizing: border-box;
+/* 1. 上段: 純資産金額 ＋ 積み上げ比率バー */
+.seiton-asset-index-top {
+  align-items: flex-end;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
-}
-
-.seiton-asset-stat-card.is-hero {
-  border-color: var(--interactive-accent);
-  border-width: 1.5px;
-}
-
-.seiton-asset-stat-label {
-  color: var(--st-muted);
-  font-size: var(--st-text-xs);
-  font-weight: 550;
-}
-
-.seiton-asset-stat-value {
-  color: var(--st-ink);
-  font-family: var(--font-monospace);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-.seiton-asset-stat-desc {
-  color: var(--st-muted);
-  font-size: 11px;
-}
-
-/* P/L 当月カード */
-.seiton-asset-pl-card {
-  background: var(--background-secondary);
-  border: 1px solid var(--st-hairline);
-  border-radius: var(--st-radius-md);
-  margin-bottom: 24px;
-  padding: 16px 20px;
-}
-
-.seiton-asset-pl-head {
-  align-items: baseline;
-  display: flex;
+  gap: 20px;
   justify-content: space-between;
   margin-bottom: 12px;
 }
 
-.seiton-asset-pl-head h3 {
-  color: var(--st-ink);
-  font-size: var(--st-text-sm);
-  font-weight: 600;
-  margin: 0;
+.seiton-asset-hero-wrap {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 
-.seiton-asset-pl-sub {
+.seiton-asset-hero-number {
+  color: var(--st-data);
+  font-family: var(--font-interface);
+  font-size: 27px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.seiton-asset-hero-label {
   color: var(--st-muted);
   font-size: var(--st-text-xs);
-  font-weight: 550;
 }
 
-.seiton-asset-pl-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-}
-
-.seiton-asset-pl-stat {
+.seiton-asset-bar-wrap {
+  align-items: flex-end;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
-.seiton-asset-pl-stat.is-highlight .seiton-asset-pl-value {
-  color: var(--interactive-accent);
-  font-weight: 700;
+.seiton-asset-bar {
+  background: var(--st-hairline);
+  border-radius: 2px;
+  display: flex;
+  height: 8px;
+  overflow: hidden;
+  width: 140px;
 }
 
-.seiton-asset-pl-label {
+.seiton-asset-bar-segment.is-living {
+  background: var(--st-data);
+  height: 100%;
+}
+
+.seiton-asset-bar-segment.is-special {
+  background: color-mix(in srgb, var(--st-data) 35%, transparent);
+  height: 100%;
+}
+
+/* 2. 中段: B/S内訳行 */
+.seiton-asset-breakdown {
+  align-items: baseline;
   color: var(--st-muted);
-  font-size: 11px;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--st-text-sm);
+  gap: 4px 10px;
+  line-height: 1.6;
+  margin-bottom: 14px;
 }
 
-.seiton-asset-pl-value {
+.seiton-asset-breakdown-item {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.seiton-asset-item-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-asset-item-val {
   color: var(--st-ink);
-  font-family: var(--font-monospace);
-  font-size: 16px;
+  font-family: var(--font-interface);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.seiton-asset-item-sub {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-asset-dot {
+  color: var(--st-hairline);
+  user-select: none;
+}
+
+/* 3. 下段: 当月P/L台帳行 */
+.seiton-asset-pl-row {
+  align-items: baseline;
+  border-top: 1px solid var(--st-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--st-text-sm);
+  gap: 8px 16px;
+  justify-content: space-between;
+  padding-top: 12px;
+}
+
+.seiton-asset-pl-main {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.seiton-asset-pl-title {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-asset-pl-cost {
+  color: var(--st-ink);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-md);
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
 
-.seiton-asset-pl-desc {
+.seiton-asset-pl-daily {
   color: var(--st-muted);
-  font-size: 10px;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ストック支出カード */
+.seiton-asset-pl-details {
+  align-items: baseline;
+  color: var(--st-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--st-text-xs);
+  gap: 4px 8px;
+}
+
+.seiton-asset-pl-detail-item {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   ストック支出・返済台帳
+   -------------------------------------------------------------------------- */
 .seiton-asset-section {
   margin-bottom: 28px;
 }
@@ -168,130 +224,117 @@
 .seiton-asset-stock-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
 .seiton-asset-stock-card {
-  background: var(--background-secondary);
-  border: 1px solid var(--st-hairline);
-  border-radius: var(--st-radius-md);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--st-hairline);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 12px 0 10px;
+}
+
+.seiton-asset-stock-card:first-child {
+  border-top: 0;
 }
 
 .seiton-asset-stock-head {
-  align-items: center;
+  align-items: baseline;
   display: flex;
+  gap: 10px;
   justify-content: space-between;
 }
 
 .seiton-asset-stock-title-wrap {
-  align-items: center;
+  align-items: baseline;
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 
 .seiton-asset-stock-title {
   color: var(--st-ink);
   font-size: var(--st-text-sm);
-  font-weight: 600;
+  font-weight: 550;
   margin: 0;
 }
 
-.seiton-asset-stock-badges {
-  display: flex;
-  gap: 6px;
-}
-
-.seiton-asset-badge {
-  background: var(--background-modifier-border);
-  border-radius: var(--st-radius-sm);
+.seiton-asset-stock-status {
   color: var(--st-muted);
-  font-size: 11px;
-  font-weight: 550;
-  padding: 1px 7px;
-}
-
-.seiton-asset-badge.is-living {
-  background: var(--background-modifier-hover);
-  color: var(--st-ink);
-}
-
-.seiton-asset-badge.is-special {
-  background: var(--background-modifier-border);
-  border: 1px solid var(--st-hairline);
-  color: var(--st-ink);
-}
-
-.seiton-asset-badge.is-repay {
-  background: var(--background-modifier-hover);
-  color: var(--text-warning, #b45309);
-}
-
-.seiton-asset-badge.is-completed {
-  background: var(--background-modifier-hover);
-  color: var(--text-success, #15803d);
+  font-size: var(--st-text-xs);
 }
 
 .seiton-asset-repay-btn {
   font-size: var(--st-text-xs);
-  padding: 4px 10px;
+  height: 24px;
+  min-height: 24px;
+  padding: 2px 8px;
 }
 
 .seiton-asset-stock-meta {
+  align-items: baseline;
   color: var(--st-muted);
   display: flex;
   flex-wrap: wrap;
+  font-family: var(--font-interface);
   font-size: var(--st-text-xs);
-  gap: 16px;
+  font-variant-numeric: tabular-nums;
+  gap: 6px 16px;
 }
 
 .seiton-asset-stock-repay-alert {
-  color: var(--text-error, #b91c1c);
-  font-weight: 600;
+  color: var(--st-ink);
+  font-weight: 550;
 }
 
-/* プログレスバー */
+/* プログレスバー（高さ 3px の極細ライン） */
 .seiton-asset-stock-progress-wrap {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-top: 2px;
 }
 
 .seiton-asset-progress-track {
-  background: var(--background-modifier-border);
-  border-radius: 99px;
-  height: 6px;
+  background: var(--st-hairline);
+  border-radius: 2px;
+  height: 3px;
   overflow: hidden;
   position: relative;
   width: 100%;
 }
 
 .seiton-asset-progress-amort {
-  background: var(--text-muted);
+  background: color-mix(in srgb, var(--st-data) 35%, transparent);
   height: 100%;
   left: 0;
-  opacity: 0.35;
   position: absolute;
   top: 0;
-  transition: width 0.2s ease;
+  transition: none;
 }
 
 .seiton-asset-progress-repay {
-  background: var(--interactive-accent, #1d5fbf);
+  background: var(--st-data);
   height: 100%;
   left: 0;
   position: absolute;
   top: 0;
-  transition: width 0.2s ease;
+  transition: none;
 }
 
 .seiton-asset-progress-legend {
+  align-items: baseline;
+  color: var(--st-muted);
   display: flex;
-  font-size: 11px;
-  gap: 16px;
+  flex-wrap: wrap;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  gap: 12px;
 }
 
 .seiton-asset-legend-item {
@@ -299,19 +342,21 @@
 }
 
 .seiton-asset-legend-item.is-amort {
-  color: var(--text-muted);
+  color: var(--st-muted);
 }
 
 .seiton-asset-legend-item.is-repay {
-  color: var(--interactive-accent, #1d5fbf);
-  font-weight: 550;
+  color: var(--st-ink);
+  font-weight: 500;
 }
 
-/* SVG チャート */
+/* --------------------------------------------------------------------------
+   SVG チャート（推移グラフ）
+   -------------------------------------------------------------------------- */
 .seiton-asset-svg-chart {
-  background: var(--background-secondary);
+  background: transparent;
   border: 1px solid var(--st-hairline);
-  border-radius: var(--st-radius-md);
+  border-radius: var(--st-radius-sm);
   box-sizing: border-box;
   height: auto;
   margin-top: 8px;
@@ -320,23 +365,24 @@
 }
 
 .seiton-chart-grid-line {
-  stroke: var(--background-modifier-border);
+  stroke: var(--st-hairline);
   stroke-dasharray: 3 3;
   stroke-width: 1;
 }
 
 .seiton-chart-label {
   fill: var(--st-muted);
-  font-family: var(--font-monospace);
-  font-size: 10px;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
 }
 
 .seiton-chart-line-total {
   fill: none;
-  stroke: var(--interactive-accent, #1d5fbf);
+  stroke: var(--st-data);
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 2.5;
+  stroke-width: 2;
 }
 
 .seiton-chart-line-living {
@@ -347,29 +393,31 @@
 }
 
 .seiton-chart-dot {
-  fill: var(--interactive-accent, #1d5fbf);
+  fill: var(--st-data);
 }
 
 .seiton-chart-bar-income {
-  fill: var(--text-success, #15803d);
-  rx: 3;
+  fill: color-mix(in srgb, var(--st-data) 35%, transparent);
+  rx: 1;
 }
 
 .seiton-chart-bar-cost {
-  fill: var(--interactive-accent, #1d5fbf);
-  rx: 3;
+  fill: var(--st-data);
+  rx: 1;
 }
 
 .seiton-asset-chart-empty {
   border: 1px dashed var(--st-hairline);
-  border-radius: var(--st-radius-md);
+  border-radius: var(--st-radius-sm);
   color: var(--st-muted);
   font-size: var(--st-text-sm);
   padding: 36px 0;
   text-align: center;
 }
 
-/* 履歴テーブル */
+/* --------------------------------------------------------------------------
+   履歴テーブル（残高履歴）
+   -------------------------------------------------------------------------- */
 .seiton-asset-history-table {
   border-collapse: collapse;
   font-size: var(--st-text-sm);
@@ -391,7 +439,8 @@
 
 .seiton-asset-history-table td {
   color: var(--st-ink);
-  font-family: var(--font-monospace);
+  font-family: var(--font-interface);
+  font-variant-numeric: tabular-nums;
 }
 
 .seiton-asset-col-date {
@@ -408,7 +457,9 @@
   font-size: var(--st-text-xs);
 }
 
-/* モーダル内フォーム */
+/* --------------------------------------------------------------------------
+   モーダル内フォーム ＆ モバイル最適化
+   -------------------------------------------------------------------------- */
 .seiton-asset-group-section {
   border-top: 1px solid var(--st-hairline);
   margin-top: 14px;
@@ -443,8 +494,16 @@
 }
 
 .seiton-asset-input-label-wrap {
+  align-items: baseline;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.seiton-asset-input-prev-wrap {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 6px;
 }
 
 .seiton-asset-input-name {
@@ -455,11 +514,46 @@
 
 .seiton-asset-input-prev {
   color: var(--st-muted);
-  font-family: var(--font-monospace);
-  font-size: 11px;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-snapshot-diff {
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-snapshot-diff.is-positive {
+  color: var(--st-ink);
+  font-weight: 500;
+}
+
+.seiton-snapshot-diff.is-negative {
+  color: var(--st-muted);
+}
+
+.seiton-snapshot-total-wrap {
+  margin: 4px 0 12px;
+}
+
+.seiton-snapshot-total-diff {
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-snapshot-total-diff.is-positive {
+  color: var(--st-ink);
+  font-weight: 600;
 }
 
 .seiton-asset-number-input {
+  font-family: var(--font-interface);
+  font-variant-numeric: tabular-nums;
   max-width: 140px;
   text-align: right;
 }
@@ -477,6 +571,8 @@
 }
 
 .seiton-asset-income-amount {
+  font-family: var(--font-interface);
+  font-variant-numeric: tabular-nums;
   max-width: 110px;
   text-align: right;
 }
@@ -487,11 +583,6 @@
 
 .seiton-asset-income-del-btn {
   padding: 4px 8px;
-}
-
-.seiton-asset-repay-btn {
-  font-size: var(--st-text-xs);
-  padding: 4px 10px;
 }
 
 .seiton-scanner-btn-mini {
@@ -515,7 +606,7 @@
 }
 
 .seiton-asset-checkbox-field {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -529,10 +620,11 @@
   font-weight: 500;
 }
 
+/* 口座管理モーダル */
 .seiton-asset-add-account-box {
-  background: var(--background-secondary);
+  background: transparent;
   border: 1px solid var(--st-hairline);
-  border-radius: var(--st-radius-md);
+  border-radius: var(--st-radius-sm);
   margin-bottom: 16px;
   padding: 12px 14px;
 }
@@ -552,20 +644,25 @@
 .seiton-asset-accounts-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
 }
 
 .seiton-asset-account-row {
   align-items: center;
-  background: var(--background-secondary);
-  border-radius: var(--st-radius-sm);
+  background: transparent;
+  border-radius: 0;
+  border-top: 1px solid var(--st-hairline);
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 8px 0;
+}
+
+.seiton-asset-account-row:first-child {
+  border-top: 0;
 }
 
 .seiton-asset-account-info {
-  align-items: center;
+  align-items: baseline;
   display: flex;
   gap: 8px;
 }
@@ -574,4 +671,130 @@
   color: var(--st-ink);
   font-size: var(--st-text-sm);
   font-weight: 500;
+}
+
+.seiton-asset-badge {
+  background: transparent;
+  border: 0;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  padding: 0;
+}
+
+/* 返済モーダル */
+.seiton-asset-repay-summary-card {
+  background: transparent;
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  margin-bottom: 16px;
+  padding: 12px 14px;
+}
+
+.seiton-asset-repay-summary-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.seiton-asset-repay-grid {
+  display: grid;
+  gap: 8px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.seiton-asset-repay-grid-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seiton-asset-repay-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-asset-repay-val {
+  color: var(--st-ink);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.seiton-asset-repay-val.is-accent {
+  color: var(--st-data);
+  font-weight: 600;
+}
+
+.seiton-asset-repay-form {
+  margin-top: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   モバイル（SP: max-width: 640px）最適化
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .seiton-asset-index-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .seiton-asset-bar-wrap {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .seiton-asset-bar {
+    width: 100%;
+  }
+
+  .seiton-asset-pl-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .seiton-asset-input-row {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .seiton-asset-input-label-wrap {
+    align-items: baseline;
+    flex: 1 1 100%;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .seiton-asset-number-input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .seiton-asset-income-inline-row {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .seiton-asset-inline-select {
+    flex: 1 1 calc(55% - 8px);
+    width: auto;
+  }
+
+  .seiton-asset-income-amount {
+    flex: 1 1 40%;
+    max-width: none;
+    width: auto;
+  }
+
+  .seiton-asset-income-memo {
+    flex: 1 1 calc(100% - 44px);
+  }
+
+  .seiton-asset-income-del-btn {
+    flex: 0 0 auto;
+  }
 }

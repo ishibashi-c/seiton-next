@@ -278,11 +278,14 @@ class NewProjectModal extends Modal {
       });
     this.statusEl = this.contentEl.createDiv({ cls: "seiton-modal-status" });
     const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
-    const cancel = footer.createEl("button", { text: "キャンセル" });
+    const cancel = footer.createEl("button", {
+      cls: "st-btn is-secondary",
+      text: "キャンセル",
+    });
     cancel.type = "button";
     cancel.addEventListener("click", () => this.close());
     const create = footer.createEl("button", {
-      cls: "mod-cta",
+      cls: "st-btn is-primary",
       text: "作成",
     });
     create.type = "button";
@@ -346,7 +349,7 @@ class LinkNoteModal extends Modal {
     this.setTitle(`「${this.project.title}」に関連付ける`);
     const search = this.contentEl.createEl("input", {
       attr: { placeholder: "ノートを検索", type: "search" },
-      cls: "seiton-library-search",
+      cls: "st-input seiton-library-search",
     });
     const list = this.contentEl.createDiv({ cls: "seiton-link-list" });
     const render = (): void => {
@@ -374,7 +377,7 @@ class LinkNoteModal extends Modal {
           (value) => normalizeLink(value) === normalizeLink(this.project.title)
         );
         const button = row.createEl("button", {
-          cls: "seiton-li-action",
+          cls: "st-btn is-secondary seiton-li-action",
           text: already ? "関連付け済み" : "関連付ける",
         });
         button.type = "button";

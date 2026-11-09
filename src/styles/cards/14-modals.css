@@ -40,26 +40,35 @@
   margin-top: 16px;
 }
 
-.seiton-triage-kind {
+.seiton-triage-kind,
+.seiton-triage-kind.st-btn {
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--st-radius-sm);
   color: var(--text-muted);
   font-size: var(--st-text-xs);
+  font-weight: 500;
+  height: auto;
+  line-height: 1.4;
   padding: 6px 10px;
 }
 
-.seiton-triage-kind:hover {
+.seiton-triage-kind:hover,
+.seiton-triage-kind.st-btn:hover {
   border-color: var(--background-modifier-border-hover);
   color: var(--text-normal);
 }
 
-.seiton-triage-decision {
+.seiton-triage-decision,
+.seiton-triage-decision.st-btn {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--st-radius-md);
   color: var(--text-normal);
   font-size: var(--st-text-sm);
+  font-weight: 500;
+  height: auto;
+  line-height: 1.4;
   padding: 7px 12px;
 }
 
@@ -429,9 +438,25 @@ button.seiton-triage-toggle-body {
   white-space: pre-wrap;
 }
 
-.seiton-triage-tags-section,
-.seiton-triage-project-section {
+.seiton-triage-tags-section {
   margin-top: 12px;
+}
+
+.seiton-triage-project-section {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.seiton-triage-project-section .seiton-triage-label {
+  margin-bottom: 0;
+}
+
+.seiton-triage-project-section .st-select {
+  flex: 1;
+  min-width: 180px;
 }
 
 .seiton-triage-label {
@@ -774,6 +799,19 @@ button.seiton-context-picker-row:hover {
   background: var(--background-modifier-hover) !important;
 }
 
+.modal.seiton-append-modal {
+  width: min(560px, calc(100vw - 24px));
+}
+
+.modal.seiton-append-modal .seiton-context-picker-list {
+  max-height: min(45vh, 320px);
+}
+
+.modal.seiton-append-modal .st-input.seiton-context-picker-search {
+  margin-bottom: 10px;
+  width: 100%;
+}
+
 /* #15: Assets Snapshot Real-Time Diff Preview */
 .seiton-snapshot-total-wrap {
   align-items: center;
@@ -794,8 +832,8 @@ button.seiton-context-picker-row:hover {
 
 .seiton-snapshot-diff,
 .seiton-snapshot-total-diff {
-  font-family: var(--font-monospace);
-  font-size: 11.5px;
+  font-family: var(--font-interface);
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
@@ -814,4 +852,76 @@ button.seiton-context-picker-row:hover {
 .seiton-snapshot-total-diff.is-zero {
   color: var(--st-muted);
 }
+
+/* =========================================================
+   v0.9.0: Classes View (授業・履修台帳) Styles
+   ========================================================= */
+
+.seiton-classes-today-section {
+  margin-top: 24px;
+}
+
+.seiton-classes-ledger-section {
+  margin-top: 32px;
+}
+
+.seiton-quick-class-add {
+  color: var(--st-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.seiton-class-course-box {
+  border-top: 1px solid var(--st-hairline);
+  padding: 20px 0 12px;
+}
+
+.seiton-class-course-box:first-of-type {
+  border-top: 0;
+  padding-top: 8px;
+}
+
+.seiton-class-course-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.seiton-class-course-title-wrap {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.seiton-class-course-name {
+  color: var(--st-ink);
+  font-size: var(--st-text-base);
+  font-weight: 620;
+  margin: 0;
+}
+
+.seiton-class-course-meta {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.seiton-class-course-count {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-class-course-actions {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 

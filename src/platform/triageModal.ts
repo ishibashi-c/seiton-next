@@ -5,7 +5,7 @@ import type { PropertyValue } from "../services/propertyService";
 import type { TriageService } from "../services/triageService";
 import type { NoteRecord } from "../services/vaultIndex";
 import { markSeitonModal } from "./ui/modal";
-
+import { createSelect } from "./ui/select";
 import { showToast } from "./ui/toast";
 
 const KIND_CHOICES = [
@@ -201,28 +201,20 @@ export class TriageModal extends Modal {
         cls: "seiton-triage-label",
         text: "プロジェクト:",
       });
-      const select = projectSection.createEl("select", {
-        cls: "seiton-triage-project-select dropdown",
-      });
-      const emptyOption = select.createEl("option", {
-        text: "プロジェクト未設定",
-        value: "",
-      });
-      emptyOption.selected = note.projects.length === 0;
-
       const currentProject = note.projects[0] ?? "";
-      for (const p of this.projectList) {
-        const opt = select.createEl("option", {
-          text: p.title,
-          value: p.title,
-        });
-        if (currentProject === p.title) {
-          opt.selected = true;
-        }
-      }
-      select.addEventListener("change", () => {
-        void this.setProject(note, select.value);
+      const choices = [
+        { label: "プロジェクト未設定", value: "" },
+        ...this.projectList.map((p) => ({ label: p.title, value: p.title })),
+      ];
+      const selectControl = createSelect({
+        choices,
+        onChange: (value) => {
+          void this.setProject(note, value);
+        },
+        title: "プロジェクトを選択",
+        value: currentProject,
       });
+      projectSection.append(selectControl.element);
     }
 
     const meta = [
@@ -246,7 +238,7 @@ export class TriageModal extends Modal {
     for (const choice of KIND_CHOICES) {
       const button = kinds.createEl("button", {
         attr: { type: "button" },
-        cls: "seiton-triage-kind",
+        cls: "st-btn is-secondary seiton-triage-kind",
         text: `${choice.label} ${choice.key}`,
       });
       button.disabled = !hasNote || this.busy;
@@ -267,7 +259,7 @@ export class TriageModal extends Modal {
     for (const decision of decisions) {
       const button = actions.createEl("button", {
         attr: { type: "button" },
-        cls: "seiton-triage-decision",
+        cls: "st-btn is-secondary seiton-triage-decision",
         text: decision.label,
       });
       button.disabled = !hasNote || this.busy;
@@ -277,14 +269,14 @@ export class TriageModal extends Modal {
     }
     const skip = actions.createEl("button", {
       attr: { type: "button" },
-      cls: "seiton-text-action",
+      cls: "st-btn is-secondary seiton-text-action",
       text: "保留",
     });
     skip.disabled = !hasNote || this.busy;
     skip.addEventListener("click", () => this.advance());
     const undo = actions.createEl("button", {
       attr: { type: "button" },
-      cls: "seiton-text-action",
+      cls: "st-btn is-secondary seiton-text-action",
       text: "戻す",
     });
     undo.disabled = this.busy || !this.triage.canUndo();
@@ -293,7 +285,7 @@ export class TriageModal extends Modal {
     });
     const close = actions.createEl("button", {
       attr: { type: "button" },
-      cls: "seiton-text-action",
+      cls: "st-btn is-secondary seiton-text-action",
       text: "閉じる",
     });
     close.addEventListener("click", () => this.close());

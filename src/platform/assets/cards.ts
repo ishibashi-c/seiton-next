@@ -13,116 +13,201 @@ import { button } from "../ui/field";
 import { renderStockProgressBar } from "./charts";
 
 /**
- * B/S（資産残高）サマリーカードを描画する。
+ * 資産インデックス（Ledger Index: 無彩色台帳）を描画する。
+ */
+export function renderAssetIndex(
+  container: HTMLElement,
+  bs: AssetBsSummary,
+  pl: MonthlyPlSummary,
+  dataset: AssetDataset
+): void {
+  const index = container.createDiv({ cls: "seiton-asset-index" });
+
+  // 1. 上段（.seiton-asset-index-top）
+  const top = index.createDiv({ cls: "seiton-asset-index-top" });
+
+  // 左: 純資産の金額 1つだけ
+  const heroWrap = top.createDiv({ cls: "seiton-asset-hero-wrap" });
+  heroWrap.createDiv({
+    cls: "seiton-asset-hero-number",
+    text: `¥${bs.totalNetWorth.toLocaleString()}`,
+  });
+  heroWrap.createDiv({
+    cls: "seiton-asset-hero-label",
+    text: `純資産（${bs.asOfDate}）`,
+  });
+
+  // 右: 1本の積み上げ比率バー（生活資金 vs 特別資金）
+  const positiveLiving = Math.max(0, bs.livingBalance);
+  const positiveSpecial = Math.max(0, bs.specialBalance);
+  const totalFunds = positiveLiving + positiveSpecial;
+  const livingPct =
+    totalFunds > 0 ? Math.round((positiveLiving / totalFunds) * 100) : 50;
+  const specialPct = totalFunds > 0 ? 100 - livingPct : 50;
+
+  const barWrap = top.createDiv({
+    cls: "seiton-asset-bar-wrap",
+  });
+  const bar = barWrap.createDiv({
+    attr: {
+      title: `生活資金 ${livingPct}% / 特別資金 ${specialPct}%`,
+    },
+    cls: "seiton-asset-bar",
+  });
+  const livingSeg = bar.createDiv({
+    cls: "seiton-asset-bar-segment is-living",
+  });
+  livingSeg.style.width = `${livingPct}%`;
+  const specialSeg = bar.createDiv({
+    cls: "seiton-asset-bar-segment is-special",
+  });
+  specialSeg.style.width = `${specialPct}%`;
+
+  // 2. 中段・B/S内訳行（.seiton-asset-breakdown）
+  const breakdown = index.createDiv({ cls: "seiton-asset-breakdown" });
+
+  const livingCount = dataset.accounts.filter(
+    (a) => a.group === "living"
+  ).length;
+  const specialCount = dataset.accounts.filter(
+    (a) => a.group === "special"
+  ).length;
+
+  const addBreakdownItem = (
+    label: string,
+    valText: string,
+    subText?: string
+  ) => {
+    const item = breakdown.createSpan({ cls: "seiton-asset-breakdown-item" });
+    item.createSpan({ cls: "seiton-asset-item-label", text: label });
+    item.createSpan({ cls: "seiton-asset-item-val", text: valText });
+    if (subText) {
+      item.createSpan({ cls: "seiton-asset-item-sub", text: subText });
+    }
+  };
+
+  addBreakdownItem(
+    "生活資金",
+    `¥${bs.livingBalance.toLocaleString()}`,
+    `（${livingCount}口座）`
+  );
+  breakdown.createSpan({ cls: "seiton-asset-dot", text: "·" });
+  addBreakdownItem(
+    "特別資金",
+    `¥${bs.specialBalance.toLocaleString()}`,
+    `（${specialCount}口座）`
+  );
+  breakdown.createSpan({ cls: "seiton-asset-dot", text: "·" });
+  addBreakdownItem(
+    "ストック未償却残高",
+    `¥${bs.unreturnedStockValue.toLocaleString()}`
+  );
+
+  // 3. 下段・当月P/L台帳行（.seiton-asset-pl-row）
+  const plRow = index.createDiv({ cls: "seiton-asset-pl-row" });
+
+  const [yStr, mStr] = pl.yearMonth.split("-");
+  const year = Number(yStr);
+  const month = Number(mStr);
+  const daysInMonth = year && month ? new Date(year, month, 0).getDate() : 30;
+  const dailyCost =
+    daysInMonth > 0 ? Math.round(pl.realLivingCost / daysInMonth) : 0;
+
+  const plMain = plRow.createDiv({ cls: "seiton-asset-pl-main" });
+  plMain.createSpan({
+    cls: "seiton-asset-pl-title",
+    text: `当月（${pl.yearMonth}）の実質生活コスト:`,
+  });
+  plMain.createSpan({
+    cls: "seiton-asset-pl-cost",
+    text: `¥${pl.realLivingCost.toLocaleString()}`,
+  });
+  plMain.createSpan({
+    cls: "seiton-asset-pl-daily",
+    text: `（日割 ¥${dailyCost.toLocaleString()}/日）`,
+  });
+
+  // 内訳: 収入 · キャッシュ減少 · 特別支出控除 · ストック月償却
+  let directLivingStockAmount = 0;
+  for (const stock of dataset.stocks) {
+    if (stock.purchaseDate.startsWith(pl.yearMonth)) {
+      const acc = dataset.accounts.find((a) => a.id === stock.sourceAccountId);
+      if (acc?.group === "living") {
+        directLivingStockAmount += stock.amount;
+      }
+    }
+  }
+
+  const cashDecrease = -pl.livingCashChange;
+  const cashDecreaseText =
+    cashDecrease >= 0
+      ? `¥${cashDecrease.toLocaleString()}`
+      : `-¥${Math.abs(cashDecrease).toLocaleString()}`;
+  const specialStockText = `-¥${directLivingStockAmount.toLocaleString()}`;
+
+  const plDetails = plRow.createDiv({ cls: "seiton-asset-pl-details" });
+  const addPlDetail = (label: string, val: string) => {
+    const item = plDetails.createSpan({ cls: "seiton-asset-pl-detail-item" });
+    item.createSpan({ cls: "seiton-asset-item-label", text: label });
+    item.createSpan({ cls: "seiton-asset-item-val", text: val });
+  };
+
+  addPlDetail("収入", `¥${pl.totalIncome.toLocaleString()}`);
+  plDetails.createSpan({ cls: "seiton-asset-dot", text: "·" });
+  addPlDetail("キャッシュ減少", cashDecreaseText);
+  plDetails.createSpan({ cls: "seiton-asset-dot", text: "·" });
+  addPlDetail("特別支出控除", specialStockText);
+  plDetails.createSpan({ cls: "seiton-asset-dot", text: "·" });
+  addPlDetail("ストック月償却", `+¥${pl.depreciation.toLocaleString()}`);
+}
+
+/**
+ * 後方互換用：B/S サマリー
  */
 export function renderBsCards(
   container: HTMLElement,
   bs: AssetBsSummary
 ): void {
-  const grid = container.createDiv({ cls: "seiton-asset-bs-grid" });
-
-  const addCard = (
-    label: string,
-    value: number,
-    desc: string,
-    isHero = false,
-    colorClass = ""
-  ) => {
-    const card = grid.createDiv({
-      cls: isHero
-        ? "seiton-asset-stat-card is-hero"
-        : `seiton-asset-stat-card ${colorClass}`,
-    });
-    card.createDiv({ cls: "seiton-asset-stat-label", text: label });
-    const valEl = card.createDiv({ cls: "seiton-asset-stat-value" });
-    valEl.createSpan({ text: `¥${value.toLocaleString()}` });
-    card.createDiv({ cls: "seiton-asset-stat-desc", text: desc });
-  };
-
-  addCard(
-    "実質総資産",
-    bs.totalNetWorth,
-    "金融純資産 ＋ ストック資産価値",
-    true
-  );
-  addCard(
-    "生活資金（日常）",
-    bs.livingBalance,
-    "財布・メイン口座・PayPay・クレカ残高",
-    false,
-    "is-living"
-  );
-  addCard(
-    "特別資金（奨学金）",
-    bs.specialBalance,
-    "自己投資・融資プール口座残高",
-    false,
-    "is-special"
-  );
-  addCard(
-    "ストック資産価値",
-    bs.unreturnedStockValue,
-    "PC・家電等の未償却残存価値",
-    false,
-    "is-stock"
-  );
+  const row = container.createDiv({ cls: "seiton-asset-index" });
+  const top = row.createDiv({ cls: "seiton-asset-index-top" });
+  const heroWrap = top.createDiv({ cls: "seiton-asset-hero-wrap" });
+  heroWrap.createDiv({
+    cls: "seiton-asset-hero-number",
+    text: `¥${bs.totalNetWorth.toLocaleString()}`,
+  });
+  heroWrap.createDiv({
+    cls: "seiton-asset-hero-label",
+    text: `純資産（${bs.asOfDate}）`,
+  });
 }
 
 /**
- * P/L（当期収支）サマリーカードを描画する。
+ * 後方互換用：P/L サマリー
  */
 export function renderPlCard(
   container: HTMLElement,
   pl: MonthlyPlSummary
 ): void {
-  const card = container.createDiv({ cls: "seiton-asset-pl-card" });
-
-  const head = card.createDiv({ cls: "seiton-asset-pl-head" });
-  head.createEl("h3", { text: `${pl.yearMonth} の生活コスト状況` });
-
-  const sub = head.createSpan({ cls: "seiton-asset-pl-sub" });
-  const cashChangeText =
-    pl.cashNetChange >= 0
-      ? `+¥${pl.cashNetChange.toLocaleString()}`
-      : `-¥${Math.abs(pl.cashNetChange).toLocaleString()}`;
-  sub.setText(`手持ち現金増減: ${cashChangeText}`);
-
-  const grid = card.createDiv({ cls: "seiton-asset-pl-grid" });
-
-  const addStat = (
-    label: string,
-    val: number,
-    desc?: string,
-    isHighlight = false
-  ) => {
-    const item = grid.createDiv({
-      cls: isHighlight
-        ? "seiton-asset-pl-stat is-highlight"
-        : "seiton-asset-pl-stat",
-    });
-    item.createSpan({ cls: "seiton-asset-pl-label", text: label });
-    item.createSpan({
-      cls: "seiton-asset-pl-value",
-      text: `¥${val.toLocaleString()}`,
-    });
-    if (desc) {
-      item.createSpan({ cls: "seiton-asset-pl-desc", text: desc });
-    }
-  };
-
-  addStat("収入合計", pl.totalIncome, "バイト代・お小遣い等");
-  addStat("日常生活費", pl.livingCost, "残高差分から自動逆算");
-  addStat("当期減価償却費", pl.depreciation, "大型支出の月割按分");
-  addStat("実質生活コスト", pl.realLivingCost, "生活費 ＋ 減価償却費", true);
+  const row = container.createDiv({ cls: "seiton-asset-pl-row" });
+  const plMain = row.createDiv({ cls: "seiton-asset-pl-main" });
+  plMain.createSpan({
+    cls: "seiton-asset-pl-title",
+    text: `当月（${pl.yearMonth}）の実質生活コスト:`,
+  });
+  plMain.createSpan({
+    cls: "seiton-asset-pl-cost",
+    text: `¥${pl.realLivingCost.toLocaleString()}`,
+  });
 }
 
 /**
- * ストック支出＆返済カードを描画する。
+ * ストック支出＆返済行を描画する（台帳行デザイン）。
  */
 export function renderStockCard(
   container: HTMLElement,
   status: StockExpenseStatus,
-  onRepayClick: () => void
+  onRepayClick: () => void,
+  dataset?: AssetDataset
 ): void {
   const card = container.createDiv({ cls: "seiton-asset-stock-card" });
 
@@ -133,32 +218,37 @@ export function renderStockCard(
     text: status.stock.title,
   });
 
-  const badges = titleWrap.createDiv({ cls: "seiton-asset-stock-badges" });
-  if (status.stock.isRepaymentRequired) {
-    badges.createSpan({
-      cls: status.isRepaymentCompleted
-        ? "seiton-asset-badge is-completed"
-        : "seiton-asset-badge is-repay",
-      text: status.isRepaymentCompleted ? "完済" : "奨学金へ要返済",
-    });
-  } else {
-    badges.createSpan({
-      cls: "seiton-asset-badge is-special",
-      text: "自己投資（返済不要）",
-    });
+  const statusTexts: string[] = [];
+  if (dataset) {
+    const acc = dataset.accounts.find(
+      (a) => a.id === status.stock.sourceAccountId
+    );
+    if (acc) {
+      statusTexts.push(acc.group === "living" ? "生活資金" : "特別資金");
+    }
   }
+  if (status.stock.isRepaymentRequired) {
+    statusTexts.push(status.isRepaymentCompleted ? "完了" : "返済中");
+  } else {
+    statusTexts.push("返済不要");
+  }
+
+  titleWrap.createSpan({
+    cls: "seiton-asset-stock-status",
+    text: statusTexts.join(" · "),
+  });
 
   // 返済ボタン（要返済かつ未完済の場合）
   if (status.stock.isRepaymentRequired && !status.isRepaymentCompleted) {
     const repayBtn = button(head, {
-      label: "返済する",
+      label: "返済",
       onClick: onRepayClick,
       tone: "secondary",
     });
     repayBtn.addClass("seiton-asset-repay-btn");
   }
 
-  // メタ情報グリッド
+  // メタ情報インライン行
   const meta = card.createDiv({ cls: "seiton-asset-stock-meta" });
   meta.createSpan({
     text: `購入: ¥${status.stock.amount.toLocaleString()} (${status.stock.purchaseDate})`,

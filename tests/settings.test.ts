@@ -151,3 +151,71 @@ describe("normalizeSettings calilLastResults", () => {
     expect(Object.keys(settings.calilLastResults)).toHaveLength(500);
   });
 });
+
+describe("normalizeSettings academic / courses", () => {
+  it("defaults grade to 3年 and term to 後期", () => {
+    const settings = normalizeSettings({});
+    expect(settings.currentGrade).toBe("3年");
+    expect(settings.currentTerm).toBe("後期");
+    expect(settings.courses).toEqual([]);
+  });
+
+  it("normalizes valid grades and terms, fallbacks invalid ones", () => {
+    const valid = normalizeSettings({
+      currentGrade: "2年",
+      currentTerm: "前期",
+    });
+    expect(valid.currentGrade).toBe("2年");
+    expect(valid.currentTerm).toBe("前期");
+
+    const invalid = normalizeSettings({
+      currentGrade: "5年" as never,
+      currentTerm: "春学期" as never,
+    });
+    expect(invalid.currentGrade).toBe("3年");
+    expect(invalid.currentTerm).toBe("後期");
+  });
+
+  it("normalizes courses and drops empty names", () => {
+    const settings = normalizeSettings({
+      courses: [
+        {
+          dayOfWeek: " 月 ",
+          grade: "3年",
+          id: "",
+          name: " 認知科学 ",
+          period: " 2限 ",
+          term: "後期",
+        },
+        {
+          grade: "1年",
+          id: "c_keep",
+          name: "",
+          term: "前期",
+        },
+      ],
+    });
+
+    expect(settings.courses).toHaveLength(1);
+    expect(settings.courses[0]).toEqual({
+      dayOfWeek: "月",
+      grade: "3年",
+      id: expect.any(String),
+      name: "認知科学",
+      period: "2限",
+      term: "後期",
+    });
+    expect(settings.courses[0]?.id).not.toBe("");
+  });
+
+  it("caps courses at 60 entries", () => {
+    const many = Array.from({ length: 70 }, (_, index) => ({
+      grade: "2年" as const,
+      id: `c_${index}`,
+      name: `科目${index}`,
+      term: "前期" as const,
+    }));
+    const settings = normalizeSettings({ courses: many });
+    expect(settings.courses).toHaveLength(60);
+  });
+});

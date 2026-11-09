@@ -10,6 +10,7 @@ import {
   LINKS_FILE,
   VIEW_TYPE_ASSETS,
   VIEW_TYPE_BOOKSHELF,
+  VIEW_TYPE_CLASSES,
   VIEW_TYPE_HOME,
   VIEW_TYPE_LIBRARY,
   VIEW_TYPE_PROJECTS,
@@ -21,6 +22,7 @@ import { parseSharedWebText } from "./domain/webclip";
 import { AppCoordinator } from "./platform/appCoordinator";
 import { AssetsView } from "./platform/assetsView";
 import { SeitonBookshelfView } from "./platform/bookshelfView";
+import { SeitonClassesView } from "./platform/classesView";
 import { registerCommands } from "./platform/commands";
 import { renderPlaceholderCover } from "./platform/coverPlaceholder";
 import { registerFormatting } from "./platform/formatting";
@@ -158,6 +160,18 @@ export default class SeitonNextPlugin extends Plugin {
         )
     );
     this.registerView(
+      VIEW_TYPE_CLASSES,
+      (leaf) =>
+        new SeitonClassesView(
+          leaf,
+          this.indexService,
+          this.notes,
+          () => this.settings,
+          (patch) => this.saveSettings(patch),
+          (path) => this.coordinator.openFile(path)
+        )
+    );
+    this.registerView(
       VIEW_TYPE_BOOKSHELF,
       (leaf) =>
         new SeitonBookshelfView(leaf, this.indexService, {
@@ -281,6 +295,7 @@ export default class SeitonNextPlugin extends Plugin {
       openBases: () => this.coordinator.openBases(),
       openBookshelf: () => this.coordinator.openBookshelf(),
       openBulkIsbn: () => this.coordinator.openBulkIsbn(),
+      openClasses: () => this.coordinator.openClasses(),
       openCoverCacheForAll: () => this.coordinator.openCoverCacheForAll(),
       openCurrentWeek: () => this.coordinator.openCurrentWeek(),
       openHome: () => this.coordinator.openHome(),
@@ -307,6 +322,7 @@ export default class SeitonNextPlugin extends Plugin {
       VIEW_TYPE_HOME,
       VIEW_TYPE_TSUBUYAKI,
       VIEW_TYPE_LIBRARY,
+      VIEW_TYPE_CLASSES,
       VIEW_TYPE_BOOKSHELF,
       VIEW_TYPE_PROJECTS,
       VIEW_TYPE_PROMPT,

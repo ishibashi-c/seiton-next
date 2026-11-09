@@ -113,4 +113,24 @@ describe("openSeitonView", () => {
     expect(leaf.setViewState).not.toHaveBeenCalled();
     expect(revealLeaf).toHaveBeenCalledWith(leaf);
   });
+
+  it("授業タブへ遷移できる", async () => {
+    const leaf = leafOf(viewOf("seiton-next-home"));
+    const app = {
+      workspace: {
+        activeLeaf: leaf,
+        getLeaf: vi.fn(),
+        getLeavesOfType: vi.fn(() => []),
+        getMostRecentLeaf: vi.fn(() => leaf),
+        revealLeaf: vi.fn(async () => undefined),
+        setActiveLeaf: vi.fn(),
+      },
+    } as unknown as App;
+
+    await openSeitonView(app, "seiton-next-classes");
+
+    expect(leaf.setViewState).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "seiton-next-classes" })
+    );
+  });
 });

@@ -13,6 +13,7 @@ export interface SeitonCommandsHost {
   openBases: () => Promise<void>;
   openBookshelf: () => Promise<void>;
   openBulkIsbn: () => void;
+  openClasses: () => Promise<void>;
   openCoverCacheForAll: () => Promise<void>;
   openCurrentWeek: () => Promise<void>;
   openHome: () => Promise<void>;
@@ -45,6 +46,11 @@ export function registerCommands(
     hotkeys: [{ key: "l", modifiers: ["Mod", "Shift"] }],
     id: "open-library",
     name: "ライブラリを開く",
+  });
+  plugin.addCommand({
+    callback: () => void host.openClasses(),
+    id: "open-classes",
+    name: "授業ページを開く",
   });
   plugin.addCommand({
     callback: () => void host.openLinkList(),

@@ -7,6 +7,7 @@ import { type App, Modal, setIcon } from "obsidian";
 import {
   VIEW_TYPE_ASSETS,
   VIEW_TYPE_BOOKSHELF,
+  VIEW_TYPE_CLASSES,
   VIEW_TYPE_HOME,
   VIEW_TYPE_LIBRARY,
   VIEW_TYPE_PROJECTS,
@@ -121,6 +122,13 @@ function buildDefaultActions(app: App): QuickSearchItem[] {
       icon: "library",
       meta: "タブ移動",
       title: "タブ移動: ライブラリ",
+    },
+    {
+      action: () => void openSeitonView(app, VIEW_TYPE_CLASSES),
+      category: "action",
+      icon: "graduation-cap",
+      meta: "タブ移動",
+      title: "タブ移動: 授業",
     },
     {
       action: () => void openSeitonView(app, VIEW_TYPE_BOOKSHELF),

@@ -105,7 +105,7 @@ export class PromptHistory {
     const empty = this.host.createDiv({ cls: "seiton-empty" });
     empty.setText("新しいセッションを作成して、指示を書いてください。");
     const button = empty.createEl("button", {
-      cls: "mod-cta",
+      cls: "st-btn is-primary",
       text: "新しいセッション",
     });
     button.type = "button";
@@ -150,7 +150,7 @@ export class PromptHistory {
         cls: "seiton-prompt-item-actions",
       });
       const quote = actions.createEl("button", {
-        cls: "seiton-prompt-item-copy",
+        cls: "st-btn is-secondary seiton-prompt-item-copy",
         text: "引用して編集",
       });
       quote.type = "button";
@@ -158,7 +158,7 @@ export class PromptHistory {
         this.options.onQuote(prompt.body);
       });
       const copy = actions.createEl("button", {
-        cls: "seiton-prompt-item-copy",
+        cls: "st-btn is-secondary seiton-prompt-item-copy",
         text: "この指示をコピー",
       });
       copy.type = "button";

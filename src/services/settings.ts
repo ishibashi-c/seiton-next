@@ -2,6 +2,18 @@
  * 旧形式のショートカット。いまは `Seiton/System/Links.md` が正本で、
  * ここは移行コマンド用に読むだけ。
  */
+export type AcademicGrade = "1年" | "2年" | "3年" | "4年";
+export type AcademicTerm = "前期" | "後期" | "通年" | "集中";
+
+export interface CourseRegistration {
+  dayOfWeek?: string; // 例: "月", "火", "水", "木", "金", ""
+  grade: AcademicGrade;
+  id: string;
+  name: string;
+  period?: string; // 例: "1限", "2限", "3限", "4限", "5限", ""
+  term: AcademicTerm;
+}
+
 export interface SeitonShortcut {
   folderId: string | null;
   id: string;
@@ -26,6 +38,9 @@ export interface SeitonSettings {
   calilApiKey: string;
   calilLastResults: Record<string, CalilLastResult>;
   calilLibrary: string;
+  courses: CourseRegistration[];
+  currentGrade: AcademicGrade;
+  currentTerm: AcademicTerm;
   enableUrlPreview: boolean;
   googleBooksApiKey: string;
   maxSearchResults: number;
@@ -40,6 +55,9 @@ export const DEFAULT_SETTINGS: SeitonSettings = {
   calilApiKey: "",
   calilLastResults: {},
   calilLibrary: "",
+  courses: [],
+  currentGrade: "3年",
+  currentTerm: "後期",
   enableUrlPreview: true,
   googleBooksApiKey: "",
   maxSearchResults: 500,
@@ -154,6 +172,61 @@ function normalizeCalilLastResults(
   return Object.fromEntries(entries.slice(0, 500));
 }
 
+const VALID_GRADES: AcademicGrade[] = ["1年", "2年", "3年", "4年"];
+const VALID_TERMS: AcademicTerm[] = ["前期", "後期", "通年", "集中"];
+
+export function normalizeGrade(value: unknown): AcademicGrade {
+  return typeof value === "string" && (VALID_GRADES as string[]).includes(value)
+    ? (value as AcademicGrade)
+    : "3年";
+}
+
+export function normalizeTerm(value: unknown): AcademicTerm {
+  return typeof value === "string" && (VALID_TERMS as string[]).includes(value)
+    ? (value as AcademicTerm)
+    : "後期";
+}
+
+function normalizeCourses(value: unknown): CourseRegistration[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const result: CourseRegistration[] = [];
+  const ids = new Set<string>();
+  for (const [index, entry] of value.entries()) {
+    if (!entry || typeof entry !== "object") {
+      continue;
+    }
+    const raw = entry as Partial<CourseRegistration>;
+    const name = typeof raw.name === "string" ? raw.name.trim() : "";
+    if (name === "") {
+      continue;
+    }
+    let id =
+      typeof raw.id === "string" && raw.id !== ""
+        ? raw.id
+        : `c_${shortcutHash(name)}`;
+    if (ids.has(id)) {
+      id = `${id}_${index}`;
+    }
+    ids.add(id);
+    const grade = normalizeGrade(raw.grade);
+    const term = normalizeTerm(raw.term);
+    const dayOfWeek =
+      typeof raw.dayOfWeek === "string" ? raw.dayOfWeek.trim() : "";
+    const period = typeof raw.period === "string" ? raw.period.trim() : "";
+    result.push({
+      ...(dayOfWeek ? { dayOfWeek } : {}),
+      grade,
+      id,
+      name,
+      ...(period ? { period } : {}),
+      term,
+    });
+  }
+  return result.slice(0, 60);
+}
+
 export function normalizeSettings(
   value: Partial<SeitonSettings> | null | undefined
 ): SeitonSettings {
@@ -162,6 +235,9 @@ export function normalizeSettings(
     ...DEFAULT_SETTINGS,
     ...(value ?? {}),
     calilLastResults: normalizeCalilLastResults(value?.calilLastResults),
+    courses: normalizeCourses(value?.courses),
+    currentGrade: normalizeGrade(value?.currentGrade),
+    currentTerm: normalizeTerm(value?.currentTerm),
     googleBooksApiKey:
       typeof value?.googleBooksApiKey === "string"
         ? value.googleBooksApiKey.trim()

@@ -57,8 +57,19 @@
   }
 
   .seiton-top-nav {
-    gap: 18px;
+    display: flex;
+    gap: 16px;
     margin: 10px 0 24px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 4px;
+    scrollbar-width: none;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .seiton-top-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .seiton-top-tab {
@@ -358,6 +369,107 @@
     max-height: none;
     padding-left: 0;
     padding-top: 12px;
+  }
+
+  /* Toolbar quick pills horizontal scroll strips */
+  .seiton-library-quick-pills,
+  .seiton-composer-tag-pills,
+  .seiton-project-filter-pills,
+  .seiton-prompt-template-pills {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .seiton-library-quick-pills::-webkit-scrollbar,
+  .seiton-composer-tag-pills::-webkit-scrollbar,
+  .seiton-project-filter-pills::-webkit-scrollbar,
+  .seiton-prompt-template-pills::-webkit-scrollbar {
+    display: none;
+  }
+
+  button.seiton-library-quick-pill,
+  button.seiton-composer-tag-pill,
+  button.seiton-project-kind-pill,
+  button.seiton-prompt-template-pill,
+  button.seiton-prompt-attach-btn {
+    flex-shrink: 0;
+    min-height: 32px;
+    padding: 0 12px !important;
+  }
+
+  /* Modal paddings and touch targets */
+  .modal.seiton-triage-modal .modal-content,
+  .modal.seiton-book-modal .modal-content,
+  .modal.seiton-webclip-modal .modal-content,
+  .modal.seiton-webclip-capture-modal .modal-content,
+  .modal.seiton-new-note-modal .modal-content,
+  .modal.seiton-append-modal .modal-content,
+  .modal.seiton-promote-modal .modal-content {
+    padding: 18px !important;
+  }
+
+  .modal.seiton-triage-modal button.seiton-triage-kind,
+  .modal.seiton-triage-modal button.seiton-triage-decision,
+  .modal.seiton-triage-modal button.seiton-text-action,
+  .modal.seiton-book-modal button,
+  .modal.seiton-webclip-modal button,
+  .modal.seiton-append-modal button.seiton-context-picker-row {
+    min-height: 38px;
+  }
+
+  button.seiton-triage-tag-pill {
+    height: 32px;
+    padding: 0 12px !important;
+  }
+
+  /* Quick quote form in BookDetailModal wrapping on mobile */
+  .seiton-book-quick-quote-form {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .seiton-book-quick-quote-page-wrap {
+    width: 100%;
+  }
+
+  input.seiton-book-quick-quote-page-input {
+    flex: 1;
+    height: 38px !important;
+    width: 100% !important;
+  }
+
+  input.seiton-book-quick-quote-text-input {
+    height: 38px !important;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .seiton-book-quick-quote-form button {
+    height: 38px;
+    width: 100%;
+  }
+
+  /* WebClip Clean Reader memo input row wrapping on mobile */
+  .seiton-webclip-memo-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .seiton-webclip-memo-input {
+    height: 38px !important;
+    width: 100%;
+  }
+
+  button.seiton-webclip-memo-btn {
+    height: 38px;
+    width: 100%;
   }
 }
 

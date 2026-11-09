@@ -108,11 +108,15 @@ export interface NoteDocumentInput {
   course?: string | null;
   createdAt: string;
   eol?: string;
+  grade?: string | null;
   kind: string;
   lectureDate?: string | null;
   project?: string | null;
+  term?: string | null;
   title: string;
 }
+
+export type BuildNoteDocumentInput = NoteDocumentInput;
 
 export function buildNoteDocument(input: NoteDocumentInput): string {
   const eol = input.eol ?? "\n";
@@ -125,6 +129,12 @@ export function buildNoteDocument(input: NoteDocumentInput): string {
   }
   if (input.lectureDate?.trim()) {
     fields.lecture_date = yamlQuoted(input.lectureDate.trim());
+  }
+  if (input.grade?.trim()) {
+    fields.grade = yamlQuoted(input.grade.trim());
+  }
+  if (input.term?.trim()) {
+    fields.term = yamlQuoted(input.term.trim());
   }
   if (input.project?.trim()) {
     fields.projects = `\n  - ${yamlQuoted(wikiLink(input.project.trim()))}`;

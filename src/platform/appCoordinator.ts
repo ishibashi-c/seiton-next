@@ -4,6 +4,7 @@ import {
   LINKS_FILE,
   VIEW_TYPE_ASSETS,
   VIEW_TYPE_BOOKSHELF,
+  VIEW_TYPE_CLASSES,
   VIEW_TYPE_HOME,
   VIEW_TYPE_LIBRARY,
   VIEW_TYPE_PROJECTS,
@@ -14,6 +15,7 @@ import { embedCoverInDocument, hasCoverEmbed } from "../domain/bookCoverEmbed";
 import { userMessageOf } from "../domain/errors";
 import { addLink, importLinks } from "../domain/linkList";
 import { domainOf } from "../domain/network";
+import type { NoteTemplateId } from "../domain/noteTemplates";
 import { ensureBasesViews, openBasesView } from "../services/basesService";
 import type { BookService } from "../services/bookService";
 import type { CoverStore } from "../services/coverStore";
@@ -32,6 +34,7 @@ import { BookBulkEditModal } from "./books/bookBulkEditModal";
 import { BookDetailModal } from "./books/bookDetailModal";
 import { BulkIsbnModal } from "./bulkIsbnModal";
 import { CalilBulkModal } from "./calilBulkModal";
+import { SeitonClassesView } from "./classesView";
 import { ConfirmModal } from "./confirmModal";
 import { CoverCacheModal } from "./coverCacheModal";
 import { SeitonHomeView } from "./homeView";
@@ -109,6 +112,10 @@ export class AppCoordinator {
 
   async openLibrary(): Promise<void> {
     await openSeitonView(this.app, VIEW_TYPE_LIBRARY);
+  }
+
+  async openClasses(): Promise<void> {
+    await openSeitonView(this.app, VIEW_TYPE_CLASSES);
   }
 
   openTriage(): void {
@@ -360,10 +367,24 @@ export class AppCoordinator {
     }
   }
 
-  openNewNote(): void {
-    new NewNoteModal(this.app, this.notes, this.indexService, "", (path) => {
-      void this.openFile(path);
-    }).open();
+  openNewNote(options?: {
+    defaultCourse?: string;
+    defaultTemplate?: NoteTemplateId;
+  }): void {
+    new NewNoteModal(
+      this.app,
+      this.notes,
+      this.indexService,
+      "",
+      (path) => {
+        void this.openFile(path);
+      },
+      {
+        defaultCourse: options?.defaultCourse,
+        defaultTemplate: options?.defaultTemplate,
+        getSettings: () => this.getSettings(),
+      }
+    ).open();
   }
 
   async openBases(): Promise<void> {
@@ -506,5 +527,14 @@ export class AppCoordinator {
       }
     }
     this.indexService.invalidate();
+  }
+
+  refreshClassesViews(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_CLASSES)) {
+      const view = leaf.view;
+      if (view instanceof SeitonClassesView) {
+        void view.refresh();
+      }
+    }
   }
 }

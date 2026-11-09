@@ -1,9 +1,10 @@
 import type { App } from "obsidian";
-import { Modal } from "obsidian";
+import { Modal, TFile } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { NOTE_TEMPLATES, type NoteTemplateId } from "../domain/noteTemplates";
 import { buildVocabulary } from "../domain/vocabulary";
 import type { ClassCandidate, NoteService } from "../services/noteService";
+import type { SeitonSettings } from "../services/settings";
 import type { VaultIndexService } from "../services/vaultIndex";
 import { button, fieldRow, selectField, textField } from "./ui/field";
 import { buildSeitonModal } from "./ui/modal";
@@ -19,11 +20,18 @@ function todayKey(): string {
   ].join("-");
 }
 
+export interface NewNoteModalOptions {
+  defaultCourse?: string;
+  defaultTemplate?: NoteTemplateId;
+  getSettings?: () => SeitonSettings;
+}
+
 export class NewNoteModal extends Modal {
   private readonly noteService: NoteService;
   private readonly indexService: VaultIndexService;
   private readonly defaultProject: string;
   private readonly onCreated: (path: string) => void;
+  private readonly getSettings?: () => SeitonSettings;
   private template: NoteTemplateId = "note";
   private title = "";
   private project: string;
@@ -42,7 +50,8 @@ export class NewNoteModal extends Modal {
     noteService: NoteService,
     indexService: VaultIndexService,
     defaultProject: string,
-    onCreated: (path: string) => void
+    onCreated: (path: string) => void,
+    options?: NewNoteModalOptions
   ) {
     super(app);
     this.noteService = noteService;
@@ -50,6 +59,13 @@ export class NewNoteModal extends Modal {
     this.defaultProject = defaultProject;
     this.project = defaultProject;
     this.onCreated = onCreated;
+    this.getSettings = options?.getSettings;
+    if (options?.defaultTemplate) {
+      this.template = options.defaultTemplate;
+    }
+    if (options?.defaultCourse) {
+      this.course = options.defaultCourse;
+    }
   }
 
   override onOpen(): void {
@@ -207,6 +223,15 @@ export class NewNoteModal extends Modal {
       return;
     }
     const index = await this.indexService.get();
+    const settings = this.getSettings?.();
+    const currentGrade = settings?.currentGrade;
+    const currentTerm = settings?.currentTerm;
+    const currentRegisteredCourses = new Set(
+      settings?.courses
+        .filter((c) => c.grade === currentGrade && c.term === currentTerm)
+        .map((c) => c.name.trim()) ?? []
+    );
+
     const counts = new Map<string, number>();
     for (const note of index.notes) {
       if (note.archived || note.kind !== "class" || !note.course.trim()) {
@@ -214,18 +239,48 @@ export class NewNoteModal extends Modal {
       }
       counts.set(note.course.trim(), (counts.get(note.course.trim()) ?? 0) + 1);
     }
-    const courses = [...counts.keys()].sort((left, right) =>
+
+    // 当学期の科目はノート数が0でも含める
+    for (const course of currentRegisteredCourses) {
+      if (!counts.has(course)) {
+        counts.set(course, 0);
+      }
+    }
+
+    const currentChoices: Array<{ label: string; value: string }> = [];
+    const otherChoices: Array<{ label: string; value: string }> = [];
+
+    const sortedCourses = [...counts.keys()].sort((left, right) =>
       left.localeCompare(right, "ja")
     );
-    control.setChoices([
+
+    for (const course of sortedCourses) {
+      const count = counts.get(course) ?? 0;
+      if (currentRegisteredCourses.has(course)) {
+        currentChoices.push({
+          label: `[当学期] ${course}（${count}）`,
+          value: course,
+        });
+      } else {
+        otherChoices.push({
+          label: `${course}（${count}）`,
+          value: course,
+        });
+      }
+    }
+
+    const allChoices = [
       { label: "既存の科目から選択", value: "" },
-      ...courses.map((course) => ({
-        label: `${course}（${counts.get(course) ?? 0}）`,
-        value: course,
-      })),
+      ...currentChoices,
+      ...otherChoices,
       { label: "＋ 新しい科目を入力", value: "__new" },
-    ]);
-    if (courses.length === 0) {
+    ];
+    control.setChoices(allChoices);
+
+    if (this.course && counts.has(this.course)) {
+      control.setValue(this.course);
+      this.showNewCourse(false);
+    } else if (counts.size === 0) {
       control.setValue("__new");
       this.showNewCourse(true);
     }
@@ -233,24 +288,51 @@ export class NewNoteModal extends Modal {
 
   private async renderQuickClassPills(container: HTMLElement): Promise<void> {
     const index = await this.indexService.get();
-    const stats = new Map<string, { count: number; lastMtime: number }>();
+    const settings = this.getSettings?.();
+    const currentGrade = settings?.currentGrade;
+    const currentTerm = settings?.currentTerm;
+    const currentRegisteredCourses = new Set(
+      settings?.courses
+        .filter((c) => c.grade === currentGrade && c.term === currentTerm)
+        .map((c) => c.name.trim()) ?? []
+    );
+
+    const stats = new Map<
+      string,
+      { count: number; isCurrent: boolean; lastMtime: number }
+    >();
+
+    // まず当学期の登録科目をシード
+    for (const course of currentRegisteredCourses) {
+      stats.set(course, { count: 0, isCurrent: true, lastMtime: 0 });
+    }
+
     for (const note of index.notes) {
       if (note.archived || note.kind !== "class" || !note.course.trim()) {
         continue;
       }
       const course = note.course.trim();
-      const current = stats.get(course) ?? { count: 0, lastMtime: 0 };
+      const current = stats.get(course) ?? {
+        count: 0,
+        isCurrent: currentRegisteredCourses.has(course),
+        lastMtime: 0,
+      };
       stats.set(course, {
         count: current.count + 1,
+        isCurrent: current.isCurrent,
         lastMtime: Math.max(current.lastMtime, note.mtime),
       });
     }
 
+    // ソート：当学期優先、次にノート数・更新日降順
     const topCourses = [...stats.entries()]
-      .sort(
-        (a, b) => b[1].count - a[1].count || b[1].lastMtime - a[1].lastMtime
-      )
-      .slice(0, 6);
+      .sort((a, b) => {
+        if (a[1].isCurrent !== b[1].isCurrent) {
+          return a[1].isCurrent ? -1 : 1;
+        }
+        return b[1].count - a[1].count || b[1].lastMtime - a[1].lastMtime;
+      })
+      .slice(0, 8);
 
     if (topCourses.length === 0) {
       return;
@@ -268,13 +350,16 @@ export class NewNoteModal extends Modal {
     const pills = container.createDiv({ cls: "seiton-quick-class-pills" });
     for (const [course, info] of topCourses) {
       const nextRound = info.count + 1;
+      const label = info.isCurrent
+        ? `${course}（第${nextRound}回）`
+        : `${course}（第${nextRound}回）`;
       const pill = pills.createEl("button", {
         attr: {
           title: `「${todayKey()} ${course}（第${nextRound}回）」を作成`,
           type: "button",
         },
-        cls: "seiton-quick-class-pill st-pill",
-        text: `${course}（第${nextRound}回）`,
+        cls: `seiton-quick-class-pill st-pill${info.isCurrent ? " is-current" : ""}`,
+        text: label,
       });
       pill.addEventListener("click", () => {
         this.template = "class";
@@ -330,6 +415,24 @@ export class NewNoteModal extends Modal {
         template: this.template,
         title: this.title,
       });
+
+      if (this.template === "class") {
+        const settings = this.getSettings?.();
+        if (settings) {
+          const file = this.app.vault.getAbstractFileByPath(path);
+          if (file instanceof TFile) {
+            await this.app.fileManager.processFrontMatter(file, (fm) => {
+              if (!fm.grade) {
+                fm.grade = settings.currentGrade;
+              }
+              if (!fm.term) {
+                fm.term = settings.currentTerm;
+              }
+            });
+          }
+        }
+      }
+
       this.onCreated(path);
       this.close();
     } catch (error) {

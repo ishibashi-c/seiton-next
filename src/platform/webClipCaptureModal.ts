@@ -135,12 +135,13 @@ export class WebClipCaptureModal extends Modal {
     const footer = this.contentEl.createDiv({ cls: "seiton-modal-footer" });
     const cancel = footer.createEl("button", {
       attr: { type: "button" },
+      cls: "st-btn is-secondary",
       text: "キャンセル",
     });
     cancel.addEventListener("click", () => this.close());
     this.saveButton = footer.createEl("button", {
       attr: { type: "button" },
-      cls: "mod-cta",
+      cls: "st-btn is-primary",
       text: "保存",
     });
     this.saveButton.disabled = !canSave;
@@ -212,7 +213,7 @@ export class WebClipCaptureModal extends Modal {
     box.createSpan({ text: "同じURLのクリップがあります。" });
     const open = box.createEl("button", {
       attr: { type: "button" },
-      cls: "seiton-text-action",
+      cls: "st-btn is-secondary seiton-text-action",
       text: "開く",
     });
     open.addEventListener("click", () => {

@@ -4,13 +4,7 @@
  */
 
 import type { App } from "obsidian";
-import {
-  Component,
-  FuzzySuggestModal,
-  MarkdownRenderer,
-  Modal,
-  type TFile,
-} from "obsidian";
+import { Component, MarkdownRenderer, Modal, type TFile } from "obsidian";
 import { SYSTEM_FOLDER } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { titleFromMemoBody } from "../domain/notes";
@@ -21,7 +15,7 @@ import type {
   MemoService,
   PromoteMemoResult,
 } from "../services/memoService";
-import { markSeitonModal } from "./ui/modal";
+import { buildSeitonModal, markSeitonModal } from "./ui/modal";
 import { ButtonComponent, Setting, type TextComponent } from "./ui/setting";
 import { showToast } from "./ui/toast";
 
@@ -205,7 +199,7 @@ export class PromoteMemoModal extends Modal {
 }
 
 /** 既存ノートを選択してメモを追記するモーダル */
-export class AppendToNoteModal extends FuzzySuggestModal<TFile> {
+export class AppendToNoteModal extends Modal {
   private readonly memoService: MemoService;
   private readonly item: MemoListItem;
   private readonly onAppended: () => void;
@@ -220,29 +214,86 @@ export class AppendToNoteModal extends FuzzySuggestModal<TFile> {
     this.memoService = memoService;
     this.item = item;
     this.onAppended = onAppended;
-    this.setPlaceholder("追記先のノートを検索…");
   }
 
   override onOpen(): void {
-    super.onOpen();
-    markSeitonModal(this);
+    const { body, footer } = buildSeitonModal(this, {
+      description: "追記先のノートを選択してください",
+      title: "既存ノートへ追記",
+    });
     this.modalEl.addClass("seiton-append-modal");
-  }
 
-  getItems(): TFile[] {
-    return this.app.vault
+    const searchInput = body.createEl("input", {
+      attr: {
+        placeholder: "追記先のノートを検索…",
+        type: "search",
+      },
+      cls: "st-input seiton-context-picker-search",
+    });
+
+    const listEl = body.createDiv({ cls: "seiton-context-picker-list" });
+
+    const allFiles = this.app.vault
       .getMarkdownFiles()
-      .filter((file) => !file.path.startsWith(`${SYSTEM_FOLDER}/`));
+      .filter((file) => !file.path.startsWith(`${SYSTEM_FOLDER}/`))
+      .sort((a, b) => b.stat.mtime - a.stat.mtime);
+
+    const renderList = (filterQuery: string) => {
+      listEl.empty();
+      const q = filterQuery.toLowerCase().trim();
+      const filtered =
+        q === ""
+          ? allFiles.slice(0, 30)
+          : allFiles
+              .filter(
+                (f) =>
+                  f.basename.toLowerCase().includes(q) ||
+                  f.path.toLowerCase().includes(q)
+              )
+              .slice(0, 30);
+
+      if (filtered.length === 0) {
+        listEl.createDiv({
+          cls: "seiton-empty",
+          text: "一致するノートがありません。",
+        });
+        return;
+      }
+
+      for (const file of filtered) {
+        const row = listEl.createEl("button", {
+          attr: { type: "button" },
+          cls: "seiton-session-row seiton-context-picker-row",
+        });
+        const head = row.createDiv({ cls: "seiton-session-row-head" });
+        head.createSpan({
+          cls: "seiton-session-row-title",
+          text: file.basename,
+        });
+        row.createDiv({ cls: "seiton-session-row-meta", text: file.path });
+        row.addEventListener("click", () => {
+          void this.chooseItem(file);
+        });
+      }
+    };
+
+    searchInput.addEventListener("input", () => {
+      renderList(searchInput.value);
+    });
+
+    renderList("");
+    window.setTimeout(() => searchInput.focus(), 50);
+
+    new ButtonComponent(footer)
+      .setButtonText("キャンセル")
+      .onClick(() => this.close());
   }
 
-  getItemText(item: TFile): string {
-    return item.basename;
-  }
-
-  async onChooseItem(item: TFile): Promise<void> {
+  private async chooseItem(item: TFile): Promise<void> {
     try {
       await this.memoService.appendMemoToNote(this.item.entry, item);
       showToast(`「${item.basename}」に追記しました。`);
+      this.close();
       this.onAppended();
     } catch (error) {
       showToast(userMessageOf(error));

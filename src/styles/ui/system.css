@@ -676,3 +676,103 @@ and the two-choice list. */
     padding: 0 14px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Mobile Obsidian resets & centered smart modal isolation
+   -------------------------------------------------------------------------- */
+
+body.is-mobile .modal.st-modal,
+body.is-mobile .modal.seiton-filter-modal {
+  border-radius: var(--st-radius-lg) !important;
+  bottom: auto !important;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 28%) !important;
+  left: 50% !important;
+  margin: auto !important;
+  max-height: min(82vh, 720px) !important;
+  max-width: min(560px, calc(100vw - 24px)) !important;
+  position: fixed !important;
+  right: auto !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(560px, calc(100vw - 24px)) !important;
+}
+
+body.is-mobile .seiton-home button,
+body.is-mobile .seiton-prompt-root button,
+body.is-mobile .st-modal button,
+body.is-mobile .seiton-filter-modal button {
+  -webkit-appearance: none;
+  appearance: none;
+  box-shadow: none;
+}
+
+body.is-mobile .st-modal .st-btn,
+body.is-mobile .seiton-home .st-btn,
+body.is-mobile .seiton-prompt-root .st-btn {
+  align-items: center;
+  box-shadow: none;
+  display: inline-flex;
+  justify-content: center;
+}
+
+body.is-mobile .st-modal .st-btn.is-primary,
+body.is-mobile .seiton-home .st-btn.is-primary,
+body.is-mobile .seiton-prompt-root .st-btn.is-primary {
+  background: var(--st-accent) !important;
+  border-color: var(--st-accent) !important;
+  color: var(--st-on-accent) !important;
+}
+
+body.is-mobile .st-modal .st-btn.is-secondary,
+body.is-mobile .seiton-home .st-btn.is-secondary,
+body.is-mobile .seiton-prompt-root .st-btn.is-secondary {
+  background: var(--background-secondary) !important;
+  border-color: var(--st-hairline) !important;
+  color: var(--st-ink) !important;
+}
+
+/* Raw checkboxes styling (clean, modern, non-OS-native) */
+input[type="checkbox"].seiton-project-task-checkbox,
+.seiton-project-task-checkbox,
+input[type="checkbox"].seiton-prompt-select,
+.seiton-prompt-select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border-hover);
+  border-radius: var(--st-radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  width: 18px;
+  min-height: 18px;
+  min-width: 18px;
+  margin: 0;
+  position: relative;
+  transition: background var(--st-transition), border-color var(--st-transition);
+  vertical-align: middle;
+}
+
+input[type="checkbox"].seiton-project-task-checkbox:checked,
+.seiton-project-task-checkbox:checked,
+input[type="checkbox"].seiton-prompt-select:checked,
+.seiton-prompt-select:checked {
+  background: var(--st-ink);
+  border-color: var(--st-ink);
+}
+
+input[type="checkbox"].seiton-project-task-checkbox:checked::after,
+.seiton-project-task-checkbox:checked::after,
+input[type="checkbox"].seiton-prompt-select:checked::after,
+.seiton-prompt-select:checked::after {
+  border: solid var(--background-primary);
+  border-width: 0 2px 2px 0;
+  content: "";
+  display: block;
+  height: 9px;
+  margin-bottom: 2px;
+  transform: rotate(45deg);
+  width: 5px;
+}
