@@ -20,9 +20,11 @@ import type { PropertyService } from "./propertyService";
 
 export interface CreateNoteInput {
   course?: string | null;
+  grade?: string | null;
   lectureDate?: string | null;
   project?: string | null;
   template: NoteTemplateId;
+  term?: string | null;
   title: string;
 }
 
@@ -73,9 +75,11 @@ export class NoteService {
       body,
       course: course || null,
       createdAt,
+      grade: template.id === "class" ? input.grade?.trim() || null : null,
       kind,
       lectureDate: lectureDate || null,
       project: input.project ?? null,
+      term: template.id === "class" ? input.term?.trim() || null : null,
       title,
     });
 
@@ -132,6 +136,42 @@ export class NoteService {
 
   async setArchived(path: string, archived: boolean): Promise<void> {
     await this.properties.update(path, { archived });
+  }
+
+  /**
+   * 指定した科目の全授業ノート（.md）の Frontmatter に grade / term（および科目名変更時は course）を一括保存する。
+   */
+  async updateCourseNotesMetadata(
+    targetCourseName: string,
+    patch: { course?: string; grade: string; term: string }
+  ): Promise<number> {
+    const trimmedTarget = targetCourseName.trim();
+    if (!trimmedTarget) {
+      return 0;
+    }
+    let updatedCount = 0;
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      const frontmatter =
+        this.app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+      const kind = typeof frontmatter.kind === "string" ? frontmatter.kind : "";
+      if (kind !== "class") {
+        continue;
+      }
+      const noteCourse =
+        typeof frontmatter.course === "string" ? frontmatter.course.trim() : "";
+      if (noteCourse !== trimmedTarget) {
+        continue;
+      }
+      await this.app.fileManager.processFrontMatter(file, (fm) => {
+        if (patch.course?.trim()) {
+          fm.course = patch.course.trim();
+        }
+        fm.grade = patch.grade;
+        fm.term = patch.term;
+      });
+      updatedCount += 1;
+    }
+    return updatedCount;
   }
 
   getFile(path: string): TFile | null {

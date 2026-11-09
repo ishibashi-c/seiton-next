@@ -1,7 +1,12 @@
 import type { App, TAbstractFile, WorkspaceLeaf } from "obsidian";
-import { ItemView, Modal, TFile } from "obsidian";
-import { VIEW_TYPE_CLASSES } from "../config";
+import { ItemView, Modal, normalizePath, TFile } from "obsidian";
+import { COURSES_FILE, SYSTEM_FOLDER, VIEW_TYPE_CLASSES } from "../config";
 import { userMessageOf } from "../domain/errors";
+import {
+  buildFrontmatter,
+  scanFrontmatter,
+  yamlQuoted,
+} from "../domain/frontmatter";
 import type { NoteService } from "../services/noteService";
 import type {
   AcademicGrade,
@@ -15,6 +20,136 @@ import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
 import { button, selectField, textField } from "./ui/field";
 import { buildSeitonModal } from "./ui/modal";
 import { showToast } from "./ui/toast";
+
+/**
+ * 履修科目・当学期設定を `Seiton/System/Courses.md` に Markdown として保存する。
+ * これにより data.json を同期しない環境でも .md ファイルとして完全に同期される。
+ */
+export async function saveCoursesLedgerMarkdown(
+  app: App,
+  settings: Pick<SeitonSettings, "courses" | "currentGrade" | "currentTerm">
+): Promise<void> {
+  const fm = buildFrontmatter(
+    {
+      current_grade: yamlQuoted(settings.currentGrade),
+      current_term: yamlQuoted(settings.currentTerm),
+      kind: "course-ledger",
+    },
+    "\n"
+  );
+  const rows = settings.courses.map((c) => {
+    const safeName = c.name.replace(/\|/gu, "｜").trim();
+    return `| ${safeName} | ${c.grade} | ${c.term} | ${c.dayOfWeek ?? ""} | ${c.period ?? ""} | ${c.id} |`;
+  });
+  const body = [
+    "# 履修科目・学期台帳",
+    "",
+    "| 科目名 | 学年 | 学期 | 曜日 | 時限 | ID |",
+    "| --- | --- | --- | --- | --- | --- |",
+    ...rows,
+    "",
+  ].join("\n");
+  const content = `${fm}\n${body}`;
+  const path = normalizePath(COURSES_FILE);
+  const existing = app.vault.getAbstractFileByPath(path);
+  if (existing instanceof TFile) {
+    await app.vault.modify(existing, content);
+    return;
+  }
+  const segments = normalizePath(SYSTEM_FOLDER).split("/");
+  let cur = "";
+  for (const seg of segments) {
+    cur = cur ? `${cur}/${seg}` : seg;
+    if (!app.vault.getAbstractFileByPath(cur)) {
+      try {
+        await app.vault.createFolder(cur);
+      } catch {
+        // 既存なら無視
+      }
+    }
+  }
+  await app.vault.create(path, content);
+}
+
+/**
+ * `Seiton/System/Courses.md` が存在する場合、そこから当学期・履修科目を読み込んで設定と同期する。
+ */
+export async function loadCoursesLedgerMarkdown(
+  app: App,
+  getSettings: () => SeitonSettings,
+  saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>
+): Promise<void> {
+  const file = app.vault.getAbstractFileByPath(normalizePath(COURSES_FILE));
+  if (!(file instanceof TFile)) {
+    return;
+  }
+  try {
+    const text = await app.vault.cachedRead(file);
+    const scanned = scanFrontmatter(text);
+    const validGrades = new Set(["1年", "2年", "3年", "4年"]);
+    const validTerms = new Set(["前期", "後期", "通年", "集中"]);
+    const rawGrade = scanned.fields.current_grade?.trim() ?? "";
+    const rawTerm = scanned.fields.current_term?.trim() ?? "";
+    const current = getSettings();
+    const currentGrade = validGrades.has(rawGrade)
+      ? (rawGrade as AcademicGrade)
+      : current.currentGrade;
+    const currentTerm = validTerms.has(rawTerm)
+      ? (rawTerm as AcademicTerm)
+      : current.currentTerm;
+
+    const courses: CourseRegistration[] = [];
+    const lines = text.slice(scanned.bodyStartOffset).split(/\r?\n/u);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!(trimmed.startsWith("|") && trimmed.endsWith("|"))) {
+        continue;
+      }
+      const cells = trimmed
+        .slice(1, -1)
+        .split("|")
+        .map((c) => c.trim());
+      if (cells.length < 3) {
+        continue;
+      }
+      const [
+        name = "",
+        grade = "",
+        term = "",
+        dayOfWeek = "",
+        period = "",
+        id = "",
+      ] = cells;
+      if (
+        !name ||
+        name === "科目名" ||
+        name.startsWith("---") ||
+        !validGrades.has(grade) ||
+        !validTerms.has(term)
+      ) {
+        continue;
+      }
+      courses.push({
+        dayOfWeek: dayOfWeek || undefined,
+        grade: grade as AcademicGrade,
+        id: id || `c_${courses.length + 1}`,
+        name,
+        period: period || undefined,
+        term: term as AcademicTerm,
+      });
+    }
+
+    const changed =
+      currentGrade !== current.currentGrade ||
+      currentTerm !== current.currentTerm ||
+      JSON.stringify(courses) !== JSON.stringify(current.courses);
+    if (changed) {
+      await saveSettings({ courses, currentGrade, currentTerm });
+    }
+  } catch {
+    // 読み込み失敗時は既存設定を維持
+  }
+}
 
 function todayKey(): string {
   const date = new Date();
@@ -55,6 +190,7 @@ export class CourseManageModal extends Modal {
   private readonly saveSettings: (
     patch: Partial<SeitonSettings>
   ) => Promise<void>;
+  private readonly notes: NoteService;
   private readonly onSaved: () => void;
   private readonly editingCourse?: CourseRegistration;
   private name = "";
@@ -66,12 +202,14 @@ export class CourseManageModal extends Modal {
 
   constructor(
     app: App,
+    notes: NoteService,
     getSettings: () => SeitonSettings,
     saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>,
     onSaved: () => void,
     courseToEdit?: CourseRegistration
   ) {
     super(app);
+    this.notes = notes;
     this.getSettings = getSettings;
     this.saveSettings = saveSettings;
     this.onSaved = onSaved;
@@ -228,6 +366,17 @@ export class CourseManageModal extends Modal {
 
     try {
       await this.saveSettings({ courses: updatedCourses });
+      await saveCoursesLedgerMarkdown(this.app, {
+        courses: updatedCourses,
+        currentGrade: current.currentGrade,
+        currentTerm: current.currentTerm,
+      });
+      const targetCourseName = this.editingCourse?.name ?? trimmed;
+      await this.notes.updateCourseNotesMetadata(targetCourseName, {
+        course: trimmed,
+        grade: this.grade,
+        term: this.term,
+      });
       this.onSaved();
       this.close();
     } catch (error) {
@@ -246,6 +395,11 @@ export class CourseManageModal extends Modal {
     );
     try {
       await this.saveSettings({ courses: updatedCourses });
+      await saveCoursesLedgerMarkdown(this.app, {
+        courses: updatedCourses,
+        currentGrade: current.currentGrade,
+        currentTerm: current.currentTerm,
+      });
       this.onSaved();
       this.close();
     } catch (error) {
@@ -257,6 +411,7 @@ export class CourseManageModal extends Modal {
 
 /** 現在の学年・学期の設定モーダル */
 export class SetCurrentTermModal extends Modal {
+  private readonly getSettings: () => SeitonSettings;
   private readonly saveSettings: (
     patch: Partial<SeitonSettings>
   ) => Promise<void>;
@@ -272,6 +427,7 @@ export class SetCurrentTermModal extends Modal {
     onSaved: () => void
   ) {
     super(app);
+    this.getSettings = getSettings;
     this.saveSettings = saveSettings;
     this.onSaved = onSaved;
     const current = getSettings();
@@ -333,7 +489,13 @@ export class SetCurrentTermModal extends Modal {
 
   private async handleSave(): Promise<void> {
     try {
+      const current = this.getSettings();
       await this.saveSettings({
+        currentGrade: this.grade,
+        currentTerm: this.term,
+      });
+      await saveCoursesLedgerMarkdown(this.app, {
+        courses: current.courses,
         currentGrade: this.grade,
         currentTerm: this.term,
       });
@@ -349,6 +511,7 @@ export class SetCurrentTermModal extends Modal {
 /** 特定科目の学年・学期変更モーダル */
 export class ChangeCourseTermModal extends Modal {
   private readonly courseName: string;
+  private readonly notes: NoteService;
   private readonly getSettings: () => SeitonSettings;
   private readonly saveSettings: (
     patch: Partial<SeitonSettings>
@@ -360,6 +523,7 @@ export class ChangeCourseTermModal extends Modal {
 
   constructor(
     app: App,
+    notes: NoteService,
     courseName: string,
     initialGrade: AcademicGrade,
     initialTerm: AcademicTerm,
@@ -368,6 +532,7 @@ export class ChangeCourseTermModal extends Modal {
     onSaved: () => void
   ) {
     super(app);
+    this.notes = notes;
     this.courseName = courseName;
     this.getSettings = getSettings;
     this.saveSettings = saveSettings;
@@ -451,6 +616,15 @@ export class ChangeCourseTermModal extends Modal {
 
     try {
       await this.saveSettings({ courses: updatedCourses });
+      await saveCoursesLedgerMarkdown(this.app, {
+        courses: updatedCourses,
+        currentGrade: current.currentGrade,
+        currentTerm: current.currentTerm,
+      });
+      await this.notes.updateCourseNotesMetadata(this.courseName, {
+        grade: this.grade,
+        term: this.term,
+      });
       this.onSaved();
       this.close();
     } catch (error) {
@@ -552,6 +726,11 @@ export class SeitonClassesView extends ItemView {
     }
     this.refreshing = true;
     try {
+      await loadCoursesLedgerMarkdown(
+        this.app,
+        this.getSettings,
+        this.saveSettings
+      );
       const index = await this.indexService.get();
       if (!this.bodyEl) {
         return;
@@ -614,9 +793,13 @@ export class SeitonClassesView extends ItemView {
   private openCourseManage(courseToEdit?: CourseRegistration): void {
     new CourseManageModal(
       this.app,
+      this.notes,
       this.getSettings,
       this.saveSettings,
-      () => void this.refresh(),
+      () => {
+        this.indexService.invalidate();
+        void this.refresh();
+      },
       courseToEdit
     ).open();
   }
@@ -637,12 +820,16 @@ export class SeitonClassesView extends ItemView {
   ): void {
     new ChangeCourseTermModal(
       this.app,
+      this.notes,
       courseName,
       currentGrade,
       currentTerm,
       this.getSettings,
       this.saveSettings,
-      () => void this.refresh()
+      () => {
+        this.indexService.invalidate();
+        void this.refresh();
+      }
     ).open();
   }
 
@@ -1115,24 +1302,23 @@ export class SeitonClassesView extends ItemView {
     const today = todayKey();
     const title = `${today} ${courseName}（第${round}回）`;
     const settings = this.getSettings();
+    const reg = (settings.courses ?? []).find(
+      (c) => c.name.trim() === courseName.trim()
+    );
+    const grade = reg?.grade ?? settings.currentGrade;
+    const term = reg?.term ?? settings.currentTerm;
 
     try {
       showToast(`「${title}」を作成中…`);
       const path = await this.notes.createNote({
         course: courseName,
+        grade,
         lectureDate: today,
         project: null,
         template: "class",
+        term,
         title,
       });
-
-      const file = this.app.vault.getAbstractFileByPath(path);
-      if (file instanceof TFile) {
-        await this.app.fileManager.processFrontMatter(file, (fm) => {
-          fm.grade = settings.currentGrade;
-          fm.term = settings.currentTerm;
-        });
-      }
 
       await this.openFile(path);
       this.indexService.invalidate();
@@ -1151,11 +1337,27 @@ export class SeitonClassesView extends ItemView {
       name: courseName,
       term: settings.currentTerm,
     };
+    const nextCourses = [...settings.courses, newCourse];
     try {
       await this.saveSettings({
-        courses: [...settings.courses, newCourse],
+        courses: nextCourses,
       });
-      showToast(`「${courseName}」を当学期の科目に登録しました。`);
+      await saveCoursesLedgerMarkdown(this.app, {
+        ...settings,
+        courses: nextCourses,
+      });
+      const updatedCount = await this.notes.updateCourseNotesMetadata(
+        courseName,
+        {
+          grade: settings.currentGrade,
+          term: settings.currentTerm,
+        }
+      );
+      showToast(
+        updatedCount > 0
+          ? `「${courseName}」を当学期の科目に登録し、${updatedCount}件のノートを更新しました。`
+          : `「${courseName}」を当学期の科目に登録しました。`
+      );
       this.indexService.invalidate();
       void this.refresh();
     } catch (error) {

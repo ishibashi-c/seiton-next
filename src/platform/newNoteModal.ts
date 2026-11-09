@@ -1,5 +1,5 @@
 import type { App } from "obsidian";
-import { Modal, TFile } from "obsidian";
+import { Modal } from "obsidian";
 import { userMessageOf } from "../domain/errors";
 import { NOTE_TEMPLATES, type NoteTemplateId } from "../domain/noteTemplates";
 import { buildVocabulary } from "../domain/vocabulary";
@@ -408,30 +408,27 @@ export class NewNoteModal extends Modal {
 
     try {
       this.setStatus("作成中…");
+      const settings = this.getSettings?.();
+      const matchedCourse =
+        this.template === "class"
+          ? settings?.courses.find((c) => c.name.trim() === this.course.trim())
+          : undefined;
+
       const path = await this.noteService.createNote({
         course: this.template === "class" ? this.course : null,
+        grade:
+          this.template === "class"
+            ? (matchedCourse?.grade ?? settings?.currentGrade ?? null)
+            : null,
         lectureDate: this.template === "class" ? this.lectureDate : null,
         project: this.project.trim() || this.defaultProject || null,
         template: this.template,
+        term:
+          this.template === "class"
+            ? (matchedCourse?.term ?? settings?.currentTerm ?? null)
+            : null,
         title: this.title,
       });
-
-      if (this.template === "class") {
-        const settings = this.getSettings?.();
-        if (settings) {
-          const file = this.app.vault.getAbstractFileByPath(path);
-          if (file instanceof TFile) {
-            await this.app.fileManager.processFrontMatter(file, (fm) => {
-              if (!fm.grade) {
-                fm.grade = settings.currentGrade;
-              }
-              if (!fm.term) {
-                fm.term = settings.currentTerm;
-              }
-            });
-          }
-        }
-      }
 
       this.onCreated(path);
       this.close();
