@@ -1,5 +1,5 @@
 import type { App } from "obsidian";
-import { Modal, TFile } from "obsidian";
+import { Modal, Notice, TFile } from "obsidian";
 import {
   BOOK_OWNERSHIP_LABELS,
   BOOK_OWNERSHIPS,
@@ -43,6 +43,7 @@ import {
   ButtonComponent,
   Setting,
   type TextAreaComponent,
+  type TextComponent,
 } from "../ui/setting";
 import { showToast } from "../ui/toast";
 
@@ -140,6 +141,7 @@ export class BookDetailModal extends Modal {
     this.renderCover();
     this.renderBib();
     this.renderFields();
+    this.renderQuickQuoteSection();
     this.renderActions();
     this.calilEl = this.contentEl.createDiv({ cls: "seiton-book-calil" });
     this.calilSummary = calilSummaryFromFrontmatter(this.record.frontmatter);
@@ -260,6 +262,8 @@ export class BookDetailModal extends Modal {
       });
     });
 
+    let finishedInput: TextComponent | null = null;
+
     const statusSetting = new Setting(this.contentEl).setName("読書状態");
     statusSetting.settingEl.addClass("seiton-book-field");
     statusSetting.addDropdown((dropdown) => {
@@ -270,6 +274,16 @@ export class BookDetailModal extends Modal {
       dropdown.setValue(this.status);
       dropdown.onChange((value) => {
         this.status = value === "" ? "" : (parseReadingStatus(value) ?? "");
+        if (this.status === "read" && this.finished.trim() === "") {
+          const now = new Date();
+          const today = [
+            String(now.getFullYear()).padStart(4, "0"),
+            String(now.getMonth() + 1).padStart(2, "0"),
+            String(now.getDate()).padStart(2, "0"),
+          ].join("-");
+          this.finished = today;
+          finishedInput?.setValue(today);
+        }
       });
     });
 
@@ -311,6 +325,7 @@ export class BookDetailModal extends Modal {
       .setDesc("YYYY-MM-DD");
     finishedSetting.settingEl.addClass("seiton-book-field");
     finishedSetting.addText((text) => {
+      finishedInput = text;
       text
         .setPlaceholder("2026-10-26")
         .setValue(this.finished)
@@ -330,6 +345,98 @@ export class BookDetailModal extends Modal {
       textarea.setPlaceholder("感想・引用メモ").onChange((value) => {
         this.memo = value;
       });
+    });
+  }
+
+  private renderQuickQuoteSection(): void {
+    const section = this.contentEl.createDiv({
+      cls: "seiton-book-quick-quote-section",
+    });
+    section.createEl("h4", {
+      cls: "seiton-book-quick-quote-title",
+      text: "読書メモ・引用を追記",
+    });
+
+    const form = section.createDiv({
+      cls: "seiton-book-quick-quote-form",
+    });
+
+    const pageWrap = form.createDiv({
+      cls: "seiton-book-quick-quote-page-wrap",
+    });
+    pageWrap.createSpan({
+      cls: "seiton-book-quick-quote-page-prefix",
+      text: "P.",
+    });
+    const pageInput = pageWrap.createEl("input", {
+      attr: {
+        "aria-label": "ページ番号",
+        inputmode: "numeric",
+        placeholder: "42",
+        type: "text",
+      },
+      cls: "seiton-book-quick-quote-page-input",
+    });
+
+    const textInput = form.createEl("input", {
+      attr: {
+        "aria-label": "引用・読書メモ",
+        placeholder: "心に残った一文、要点、気づき...",
+        type: "text",
+      },
+      cls: "seiton-book-quick-quote-text-input",
+    });
+
+    const appendBtn = new ButtonComponent(form)
+      .setButtonText("追記")
+      .onClick(async () => {
+        const memoText = textInput.value.trim();
+        if (memoText === "") {
+          return;
+        }
+        const page = pageInput.value.trim();
+        const now = new Date();
+        const today = [
+          String(now.getFullYear()).padStart(4, "0"),
+          String(now.getMonth() + 1).padStart(2, "0"),
+          String(now.getDate()).padStart(2, "0"),
+        ].join("-");
+        const line = `- **P.${page || "-"}** (${today}): ${memoText}`;
+
+        try {
+          const file = this.app.vault.getAbstractFileByPath(this.record.path);
+          if (!(file instanceof TFile)) {
+            new Notice("本のノートが見つかりませんでした");
+            return;
+          }
+          await this.app.vault.process(file, (data) => {
+            const trimmed = data.trimEnd();
+            return `${trimmed}\n${line}\n`;
+          });
+
+          this.memo = this.memo ? `${this.memo.trimEnd()}\n${line}` : line;
+          this.initialMemo = this.memo;
+          this.memoInput?.setValue(this.memo);
+
+          pageInput.value = "";
+          textInput.value = "";
+          new Notice("読書メモを追記しました");
+          try {
+            this.options.onSaved?.();
+          } catch (error) {
+            console.error("[Seiton] book saved callback failed", error);
+          }
+        } catch (error) {
+          this.setStatus(userMessageOf(error), true);
+        }
+      });
+    appendBtn.buttonEl.addClass("seiton-book-quick-quote-btn");
+
+    textInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.isComposing) {
+        event.preventDefault();
+        appendBtn.buttonEl.click();
+      }
     });
   }
 

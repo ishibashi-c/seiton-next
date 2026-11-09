@@ -59,6 +59,12 @@ export class NewNoteModal extends Modal {
       title: "新しいノート",
     });
 
+    const quickClassSection = body.createDiv({
+      cls: "seiton-quick-class-section",
+    });
+    quickClassSection.style.display = "none";
+    void this.renderQuickClassPills(quickClassSection);
+
     selectField(body, {
       choices: NOTE_TEMPLATES.map((template) => ({
         label: template.label,
@@ -222,6 +228,61 @@ export class NewNoteModal extends Modal {
     if (courses.length === 0) {
       control.setValue("__new");
       this.showNewCourse(true);
+    }
+  }
+
+  private async renderQuickClassPills(container: HTMLElement): Promise<void> {
+    const index = await this.indexService.get();
+    const stats = new Map<string, { count: number; lastMtime: number }>();
+    for (const note of index.notes) {
+      if (note.archived || note.kind !== "class" || !note.course.trim()) {
+        continue;
+      }
+      const course = note.course.trim();
+      const current = stats.get(course) ?? { count: 0, lastMtime: 0 };
+      stats.set(course, {
+        count: current.count + 1,
+        lastMtime: Math.max(current.lastMtime, note.mtime),
+      });
+    }
+
+    const topCourses = [...stats.entries()]
+      .sort(
+        (a, b) => b[1].count - a[1].count || b[1].lastMtime - a[1].lastMtime
+      )
+      .slice(0, 6);
+
+    if (topCourses.length === 0) {
+      return;
+    }
+
+    container.empty();
+    container.style.display = "";
+
+    const head = container.createDiv({ cls: "seiton-quick-class-head" });
+    head.createSpan({
+      cls: "seiton-quick-class-label",
+      text: "科目から1タップで今日の授業ノートを作成",
+    });
+
+    const pills = container.createDiv({ cls: "seiton-quick-class-pills" });
+    for (const [course, info] of topCourses) {
+      const nextRound = info.count + 1;
+      const pill = pills.createEl("button", {
+        attr: {
+          title: `「${todayKey()} ${course}（第${nextRound}回）」を作成`,
+          type: "button",
+        },
+        cls: "seiton-quick-class-pill st-pill",
+        text: `${course}（第${nextRound}回）`,
+      });
+      pill.addEventListener("click", () => {
+        this.template = "class";
+        this.course = course;
+        this.lectureDate = todayKey();
+        this.title = `${todayKey()} ${course}（第${nextRound}回）`;
+        void this.submit();
+      });
     }
   }
 

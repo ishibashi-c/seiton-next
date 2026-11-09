@@ -4,9 +4,18 @@
  */
 
 import type { App } from "obsidian";
-import { Component, MarkdownRenderer, Modal } from "obsidian";
+import {
+  Component,
+  FuzzySuggestModal,
+  MarkdownRenderer,
+  Modal,
+  type TFile,
+} from "obsidian";
+import { SYSTEM_FOLDER } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { titleFromMemoBody } from "../domain/notes";
+import { normalizeNewlines } from "../domain/text";
+import { clockOf, dateKeyOf } from "../domain/time";
 import type {
   MemoListItem,
   MemoService,
@@ -14,6 +23,7 @@ import type {
 } from "../services/memoService";
 import { markSeitonModal } from "./ui/modal";
 import { ButtonComponent, Setting, type TextComponent } from "./ui/setting";
+import { showToast } from "./ui/toast";
 
 const KIND_OPTIONS: Record<string, string> = {
   class: "授業",
@@ -25,8 +35,8 @@ const KIND_OPTIONS: Record<string, string> = {
 
 export class PromoteMemoModal extends Modal {
   private readonly memoService: MemoService;
-  private readonly item: MemoListItem;
-  private readonly onPromoted: (result: PromoteMemoResult) => void;
+  private readonly items: MemoListItem[];
+  private readonly onPromoted: (result: PromoteMemoResult | TFile) => void;
   private title: string;
   private kind = "idea";
   private statusEl: HTMLElement | null = null;
@@ -37,29 +47,40 @@ export class PromoteMemoModal extends Modal {
   constructor(
     app: App,
     memoService: MemoService,
-    item: MemoListItem,
-    onPromoted: (result: PromoteMemoResult) => void
+    itemOrItems: MemoListItem | MemoListItem[],
+    onPromoted: (result: PromoteMemoResult | TFile) => void
   ) {
     super(app);
     this.memoService = memoService;
-    this.item = item;
+    this.items = Array.isArray(itemOrItems) ? itemOrItems : [itemOrItems];
     this.onPromoted = onPromoted;
-    this.title = titleFromMemoBody(item.entry.body);
+    if (this.items.length === 1 && this.items[0]) {
+      this.title = titleFromMemoBody(this.items[0].entry.body);
+    } else {
+      const first = this.items[0];
+      const dateKey = first ? dateKeyOf(first.entry.at) : "";
+      this.title = dateKey ? `まとめ ${dateKey}` : "まとめノート";
+    }
   }
 
   override onOpen(): void {
     markSeitonModal(this);
     this.modalEl.addClass("seiton-promote-modal");
-    this.setTitle("ノート化");
+    const isMultiple = this.items.length > 1;
+    this.setTitle(
+      isMultiple ? `まとめノート化（${this.items.length}件）` : "ノート化"
+    );
 
     this.contentEl.createEl("p", {
       cls: "seiton-promote-description",
-      text: "新しいMarkdownノートを作成し、元のメモにはリンクを追記します。元の本文は消しません。",
+      text: isMultiple
+        ? `${this.items.length}件のつぶやきを結合した新しいMarkdownノートを作成し、元のメモにはリンクを追記します。元の本文は消しません。`
+        : "新しいMarkdownノートを作成し、元のメモにはリンクを追記します。元の本文は消しません。",
     });
 
     new Setting(this.contentEl)
       .setName("ノート名")
-      .setDesc("空にすると本文の先頭から自動で付けます。")
+      .setDesc("空にすると自動で付けます。")
       .addText((text: TextComponent) => {
         text.setValue(this.title).onChange((value) => {
           this.title = value;
@@ -87,14 +108,31 @@ export class PromoteMemoModal extends Modal {
     });
     this.previewComponent = new Component();
     this.previewComponent.load();
+
+    const previewText = isMultiple
+      ? [...this.items]
+          .sort((a, b) => a.entry.at.localeCompare(b.entry.at))
+          .map((item) => {
+            const date = dateKeyOf(item.entry.at) || "日付不明";
+            const time = clockOf(item.entry.at) || "時刻不明";
+            const lines = normalizeNewlines(item.entry.body).split("\n");
+            const indented = lines
+              .map((line, idx) => (idx === 0 ? line : `  ${line}`))
+              .join("\n");
+            return `- **${date} ${time}**\n  ${indented}`;
+          })
+          .join("\n\n")
+      : (this.items[0]?.entry.body ?? "");
+
+    const previewPath = this.items[0]?.path ?? "";
     void MarkdownRenderer.render(
       this.app,
-      this.item.entry.body,
+      previewText,
       preview,
-      this.item.path,
+      previewPath,
       this.previewComponent
     ).catch(() => {
-      preview.setText(this.item.entry.body);
+      preview.setText(previewText);
     });
 
     this.statusEl = this.contentEl.createDiv({ cls: "seiton-modal-status" });
@@ -134,14 +172,21 @@ export class PromoteMemoModal extends Modal {
     this.submitButton?.setDisabled(true);
     this.setStatus("作成中…");
 
-    let result: PromoteMemoResult;
+    let result: PromoteMemoResult | TFile;
     try {
-      result = await this.memoService.promoteMemo({
-        id: this.item.entry.id,
-        kind: this.kind,
-        title: this.title,
-        week: this.item.week,
-      });
+      if (this.items.length === 1 && this.items[0]) {
+        result = await this.memoService.promoteMemo({
+          id: this.items[0].entry.id,
+          kind: this.kind,
+          title: this.title,
+          week: this.items[0].week,
+        });
+      } else {
+        result = await this.memoService.promoteMultipleMemos(
+          this.items.map((i) => i.entry),
+          { kind: this.kind, title: this.title }
+        );
+      }
     } catch (error) {
       this.busy = false;
       this.submitButton?.setDisabled(false);
@@ -156,5 +201,51 @@ export class PromoteMemoModal extends Modal {
       console.error("[Seiton] promote callback failed", error);
     }
     this.close();
+  }
+}
+
+/** 既存ノートを選択してメモを追記するモーダル */
+export class AppendToNoteModal extends FuzzySuggestModal<TFile> {
+  private readonly memoService: MemoService;
+  private readonly item: MemoListItem;
+  private readonly onAppended: () => void;
+
+  constructor(
+    app: App,
+    memoService: MemoService,
+    item: MemoListItem,
+    onAppended: () => void
+  ) {
+    super(app);
+    this.memoService = memoService;
+    this.item = item;
+    this.onAppended = onAppended;
+    this.setPlaceholder("追記先のノートを検索…");
+  }
+
+  override onOpen(): void {
+    super.onOpen();
+    markSeitonModal(this);
+    this.modalEl.addClass("seiton-append-modal");
+  }
+
+  getItems(): TFile[] {
+    return this.app.vault
+      .getMarkdownFiles()
+      .filter((file) => !file.path.startsWith(`${SYSTEM_FOLDER}/`));
+  }
+
+  getItemText(item: TFile): string {
+    return item.basename;
+  }
+
+  async onChooseItem(item: TFile): Promise<void> {
+    try {
+      await this.memoService.appendMemoToNote(this.item.entry, item);
+      showToast(`「${item.basename}」に追記しました。`);
+      this.onAppended();
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
   }
 }

@@ -73,6 +73,11 @@ export class HomeSections {
   private readonly openPromptSession: (path: string) => void;
   private elements: HomeSectionElements | null = null;
   private resumePaths = new Set<string>();
+  private rediscoverySection: HTMLElement | null = null;
+  private rediscoveryBody: HTMLElement | null = null;
+  private rediscoveryCount: HTMLElement | null = null;
+  private rediscoveryOffset = 0;
+  private lastIndex: VaultIndex | null = null;
 
   constructor(options: HomeSectionsOptions) {
     this.app = options.app;
@@ -88,6 +93,10 @@ export class HomeSections {
   reset(): void {
     this.elements = null;
     this.resumePaths.clear();
+    this.rediscoverySection = null;
+    this.rediscoveryBody = null;
+    this.rediscoveryCount = null;
+    this.lastIndex = null;
   }
 
   renderResume(index: VaultIndex, sessions: PromptSessionSummary[]): void {
@@ -266,6 +275,127 @@ export class HomeSections {
     section.style.display = notes.length > 0 ? "" : "none";
   }
 
+  renderRediscoverySection(parent: HTMLElement): HTMLElement {
+    const section = parent.createDiv({
+      cls: "seiton-zone seiton-home-section seiton-home-rediscovery is-minor",
+    });
+    section.style.display = "none";
+
+    const head = section.createDiv({ cls: "seiton-zone-head" });
+    head.createEl("h2", { text: "過去の今日・再発見" });
+
+    const actions = head.createDiv({ cls: "seiton-zone-actions" });
+    const shuffleBtn = actions.createEl("button", {
+      attr: { "aria-label": "入れ替え", type: "button" },
+      cls: "seiton-text-action seiton-rediscovery-shuffle-btn",
+      text: "入れ替え",
+    });
+    shuffleBtn.addEventListener("click", () => {
+      this.rediscoveryOffset += 1;
+      if (this.lastIndex) {
+        this.renderRediscovery(this.lastIndex);
+      }
+    });
+
+    const countEl = head.createSpan({ cls: "seiton-zone-count" });
+    const bodyEl = section.createDiv({
+      cls: "seiton-home-section-body seiton-home-cards seiton-rediscovery-cards",
+    });
+
+    this.rediscoverySection = section;
+    this.rediscoveryBody = bodyEl;
+    this.rediscoveryCount = countEl;
+
+    return section;
+  }
+
+  renderRediscovery(index: VaultIndex): void {
+    this.lastIndex = index;
+    const section = this.rediscoverySection;
+    const body = this.rediscoveryBody;
+    if (!section || !body) {
+      return;
+    }
+    body.empty();
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    const candidates = index.notes.filter((note) =>
+      this.isRediscoveryCandidate(note, now)
+    );
+
+    if (candidates.length === 0) {
+      section.style.display = "none";
+      if (this.rediscoveryCount) {
+        this.rediscoveryCount.setText("");
+      }
+      return;
+    }
+
+    const seed = hashSeed(`${todayStr}:${this.rediscoveryOffset}`);
+    const picked = deterministicPick(candidates, seed, 3);
+
+    for (const note of picked) {
+      this.renderHomeCard(body, {
+        action: () => this.openPath(note.path),
+        date: shortDateOf(note.mtime),
+        kind: HOME_KIND_LABELS[note.kind] ?? note.kind,
+        meta: this.noteContext(note),
+        title: note.title,
+      });
+    }
+
+    if (this.rediscoveryCount) {
+      this.rediscoveryCount.setText(`${picked.length}件`);
+    }
+    section.style.display = "";
+  }
+
+  private isRediscoveryCandidate(note: NoteRecord, now: Date): boolean {
+    if (note.archived) {
+      return false;
+    }
+    const isIdea = note.kind === "idea";
+    const isPinned = note.pinned || note.frontmatter.status === "pinned";
+    const isInbox =
+      note.review ||
+      note.frontmatter.status === "inbox" ||
+      note.frontmatter.status === "review";
+    const isWebUnread =
+      (note.kind === "web" || note.kind === "webclip") &&
+      note.frontmatter.clip_status !== "done" &&
+      note.frontmatter.clipStatus !== "done" &&
+      note.frontmatter.status !== "done";
+
+    if (!isIdea && !isPinned && !isInbox && !isWebUnread) {
+      return false;
+    }
+
+    const checkTimestamp = (timestamp: number): boolean => {
+      if (Number.isNaN(timestamp) || timestamp <= 0) {
+        return false;
+      }
+      const diffDays = (now.getTime() - timestamp) / (1000 * 60 * 60 * 24);
+      if (diffDays >= 7) {
+        return true;
+      }
+      const d = new Date(timestamp);
+      return (
+        d.getFullYear() < now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate()
+      );
+    };
+
+    const createdTime = note.created ? Date.parse(note.created) : Number.NaN;
+    const createdMatches =
+      !Number.isNaN(createdTime) && checkTimestamp(createdTime);
+    const updatedMatches = checkTimestamp(note.mtime);
+
+    return createdMatches || updatedMatches;
+  }
+
   private renderHomeCard(parent: HTMLElement, item: HomeCard): void {
     const card = parent.createEl("article", {
       cls: `seiton-home-card${item.featured ? " is-featured" : ""}`,
@@ -319,4 +449,35 @@ export class HomeSections {
       .filter(Boolean)
       .join(" · ");
   }
+}
+
+function hashSeed(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function deterministicPick<T>(items: T[], seed: number, count: number): T[] {
+  if (items.length <= count) {
+    return [...items];
+  }
+  const cloned = [...items];
+  let s = (seed === 0 ? 1 : seed) >>> 0;
+  const nextRand = () => {
+    s = (s * 1_664_525 + 1_013_904_223) >>> 0;
+    return s / 4_294_967_296;
+  };
+  for (let i = cloned.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(nextRand() * (i + 1));
+    const itemI = cloned[i];
+    const itemJ = cloned[j];
+    if (itemI !== undefined && itemJ !== undefined) {
+      cloned[i] = itemJ;
+      cloned[j] = itemI;
+    }
+  }
+  return cloned.slice(0, count);
 }

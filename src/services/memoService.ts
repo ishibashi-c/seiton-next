@@ -3,9 +3,15 @@
  * PCのホーム、コマンド、モバイルクイックアクションはすべてこのクラスを呼ぶ。
  */
 
+import type { TFile } from "obsidian";
 import { MEMOS_FOLDER, memoFilePath, NOTES_FOLDER } from "../config";
 import { SeitonError, toSeitonError } from "../domain/errors";
-import { bodyAfterFrontmatter, frontmatterField } from "../domain/frontmatter";
+import {
+  bodyAfterFrontmatter,
+  buildFrontmatter,
+  frontmatterField,
+  yamlQuoted,
+} from "../domain/frontmatter";
 import { createMemoId as defaultCreateMemoId } from "../domain/ids";
 import { isValidWeekId, weekIdOf } from "../domain/isoWeek";
 import type { MemoEntry, MemoState } from "../domain/memoLog";
@@ -29,7 +35,7 @@ import {
   withPathSuffix,
 } from "../domain/notes";
 import { normalizeNewlines } from "../domain/text";
-import { dateKeyOf, formatLocalIso } from "../domain/time";
+import { clockOf, dateKeyOf, formatLocalIso } from "../domain/time";
 import { SerialQueue } from "./serialQueue";
 import type { VaultPort } from "./vaultPort";
 
@@ -76,6 +82,11 @@ export interface PromoteMemoResult {
   link: string;
   notePath: string;
   reusedExisting: boolean;
+}
+
+export interface PromoteMemoOptions {
+  kind: string;
+  title: string;
 }
 
 function trimmedOrUndefined(value: string): string | undefined {
@@ -426,6 +437,152 @@ export class MemoService {
         throw toSeitonError(
           error,
           "独立ノートへの昇格に失敗しました。元のメモは残っています。"
+        );
+      }
+    });
+  }
+
+  /**
+   * 複数のメモを時系列順に結合し、1つの独立ノートへまとめ昇格する。
+   * 各元メモには昇格先へのリンクを追記する。
+   */
+  async promoteMultipleMemos(
+    entries: MemoEntry[],
+    options: PromoteMemoOptions
+  ): Promise<TFile> {
+    if (entries.length === 0) {
+      throw new SeitonError("EMPTY_MEMO", "昇格するメモが選択されていません。");
+    }
+    if (!isPromotableKind(options.kind)) {
+      throw new SeitonError(
+        "MEMO_FORMAT",
+        "昇格先の種類が不正です。idea / note などを選んでください。"
+      );
+    }
+
+    const sorted = [...entries].sort((a, b) => a.at.localeCompare(b.at));
+    const now = this.now();
+    const createdIso = formatLocalIso(now);
+    const dateKey = dateKeyOf(createdIso) || "undated";
+    const title = options.title.trim() || "まとめノート";
+
+    const base = promotedNotePath(dateKey, title);
+    let notePath = base;
+    let suffixCount = 1;
+    while (this.vault.exists(notePath)) {
+      notePath = withPathSuffix(base, String(suffixCount));
+      suffixCount += 1;
+    }
+
+    const noteBody = sorted
+      .map((entry) => {
+        const date = dateKeyOf(entry.at) || "日付不明";
+        const time = clockOf(entry.at) || "時刻不明";
+        const lines = normalizeNewlines(entry.body).split("\n");
+        const indented = lines
+          .map((line, idx) => (idx === 0 ? line : `  ${line}`))
+          .join("\n");
+        return `- **${date} ${time}**\n  ${indented}`;
+      })
+      .join("\n\n");
+
+    const frontmatter = buildFrontmatter(
+      {
+        created: yamlQuoted(createdIso),
+        kind: options.kind,
+      },
+      "\n"
+    );
+    const content = `${frontmatter}\n${noteBody}\n`;
+
+    await this.vault.ensureFolder(NOTES_FOLDER);
+    await this.vault.create(notePath, content);
+
+    const link = `[[${stripMarkdownExtension(notePath)}]]`;
+
+    const byWeek = new Map<string, MemoEntry[]>();
+    for (const entry of sorted) {
+      const week = weekIdOf(new Date(entry.at));
+      const list = byWeek.get(week) ?? [];
+      list.push(entry);
+      byWeek.set(week, list);
+    }
+
+    for (const [week, weekEntries] of byWeek.entries()) {
+      const path = this.weekPath(week);
+      await this.queue.run(path, async () => {
+        try {
+          await this.vault.process(path, (data) => {
+            this.assertMemoFile(data, week, path);
+            let current = data;
+            for (const item of weekEntries) {
+              const bodyWithLink = appendPromotionLink(item.body, link);
+              current = updateMemoEntry(current, item.id, {
+                body: bodyWithLink,
+                deletedAt: null,
+                promotedTo: notePath,
+                state: "promoted",
+              });
+            }
+            return current;
+          });
+        } catch (error) {
+          this.logError("promoteMultipleMemos:updateMemoEntry", error);
+        }
+      });
+    }
+
+    const appVault = (
+      this.vault as unknown as {
+        app?: { vault?: { getAbstractFileByPath: (p: string) => unknown } };
+      }
+    ).app?.vault;
+    const file = appVault?.getAbstractFileByPath(notePath);
+    if (file) {
+      return file as TFile;
+    }
+    const basename = stripMarkdownExtension(notePath).split("/").pop() ?? "";
+    return { basename, path: notePath } as unknown as TFile;
+  }
+
+  /**
+   * 既存ノートの末尾にメモを追記し、元メモにはノートへのリンクを付与する。
+   */
+  async appendMemoToNote(entry: MemoEntry, targetFile: TFile): Promise<void> {
+    const date = dateKeyOf(entry.at) || "日付不明";
+    const time = clockOf(entry.at) || "時刻不明";
+    const appendText = `\n\n- **${date} ${time}** ${normalizeNewlines(entry.body)}`;
+
+    await this.vault.process(targetFile.path, (current) => {
+      const trimmed = current.trimEnd();
+      return `${trimmed}${appendText}\n`;
+    });
+
+    const week = weekIdOf(new Date(entry.at));
+    const path = this.weekPath(week);
+    const link = `[[${targetFile.basename}]]`;
+    const bodyWithLink = appendPromotionLink(entry.body, link);
+
+    await this.queue.run(path, async () => {
+      try {
+        const updated = await this.vault.process(path, (data) => {
+          this.assertMemoFile(data, week, path);
+          return updateMemoEntry(data, entry.id, {
+            body: bodyWithLink,
+            deletedAt: null,
+            promotedTo: targetFile.path,
+            state: "promoted",
+          });
+        });
+        this.verifyEntry(updated, week, entry.id, bodyWithLink, {
+          promotedTo: targetFile.path,
+          state: "promoted",
+        });
+      } catch (error) {
+        this.logError("appendMemoToNote", error);
+        throw toSeitonError(
+          error,
+          "ノートへの追記後のメモ更新に失敗しました。ノートへの追記自体は完了している可能性があります。"
         );
       }
     });

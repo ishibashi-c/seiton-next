@@ -422,4 +422,56 @@ describe("MemoService", () => {
       /週識別子/u
     );
   });
+
+  it("複数のメモを1つのノートにまとめて昇格し、各元メモに昇格先リンクを残す", async () => {
+    const service = serviceFor(vault, () => new Date(2026, 9, 26, 9, 0));
+    await service.addMemo("最初のアイデア #企画");
+    await service.addMemo("2つ目のアイデア #企画");
+    const before = await service.listAll();
+    const entries = before.items.map((item) => item.entry);
+
+    const result = await service.promoteMultipleMemos(entries, {
+      kind: "idea",
+      title: "統合企画ノート",
+    });
+
+    expect(result.path).toBe("Seiton/Notes/2026-10-26-統合企画ノート.md");
+    const noteText = vault.files.get(result.path) ?? "";
+    expect(noteText).toContain("kind: idea");
+    expect(noteText).toContain("最初のアイデア");
+    expect(noteText).toContain("2つ目のアイデア");
+
+    const all = await service.listAll();
+    for (const item of all.items) {
+      expect(item.entry.promotedTo).toBe(result.path);
+      expect(item.entry.body).toContain(
+        "[[Seiton/Notes/2026-10-26-統合企画ノート]]"
+      );
+    }
+  });
+
+  it("既存のノート末尾にメモを追記し、元メモに昇格先リンクを記録する", async () => {
+    const service = serviceFor(vault, () => new Date(2026, 9, 26, 10, 30));
+    const added = await service.addMemo("追記したい気づき");
+    const loaded = await service.readEntry(added.week, added.id);
+    const targetPath = "Seiton/Notes/既存ノート.md";
+    vault.files.set(targetPath, "---\nkind: note\n---\n\n本文テキスト");
+
+    await service.appendMemoToNote(loaded.entry, {
+      basename: "既存ノート",
+      extension: "md",
+      name: "既存ノート.md",
+      parent: null,
+      path: targetPath,
+      stat: { ctime: 0, mtime: 0, size: 0 },
+      vault: {} as never,
+    });
+
+    const updatedNote = vault.files.get(targetPath) ?? "";
+    expect(updatedNote).toContain("- **2026-10-26 10:30** 追記したい気づき");
+
+    const reloaded = await service.readEntry(added.week, added.id);
+    expect(reloaded.entry.promotedTo).toBe(targetPath);
+    expect(reloaded.entry.body).toContain("既存ノート");
+  });
 });

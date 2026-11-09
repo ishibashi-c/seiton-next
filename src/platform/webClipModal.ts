@@ -1,15 +1,18 @@
-import type { App } from "obsidian";
-import { Modal } from "obsidian";
+import { type App, Modal, Notice, TFile } from "obsidian";
 import { userMessageOf } from "../domain/errors";
+import { bodyAfterFrontmatter } from "../domain/frontmatter";
 import { isAllowedRemoteUrl } from "../domain/network";
 import type { WebClipMetadata } from "../domain/webclip";
+import { MemoService } from "../services/memoService";
 import type { WebClipNote, WebClipService } from "../services/webClipService";
+import { ObsidianVaultPort } from "./obsidianVaultPort";
 import { markSeitonModal } from "./ui/modal";
 import { ButtonComponent, Setting, type TextComponent } from "./ui/setting";
 
 import { showToast } from "./ui/toast";
 export interface WebClipPreviewOptions {
   initialUrl?: string;
+  memoService?: MemoService;
   notePath?: string;
   onChanged?: (path: string) => void;
 }
@@ -21,8 +24,10 @@ export class WebClipPreviewModal extends Modal {
   private url: string;
   private preview: WebClipMetadata | null = null;
   private previewEl: HTMLElement | null = null;
+  private readerHostEl: HTMLElement | null = null;
   private statusEl: HTMLElement | null = null;
   private applyButton: ButtonComponent | null = null;
+  private clipTitle = "";
   private busy = false;
 
   constructor(
@@ -82,11 +87,115 @@ export class WebClipPreviewModal extends Modal {
     this.previewEl = this.contentEl.createDiv({
       cls: "seiton-webclip-preview",
     });
-    this.previewEl.createDiv({
-      cls: "seiton-empty",
-      text: "URLを入力して「プレビュー取得」を押してください。",
+    this.readerHostEl = this.contentEl.createDiv({
+      cls: "seiton-webclip-reader-container",
     });
+
+    if (this.options.notePath) {
+      void this.loadNoteReader();
+    } else {
+      this.previewEl.createDiv({
+        cls: "seiton-empty",
+        text: "URLを入力して「プレビュー取得」を押してください。",
+      });
+    }
     void previewButton;
+  }
+
+  private async loadNoteReader(): Promise<void> {
+    const notePath = this.options.notePath;
+    if (!notePath || !this.readerHostEl) {
+      return;
+    }
+    this.readerHostEl.empty();
+    try {
+      const file = this.app.vault.getAbstractFileByPath(notePath);
+      if (!(file instanceof TFile)) {
+        return;
+      }
+      const content = await this.app.vault.cachedRead(file);
+      const cache = this.app.metadataCache.getFileCache(file);
+      const title =
+        (typeof cache?.frontmatter?.title === "string" &&
+          cache.frontmatter.title.trim()) ||
+        file.basename;
+      this.clipTitle = title;
+      const body = bodyAfterFrontmatter(content).trim();
+
+      const section = this.readerHostEl.createDiv({
+        cls: "seiton-webclip-reader-zone",
+      });
+
+      // ひとこと抜粋・感想メモ入力欄
+      const memoWrap = section.createDiv({
+        cls: "seiton-webclip-memo-input-wrap",
+      });
+      memoWrap.createEl("h3", {
+        cls: "seiton-webclip-memo-title",
+        text: "ひとこと抜粋・感想メモを追加",
+      });
+      const inputRow = memoWrap.createDiv({
+        cls: "seiton-webclip-memo-row",
+      });
+      const memoInput = inputRow.createEl("input", {
+        attr: {
+          placeholder: "気になるフレーズや要約・感想を入力...",
+          type: "text",
+        },
+        cls: "st-input seiton-webclip-memo-input",
+      });
+      const submitBtn = inputRow.createEl("button", {
+        attr: { type: "button" },
+        cls: "st-btn mod-cta seiton-webclip-memo-btn",
+        text: "つぶやきに記録",
+      });
+
+      const handleAddMemo = async () => {
+        const val = memoInput.value.trim();
+        if (!val) {
+          return;
+        }
+        submitBtn.disabled = true;
+        try {
+          const memoService =
+            this.options.memoService ??
+            new MemoService({ vault: new ObsidianVaultPort(this.app) });
+          await memoService.addMemo(
+            `\`${this.clipTitle}\` より: ${val} #webクリップ`
+          );
+          memoInput.value = "";
+          new Notice("つぶやきに抜粋メモを保存しました");
+        } catch (error) {
+          showToast(userMessageOf(error));
+        } finally {
+          submitBtn.disabled = false;
+        }
+      };
+
+      submitBtn.addEventListener("click", () => void handleAddMemo());
+      memoInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          void handleAddMemo();
+        }
+      });
+
+      // クリーンリーダー領域
+      const reader = section.createDiv({ cls: "seiton-webclip-reader" });
+      reader.createEl("h3", {
+        cls: "seiton-webclip-reader-title",
+        text: title,
+      });
+      const bodyEl = reader.createDiv({
+        cls: "seiton-webclip-reader-body",
+      });
+      bodyEl.setText(body || "（ノート本文はありません）");
+    } catch (error) {
+      this.readerHostEl.createDiv({
+        cls: "st-status is-error",
+        text: userMessageOf(error),
+      });
+    }
   }
 
   private async fetchPreview(): Promise<void> {
@@ -168,6 +277,14 @@ export class WebClipPreviewModal extends Modal {
       cls: "seiton-webclip-source",
       text: preview.source,
     });
+  }
+
+  override onClose(): void {
+    this.contentEl.empty();
+    this.previewEl = null;
+    this.readerHostEl = null;
+    this.statusEl = null;
+    this.applyButton = null;
   }
 
   private setStatus(message: string, isError = false): void {

@@ -12,6 +12,7 @@ export interface HomeCaptureOptions {
   memoService: MemoService;
   onCleared: () => void;
   onRefresh: () => Promise<void> | void;
+  recentTags?: string[];
 }
 
 interface LastSaved {
@@ -25,6 +26,7 @@ export class HomeCapture {
   private readonly memoService: MemoService;
   private readonly onCleared: () => void;
   private readonly onRefresh: () => Promise<void> | void;
+  private readonly recentTags?: string[];
   private buttonEl: HTMLButtonElement | null = null;
   private draft = "";
   private lastSaved: LastSaved | null = null;
@@ -37,6 +39,7 @@ export class HomeCapture {
     this.memoService = options.memoService;
     this.onCleared = options.onCleared;
     this.onRefresh = options.onRefresh;
+    this.recentTags = options.recentTags;
   }
 
   render(parent: HTMLElement): void {
@@ -90,6 +93,21 @@ export class HomeCapture {
     });
     this.buttonEl = button;
 
+    const tags = this.resolveRecentTags();
+    if (tags.length > 0) {
+      const pills = capture.createDiv({ cls: "seiton-composer-tag-pills" });
+      for (const tag of tags) {
+        const pill = pills.createEl("button", {
+          attr: { type: "button" },
+          cls: "seiton-composer-tag-pill",
+          text: `#${tag}`,
+        });
+        pill.addEventListener("click", () => {
+          this.insertTag(tag);
+        });
+      }
+    }
+
     const footer = capture.createDiv({ cls: "seiton-capture-footer" });
     this.statusEl = footer.createSpan({
       cls: "seiton-capture-status",
@@ -108,6 +126,52 @@ export class HomeCapture {
       cls: "seiton-keyhint",
       text: "⌘/Ctrl + Enter",
     });
+  }
+
+  private resolveRecentTags(): string[] {
+    if (this.recentTags && this.recentTags.length > 0) {
+      return this.recentTags;
+    }
+    try {
+      const rawTags = (
+        this.app.metadataCache as unknown as {
+          getTags?: () => Record<string, number>;
+        }
+      )?.getTags?.();
+      if (rawTags && Object.keys(rawTags).length > 0) {
+        return Object.entries(rawTags)
+          .map(([k, count]) => ({ count, tag: k.replace(/^#/u, "") }))
+          .filter((e) => e.tag.length > 0 && !e.tag.startsWith("/"))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5)
+          .map((e) => e.tag);
+      }
+    } catch {
+      // metadataCache が取得できない場合は空配列
+    }
+    return [];
+  }
+
+  private insertTag(tag: string): void {
+    const tagText = `#${tag}`;
+    if (!this.draft.includes(tagText)) {
+      const textarea = this.textareaEl;
+      if (textarea) {
+        const start = textarea.selectionStart ?? this.draft.length;
+        const end = textarea.selectionEnd ?? this.draft.length;
+        const insert = `${tagText} `;
+        this.draft =
+          this.draft.slice(0, start) + insert + this.draft.slice(end);
+        textarea.value = this.draft;
+        const newPos = start + insert.length;
+        textarea.setSelectionRange(newPos, newPos);
+      } else {
+        this.draft = `${this.draft} ${tagText} `.trim();
+      }
+      window.localStorage.setItem(CAPTURE_DRAFT_KEY, this.draft);
+      this.setStatus("", "idle");
+    }
+    this.textareaEl?.focus();
   }
 
   focus(): void {

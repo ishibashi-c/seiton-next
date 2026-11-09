@@ -17,7 +17,8 @@ export type LibraryFilter =
   | "archived"
   | "pinned";
 
-export type LibrarySort = "created" | "lecture" | "updated";
+export type SortKey = "created" | "lecture" | "updated" | "random";
+export type LibrarySort = SortKey;
 
 export interface LibraryQueryState {
   courseFilter: string;
@@ -101,23 +102,48 @@ export function hitsForQuery(
   }).map((hit) => hit.item);
 }
 
+export function sortItems(
+  items: IndexItem[],
+  sortKey: SortKey,
+  seed?: number
+): IndexItem[] {
+  if (sortKey === "created") {
+    items.sort((left, right) => createdValue(right) - createdValue(left));
+  } else if (sortKey === "lecture") {
+    items.sort((left, right) => lectureDateOf(right) - lectureDateOf(left));
+  } else if (sortKey === "random") {
+    const effectiveSeed = seed ?? Date.now();
+    let s = (effectiveSeed === 0 ? 1 : effectiveSeed) >>> 0;
+    const nextRand = () => {
+      s = (s * 1_664_525 + 1_013_904_223) >>> 0;
+      return s / 4_294_967_296;
+    };
+    for (let i = items.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(nextRand() * (i + 1));
+      const itemI = items[i];
+      const itemJ = items[j];
+      if (itemI !== undefined && itemJ !== undefined) {
+        items[i] = itemJ;
+        items[j] = itemI;
+      }
+    }
+  } else {
+    items.sort((left, right) => updatedAt(right) - updatedAt(left));
+  }
+  return items;
+}
+
 export function queryHits(
   index: VaultIndex,
   state: LibraryQueryState,
-  limit: number
+  limit: number,
+  seed?: number
 ): IndexItem[] {
   const hits = hitsForQuery(index, state, limit);
   if (parseQuery(state.query).text !== "") {
     return hits;
   }
-  if (state.sort === "created") {
-    hits.sort((left, right) => createdValue(right) - createdValue(left));
-  } else if (state.sort === "lecture") {
-    hits.sort((left, right) => lectureDateOf(right) - lectureDateOf(left));
-  } else {
-    hits.sort((left, right) => updatedAt(right) - updatedAt(left));
-  }
-  return hits;
+  return sortItems(hits, state.sort, seed);
 }
 
 export function relaxedSuggestions(

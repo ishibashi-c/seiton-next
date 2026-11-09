@@ -163,8 +163,16 @@ export function renderStockCard(
   meta.createSpan({
     text: `購入: ¥${status.stock.amount.toLocaleString()} (${status.stock.purchaseDate})`,
   });
+  const months =
+    (status.stock as unknown as { usefulLifeMonths?: number })
+      .usefulLifeMonths ?? status.stock.amortizationMonths;
+  const dailyCost =
+    months > 0 ? Math.round(status.stock.amount / (months * 30.4375)) : 0;
   meta.createSpan({
     text: `月額償却: ¥${status.monthlyAmortization.toLocaleString()} / 月`,
+  });
+  meta.createSpan({
+    text: `日割償却: ¥${dailyCost.toLocaleString()} / 日`,
   });
   meta.createSpan({
     text: `未償却残高: ¥${status.unreturnedValue.toLocaleString()}`,

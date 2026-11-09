@@ -250,3 +250,568 @@ button.seiton-card-menu-item.is-danger {
 .seiton-settings-advanced > p {
   margin: 6px 0 0;
 }
+
+/* =========================================================
+   v0.8.0: 18 Feature Enhancements Styles
+   ========================================================= */
+
+/* #5: Composer tag quick-insert pills (Home & Tsubuyaki) */
+.seiton-composer-tag-pills {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+button.seiton-composer-tag-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-muted) !important;
+  cursor: pointer;
+  font-family: var(--font-interface);
+  font-size: 11.5px;
+  font-weight: 500;
+  height: 24px;
+  line-height: 1;
+  padding: 0 10px !important;
+}
+
+button.seiton-composer-tag-pill:hover {
+  background: var(--background-modifier-hover) !important;
+  border-color: var(--st-border-hover) !important;
+  color: var(--st-ink) !important;
+}
+
+/* #3 & #6: Tsubuyaki bulk promote & weekly digest buttons */
+button.seiton-bulk-promote-button,
+button.seiton-weekly-digest-button {
+  align-items: center;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-ink) !important;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-weight: 550;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px !important;
+  white-space: nowrap;
+}
+
+button.seiton-bulk-promote-button:hover,
+button.seiton-weekly-digest-button:hover {
+  background: var(--background-modifier-hover) !important;
+  border-color: var(--st-border-hover) !important;
+}
+
+.seiton-bulk-promote-icon,
+.seiton-digest-icon {
+  align-items: center;
+  color: var(--st-muted);
+  display: inline-flex;
+}
+
+.seiton-bulk-promote-icon svg,
+.seiton-digest-icon svg {
+  height: 13px;
+  width: 13px;
+}
+
+/* #1: Home Rediscovery (Serendipity) */
+.seiton-home-rediscovery {
+  margin-top: 24px;
+}
+
+button.seiton-rediscovery-shuffle-btn {
+  align-items: center;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-muted) !important;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 11.5px;
+  gap: 4px;
+  height: 24px;
+  padding: 0 9px !important;
+}
+
+button.seiton-rediscovery-shuffle-btn:hover {
+  background: var(--background-secondary) !important;
+  color: var(--st-ink) !important;
+}
+
+.seiton-rediscovery-cards {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  margin-top: 8px;
+}
+
+/* #2: Library Quick Pills (Unread Web / Shuffle) */
+.seiton-library-quick-pills {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+button.seiton-library-quick-pill {
+  align-items: center;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-muted) !important;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 11.5px;
+  font-weight: 500;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px !important;
+}
+
+button.seiton-library-quick-pill:hover {
+  color: var(--st-ink) !important;
+}
+
+button.seiton-library-quick-pill.is-active {
+  background: var(--interactive-accent) !important;
+  border-color: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
+}
+
+/* #7: TriageModal enhancements */
+.seiton-triage-content-box {
+  margin-top: 8px;
+}
+
+button.seiton-triage-toggle-body {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--st-accent) !important;
+  cursor: pointer;
+  font-size: var(--st-text-xs);
+  margin-top: 6px;
+  padding: 2px 0 !important;
+}
+
+.seiton-triage-fulltext {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  font-size: var(--st-text-sm);
+  line-height: 1.65;
+  margin-top: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  white-space: pre-wrap;
+}
+
+.seiton-triage-tags-section,
+.seiton-triage-project-section {
+  margin-top: 12px;
+}
+
+.seiton-triage-label {
+  color: var(--st-muted);
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.seiton-triage-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+button.seiton-triage-tag-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-muted) !important;
+  cursor: pointer;
+  font-size: 12px;
+  height: 26px;
+  padding: 0 10px !important;
+}
+
+button.seiton-triage-tag-pill.is-active {
+  background: var(--interactive-accent) !important;
+  border-color: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
+}
+
+/* #8: Quick Class Creation Pills in NewNoteModal */
+.seiton-quick-class-section {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-bottom: 14px;
+  padding: 10px 12px;
+}
+
+.seiton-quick-class-head {
+  margin-bottom: 6px;
+}
+
+.seiton-quick-class-label {
+  color: var(--st-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.seiton-quick-class-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+button.seiton-quick-class-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-primary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-ink) !important;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 550;
+  height: 28px;
+  padding: 0 12px !important;
+}
+
+button.seiton-quick-class-pill:hover {
+  border-color: var(--interactive-accent) !important;
+  color: var(--interactive-accent) !important;
+}
+
+/* #9: WebClip Clean Reader & Excerpt Memo */
+.seiton-webclip-reader-container,
+.seiton-webclip-reader {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-top: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 12px 14px;
+}
+
+.seiton-webclip-reader-title,
+.seiton-webclip-memo-title {
+  color: var(--st-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.seiton-webclip-reader-body {
+  color: var(--st-ink);
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.seiton-webclip-memo-input-wrap {
+  border-top: 1px solid var(--st-hairline);
+  margin-top: 12px;
+  padding-top: 10px;
+}
+
+.seiton-webclip-memo-row {
+  display: flex;
+  gap: 8px;
+}
+
+.seiton-webclip-memo-input {
+  flex: 1;
+}
+
+/* #11 & #12: Bookshelf Quick Quote & Stats Subbar & Series Badge */
+.seiton-book-quick-quote-section {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-top: 14px;
+  padding: 10px 12px;
+}
+
+.seiton-book-quick-quote-title {
+  color: var(--st-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.seiton-book-quick-quote-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.seiton-book-quick-quote-page-wrap {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.seiton-book-quick-quote-page-prefix {
+  color: var(--st-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+input.seiton-book-quick-quote-page-input {
+  width: 68px !important;
+}
+
+input.seiton-book-quick-quote-text-input {
+  flex: 1;
+  min-width: 160px;
+}
+
+.seiton-bookshelf-subbar-info {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.seiton-books-stats-summary {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+button.seiton-series-toggle-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-muted) !important;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 550;
+  height: 26px;
+  padding: 0 10px !important;
+}
+
+button.seiton-series-toggle-btn.is-active {
+  background: var(--interactive-accent) !important;
+  border-color: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.seiton-book-series-badge {
+  background: var(--interactive-accent);
+  border-radius: 999px;
+  color: var(--text-on-accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+}
+
+/* #13: Projects Interactive Task List & Kind Filter Pills */
+.seiton-project-tasks {
+  margin-top: 20px;
+}
+
+.seiton-project-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.seiton-project-task-item {
+  align-items: flex-start;
+  background: var(--background-secondary);
+  border-radius: var(--st-radius-sm);
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  padding: 7px 10px;
+}
+
+.seiton-project-task-item.is-completed .seiton-project-task-text {
+  color: var(--st-muted);
+  text-decoration: line-through;
+}
+
+.seiton-project-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 10px;
+}
+
+button.seiton-project-kind-pill {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-muted) !important;
+  cursor: pointer;
+  font-size: 11.5px;
+  height: 26px;
+  padding: 0 10px !important;
+}
+
+button.seiton-project-kind-pill.is-active {
+  background: var(--st-ink) !important;
+  border-color: var(--st-ink) !important;
+  color: var(--st-paper) !important;
+}
+
+/* #14: Prompt Workbench Template Pills & Context Attachment */
+.seiton-prompt-composer-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+
+.seiton-prompt-template-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+button.seiton-prompt-template-pill,
+button.seiton-prompt-attach-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--background-secondary) !important;
+  border: 1px solid var(--st-hairline) !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: var(--st-muted) !important;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 500;
+  height: 25px;
+  padding: 0 10px !important;
+}
+
+button.seiton-prompt-template-pill:hover,
+button.seiton-prompt-attach-btn:hover {
+  border-color: var(--st-border-hover) !important;
+  color: var(--st-ink) !important;
+}
+
+.seiton-context-picker {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  margin-bottom: 8px;
+  padding: 8px;
+}
+
+.seiton-context-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+button.seiton-context-picker-row {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--st-radius-sm) !important;
+  box-shadow: none !important;
+  color: var(--st-ink) !important;
+  cursor: pointer;
+  font-size: var(--st-text-xs);
+  justify-content: flex-start;
+  padding: 5px 8px !important;
+  text-align: left;
+  width: 100%;
+}
+
+button.seiton-context-picker-row:hover {
+  background: var(--background-modifier-hover) !important;
+}
+
+/* #15: Assets Snapshot Real-Time Diff Preview */
+.seiton-snapshot-total-wrap {
+  align-items: center;
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+}
+
+.seiton-asset-input-prev-wrap {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.seiton-snapshot-diff,
+.seiton-snapshot-total-diff {
+  font-family: var(--font-monospace);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.seiton-snapshot-diff.is-positive,
+.seiton-snapshot-total-diff.is-positive {
+  color: var(--text-success);
+}
+
+.seiton-snapshot-diff.is-negative,
+.seiton-snapshot-total-diff.is-negative {
+  color: var(--text-error);
+}
+
+.seiton-snapshot-diff.is-zero,
+.seiton-snapshot-total-diff.is-zero {
+  color: var(--st-muted);
+}
+

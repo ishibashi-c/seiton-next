@@ -1,4 +1,4 @@
-import type { App } from "obsidian";
+import { type App, TFile } from "obsidian";
 import { normalizeLink } from "../../domain/links";
 import { countSessionsByProject } from "../../domain/projects";
 import type { NoteService } from "../../services/noteService";
@@ -245,6 +245,91 @@ export class ProjectsRenderer {
       }
     );
 
+    // タスク抽出 & インタラクティブチェックリスト
+    const file = this.options.app.vault.getAbstractFileByPath(project.path);
+    let noteContent = "";
+    if (file instanceof TFile) {
+      try {
+        noteContent = await this.options.app.vault.cachedRead(file);
+      } catch {
+        // 読み込み失敗時は空
+      }
+    }
+    const lines = noteContent.split("\n");
+    const tasks: Array<{ checked: boolean; line: string; text: string }> = [];
+    for (const line of lines) {
+      const match = line.match(/^\s*[-*]\s*\[([ xX])\]\s*(.*)$/);
+      if (match) {
+        tasks.push({
+          checked: match[1]?.toLowerCase() === "x",
+          line,
+          text: (match[2] ?? "").trim(),
+        });
+      }
+    }
+
+    const tasksSection = body.createDiv({
+      cls: "seiton-section seiton-project-tasks",
+    });
+    const tasksHead = tasksSection.createDiv({ cls: "seiton-section-head" });
+    tasksHead.createEl("h2", { text: "タスク" });
+    const completedCount = tasks.filter((t) => t.checked).length;
+    tasksHead.createSpan({
+      cls: "seiton-section-count",
+      text: `${completedCount}/${tasks.length}`,
+    });
+
+    if (tasks.length === 0) {
+      tasksSection.createDiv({
+        cls: "seiton-section-empty",
+        text: "プロジェクトノートに `- [ ] タスク` を書くと、ここにチェックリストとして表示されます。",
+      });
+    } else {
+      const taskList = tasksSection.createDiv({
+        cls: "seiton-project-task-list",
+      });
+      for (const task of tasks) {
+        const item = taskList.createDiv({
+          cls: `seiton-project-task-item${task.checked ? " is-completed" : ""}`,
+        });
+        const checkbox = item.createEl("input", {
+          attr: {
+            "aria-label": task.text,
+            type: "checkbox",
+          },
+          cls: "seiton-project-task-checkbox",
+        });
+        checkbox.checked = task.checked;
+        checkbox.addEventListener("change", async () => {
+          if (!(file instanceof TFile)) {
+            return;
+          }
+          const targetLine = task.line;
+          const toggledLine = task.checked
+            ? task.line.replace(/\[[xX]\]/, "[ ]")
+            : task.line.replace(/\[ \]/, "[x]");
+          try {
+            await this.options.app.vault.process(file, (data) => {
+              const fileLines = data.split("\n");
+              const idx = fileLines.indexOf(targetLine);
+              if (idx !== -1) {
+                fileLines[idx] = toggledLine;
+                return fileLines.join("\n");
+              }
+              return data.replace(targetLine, toggledLine);
+            });
+            await this.renderDetail(body, index, project);
+          } catch (error) {
+            console.error("[Seiton] failed to update task", error);
+          }
+        });
+        item.createSpan({
+          cls: "seiton-project-task-text",
+          text: task.text,
+        });
+      }
+    }
+
     const notesSection = body.createDiv({ cls: "seiton-section" });
     const notesHead = notesSection.createDiv({ cls: "seiton-section-head" });
     notesHead.createEl("h2", { text: "関連ノート" });
@@ -252,19 +337,63 @@ export class ProjectsRenderer {
       cls: "seiton-section-count",
       text: String(related.length),
     });
-    if (related.length === 0) {
-      notesSection.createDiv({
-        cls: "seiton-section-empty",
-        text: "まだ関連ノートがありません。",
+
+    const KIND_GROUPS: Record<string, string[]> = {
+      all: [],
+      class: ["class", "reading"],
+      idea: ["idea", "note", "article", "collection", "profile"],
+      web: ["webclip", "book"],
+    };
+    const KIND_PILLS: Array<{ id: string; label: string }> = [
+      { id: "all", label: "すべて" },
+      { id: "idea", label: "メモ・アイデア" },
+      { id: "class", label: "授業・ノート" },
+      { id: "web", label: "Web・本" },
+    ];
+    let selectedFilter = "all";
+
+    const filterPillsContainer = notesSection.createDiv({
+      cls: "seiton-project-filter-pills",
+    });
+    const listContainer = notesSection.createDiv({
+      cls: "seiton-related-list-wrap",
+    });
+
+    const pillButtons: HTMLButtonElement[] = [];
+    const renderRelatedList = () => {
+      listContainer.empty();
+      const filteredNotes = related.filter((note) => {
+        if (selectedFilter === "all") {
+          return true;
+        }
+        const allowed = KIND_GROUPS[selectedFilter];
+        return allowed ? allowed.includes(note.kind) : true;
       });
-    } else {
-      const list = notesSection.createDiv({ cls: "seiton-related-list" });
-      for (const note of related) {
+
+      for (const btn of pillButtons) {
+        btn.classList.toggle(
+          "is-active",
+          btn.dataset.filter === selectedFilter
+        );
+      }
+
+      if (filteredNotes.length === 0) {
+        listContainer.createDiv({
+          cls: "seiton-section-empty",
+          text:
+            selectedFilter === "all"
+              ? "まだ関連ノートがありません。"
+              : "この種類の関連ノートはありません。",
+        });
+        return;
+      }
+      const list = listContainer.createDiv({ cls: "seiton-related-list" });
+      for (const note of filteredNotes) {
         const article = document.createElement("article");
         article.className = "seiton-related-item";
         const content = article.createDiv({ cls: "seiton-item-content" });
         content.createDiv({
-          cls: "seiton-item-kicker",
+          cls: `seiton-item-kicker seiton-kind-badge is-${note.kind}`,
           text: KIND_LABEL[note.kind] ?? note.kind,
         });
         const title = content.createEl("button", {
@@ -298,7 +427,24 @@ export class ProjectsRenderer {
         });
         list.appendChild(article);
       }
+    };
+
+    for (const pill of KIND_PILLS) {
+      const btn = filterPillsContainer.createEl("button", {
+        attr: { "data-filter": pill.id, type: "button" },
+        cls: `seiton-pill seiton-project-kind-pill${
+          pill.id === selectedFilter ? " is-active" : ""
+        }`,
+        text: pill.label,
+      });
+      pillButtons.push(btn);
+      btn.addEventListener("click", () => {
+        selectedFilter = pill.id;
+        renderRelatedList();
+      });
     }
+
+    renderRelatedList();
 
     const sessionsSection = body.createDiv({ cls: "seiton-section" });
     const sessionsHead = sessionsSection.createDiv({

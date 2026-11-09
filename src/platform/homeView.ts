@@ -210,6 +210,7 @@ export class SeitonHomeView extends ItemView {
       this.sections.renderResume(index, sessionList.sessions);
       this.sections.renderFavorites(index);
       this.sections.renderRecent(index);
+      this.sections.renderRediscovery(index);
     } catch (error) {
       showToast(userMessageOf(error));
     } finally {
@@ -346,6 +347,8 @@ export class SeitonHomeView extends ItemView {
       resumeCount,
       resumeSection,
     });
+
+    this.sections.renderRediscoverySection(content);
   }
 
   private renderQuick(parent: HTMLElement): void {

@@ -1,15 +1,17 @@
-import { showToast } from "./ui/toast";
-/**
- * `obsidian://seiton-next?...` の処理。
- * main.ts から呼ばれ、画面やサービスを直接触らないようホスト経由で操作する。
- */
-
-import type { App } from "obsidian";
-
+import { type App, TFile } from "obsidian";
 import { VIEW_TYPE_LIBRARY } from "../config";
+import {
+  buildNoteDocument,
+  buildTemplateBody,
+  classNotePath,
+} from "../domain/noteTemplates";
 import type { MemoService } from "../services/memoService";
+import { NoteService } from "../services/noteService";
+import { PropertyService } from "../services/propertyService";
 import type { NoteRecord, VaultIndexService } from "../services/vaultIndex";
 import { SeitonLibraryView } from "./libraryView";
+import { NewNoteModal } from "./newNoteModal";
+import { showToast } from "./ui/toast";
 import type { WebClipCaptureInput } from "./webClipCaptureModal";
 
 export interface SeitonUriHost {
@@ -119,11 +121,67 @@ export async function handleSeitonUri(
       await host.openPromptView();
       return;
     }
-    if (view === "assets") {
+    if (view === "assets" || view === "snapshot") {
       await host.openAssets();
       return;
     }
     await host.openHome();
+    return;
+  }
+
+  if (action === "snapshot") {
+    await host.openAssets();
+    return;
+  }
+
+  if (
+    action === "class" ||
+    (params.course !== undefined && params.course.trim() !== "")
+  ) {
+    const course = (params.course ?? "").trim();
+    if (course !== "") {
+      const now = new Date();
+      const today = [
+        String(now.getFullYear()).padStart(4, "0"),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0"),
+      ].join("-");
+      const path = classNotePath(today, course);
+      const existing = host.app.vault.getAbstractFileByPath(path);
+      if (existing instanceof TFile) {
+        await host.app.workspace.openLinkText(path, "", false);
+        showToast(`授業ノートを開きました: ${today} ${course}`);
+        return;
+      }
+      const folder = "Seiton/Notes";
+      if (!host.app.vault.getAbstractFileByPath(folder)) {
+        await host.app.vault.createFolder(folder);
+      }
+      const content = buildNoteDocument({
+        body: buildTemplateBody("class"),
+        course,
+        createdAt: new Date().toISOString(),
+        kind: "class",
+        lectureDate: today,
+        title: `${today} ${course}`,
+      });
+      await host.app.vault.create(path, content);
+      await host.app.workspace.openLinkText(path, "", false);
+      showToast(`授業ノートを作成しました: ${today} ${course}`);
+      return;
+    }
+
+    const properties = new PropertyService(host.app);
+    const noteService = new NoteService(host.app, properties);
+    new NewNoteModal(
+      host.app,
+      noteService,
+      host.indexService,
+      "",
+      (createdPath) => {
+        void host.app.workspace.openLinkText(createdPath, "", false);
+      }
+    ).open();
     return;
   }
 

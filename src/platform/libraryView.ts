@@ -30,6 +30,7 @@ import { LibraryList } from "./library/list";
 import {
   type LibraryFilter,
   type LibraryQueryState,
+  type LibrarySort,
   queryHits,
   relaxedSuggestions,
 } from "./library/query";
@@ -61,7 +62,7 @@ export class SeitonLibraryView extends ItemView {
   private filter: LibraryFilter = "all";
   private statusFilter: "all" | "review" | "pinned" | "archived" = "all";
   private query = "";
-  private sort: "updated" | "created" | "lecture" = "updated";
+  private sort: LibrarySort = "updated";
   private tagFilter = "";
   private listFilter = "";
   private projectFilter = "";
@@ -652,8 +653,8 @@ export class SeitonLibraryView extends ItemView {
       }
       new QuickSearchModal(this.appRef, {
         items,
-        placeholder: "タイトル、本文、タグ",
-        title: "ライブラリを検索",
+        placeholder: "タイトル、本文、タグ、またはコマンドを入力...",
+        title: "統合クイックスイッチャー＆コマンド",
       }).open();
     } catch (error) {
       showToast(userMessageOf(error));

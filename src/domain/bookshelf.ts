@@ -117,3 +117,87 @@ export function bookCategories(items: BookShelfItem[]): string[] {
     ),
   ].sort((left, right) => left.localeCompare(right, "ja"));
 }
+
+export interface BookReadingStats {
+  readingCount: number;
+  readThisMonth: number;
+  readThisYear: number;
+}
+
+export function computeBookStats(
+  items: BookShelfItem[],
+  now = new Date()
+): BookReadingStats {
+  const currentYearStr = String(now.getFullYear());
+  const currentMonthStr = `${currentYearStr}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  let readingCount = 0;
+  let readThisMonth = 0;
+  let readThisYear = 0;
+
+  for (const item of items) {
+    if (item.status === "reading") {
+      readingCount += 1;
+    } else if (item.status === "read") {
+      let finishedDate = item.finished.trim();
+      if (!finishedDate && item.updated) {
+        const d = new Date(item.updated);
+        finishedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }
+      if (finishedDate.startsWith(currentMonthStr)) {
+        readThisMonth += 1;
+      }
+      if (finishedDate.startsWith(currentYearStr)) {
+        readThisYear += 1;
+      }
+    }
+  }
+
+  return { readingCount, readThisMonth, readThisYear };
+}
+
+export interface BookDisplayGroup {
+  item: BookShelfItem;
+  seriesCount?: number;
+}
+
+export function groupBooksBySeries(items: BookShelfItem[]): BookDisplayGroup[] {
+  const result: BookDisplayGroup[] = [];
+  const seriesMap = new Map<string, BookShelfItem[]>();
+
+  for (const item of items) {
+    const series = item.series.trim();
+    if (series !== "") {
+      const list = seriesMap.get(series);
+      if (list) {
+        list.push(item);
+      } else {
+        seriesMap.set(series, [item]);
+      }
+    }
+  }
+
+  const seenSeries = new Set<string>();
+
+  for (const item of items) {
+    const series = item.series.trim();
+    if (series === "") {
+      result.push({ item });
+    } else {
+      if (seenSeries.has(series)) {
+        continue;
+      }
+      seenSeries.add(series);
+      const list = seriesMap.get(series) ?? [item];
+      const first = list[0];
+      if (first) {
+        result.push({
+          item: first,
+          seriesCount: list.length,
+        });
+      }
+    }
+  }
+
+  return result;
+}

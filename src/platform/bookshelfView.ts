@@ -2,13 +2,16 @@ import type { EventRef, WorkspaceLeaf } from "obsidian";
 import { ItemView, setIcon } from "obsidian";
 import { VIEW_TYPE_BOOKSHELF } from "../config";
 import {
+  type BookDisplayGroup,
   type BookFilters,
   type BookShelfItem,
   bookCategories,
   bookOwnershipLabel,
   bookStatusLabel,
+  computeBookStats,
   DEFAULT_BOOK_FILTERS,
   filterBooks,
+  groupBooksBySeries,
 } from "../domain/bookshelf";
 import {
   calilBadgeText,
@@ -64,9 +67,12 @@ export class SeitonBookshelfView extends ItemView {
   private readonly indexService: VaultIndexService;
   private readonly host: BookshelfHost;
   private readonly filters: BookFilters = { ...DEFAULT_BOOK_FILTERS };
+  private groupBySeries = false;
   private records: NoteRecord[] = [];
   private gridEl: HTMLElement | null = null;
   private countEl: HTMLElement | null = null;
+  private statsEl: HTMLElement | null = null;
+  private seriesToggleBtn: HTMLButtonElement | null = null;
   private searchInput: HTMLInputElement | null = null;
   private categorySelect: SelectControl | null = null;
   private eventRefs: EventRef[] = [];
@@ -145,6 +151,8 @@ export class SeitonBookshelfView extends ItemView {
     this.contentEl.empty();
     this.gridEl = null;
     this.countEl = null;
+    this.statsEl = null;
+    this.seriesToggleBtn = null;
     this.searchInput = null;
     this.categorySelect = null;
   }
@@ -168,9 +176,24 @@ export class SeitonBookshelfView extends ItemView {
   }
 
   private renderTools(parent: HTMLElement): void {
-    const subbar = parent.createDiv({ cls: "seiton-bookshelf-subbar" });
+    const subbar = parent.createDiv({
+      cls: "seiton-bookshelf-subbar seiton-books-subbar",
+    });
     this.countEl = subbar.createDiv({ cls: "seiton-bookshelf-count" });
+    this.statsEl = subbar.createDiv({ cls: "seiton-books-stats-summary" });
+
     const tools = subbar.createDiv({ cls: "seiton-bookshelf-tools" });
+    this.seriesToggleBtn = tools.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-text-action seiton-series-toggle-btn",
+      text: "シリーズ集約",
+    });
+    this.seriesToggleBtn.addEventListener("click", () => {
+      this.groupBySeries = !this.groupBySeries;
+      this.seriesToggleBtn?.toggleClass("is-active", this.groupBySeries);
+      this.render();
+    });
+
     this.renderTool(tools, "一括ISBN", () => this.host.bulkIsbn());
     this.renderTool(tools, "カーリル一括検索", () =>
       this.host.calilBulk(this.records)
@@ -307,11 +330,28 @@ export class SeitonBookshelfView extends ItemView {
       return;
     }
     grid.empty();
-    const items = filterBooks(this.records.map(toItem), this.filters);
-    if (this.countEl) {
-      this.countEl.setText(`${items.length}冊`);
+
+    const allItems = this.records.map(toItem);
+    const stats = computeBookStats(allItems);
+    if (this.statsEl) {
+      this.statsEl.setText(
+        `読書中 ${stats.readingCount}冊 · 今月読了 ${stats.readThisMonth}冊 · 今年読了 ${stats.readThisYear}冊`
+      );
     }
-    if (items.length === 0) {
+
+    const filtered = filterBooks(allItems, this.filters);
+    const displayGroups: BookDisplayGroup[] = this.groupBySeries
+      ? groupBooksBySeries(filtered)
+      : filtered.map((item) => ({ item }));
+
+    if (this.countEl) {
+      this.countEl.setText(
+        this.groupBySeries && displayGroups.length !== filtered.length
+          ? `${displayGroups.length}件 (${filtered.length}冊)`
+          : `${filtered.length}冊`
+      );
+    }
+    if (displayGroups.length === 0) {
       const empty = grid.createDiv({ cls: "seiton-empty" });
       empty.setText(
         this.records.length === 0
@@ -321,16 +361,20 @@ export class SeitonBookshelfView extends ItemView {
       return;
     }
     const shelf = grid.createDiv({ cls: "seiton-card-grid is-shelf" });
-    for (const item of items) {
-      const record = this.records.find((note) => note.path === item.path);
+    for (const group of displayGroups) {
+      const record = this.records.find((note) => note.path === group.item.path);
       if (!record) {
         continue;
       }
-      shelf.appendChild(this.renderCard(record, item));
+      shelf.appendChild(this.renderCard(record, group.item, group.seriesCount));
     }
   }
 
-  private renderCard(record: NoteRecord, item: BookShelfItem): HTMLElement {
+  private renderCard(
+    record: NoteRecord,
+    item: BookShelfItem,
+    seriesCount?: number
+  ): HTMLElement {
     const card = document.createElement("article");
     card.className = "seiton-book-card";
 
@@ -341,6 +385,12 @@ export class SeitonBookshelfView extends ItemView {
       },
       cls: "seiton-book-cover-wrap",
     });
+    if (seriesCount && seriesCount > 1) {
+      cover.createSpan({
+        cls: "seiton-book-series-badge",
+        text: `全${seriesCount}巻`,
+      });
+    }
     const coverUrl = resolveCover(this.app, record.cover || item.cover);
     if (coverUrl) {
       const image = cover.createEl("img", {
@@ -372,11 +422,18 @@ export class SeitonBookshelfView extends ItemView {
     if (item.author) {
       body.createDiv({ cls: "seiton-book-card-meta", text: item.author });
     }
+    const seriesMeta =
+      seriesCount && seriesCount > 1
+        ? `シリーズ: ${item.series} (全${seriesCount}巻)`
+        : item.series
+          ? `シリーズ: ${item.series}`
+          : "";
     const state = [
       bookStatusLabel(item.status),
       item.category,
       item.owned ? bookOwnershipLabel(item.owned) : "",
       item.rating ? `評価 ${item.rating}` : "",
+      seriesMeta,
     ]
       .filter(Boolean)
       .join(" · ");

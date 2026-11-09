@@ -6,9 +6,17 @@ import { showToast } from "./ui/toast";
 
 import type { TAbstractFile, WorkspaceLeaf } from "obsidian";
 import { ItemView, setIcon, TFile } from "obsidian";
-import { MEMOS_FOLDER, VIEW_TYPE_TSUBUYAKI } from "../config";
+import {
+  MEMOS_FOLDER,
+  NOTES_FOLDER,
+  SYSTEM_FOLDER,
+  VIEW_TYPE_TSUBUYAKI,
+} from "../config";
 import { userMessageOf } from "../domain/errors";
-import { clockOf } from "../domain/time";
+import { buildFrontmatter, yamlQuoted } from "../domain/frontmatter";
+import { withPathSuffix } from "../domain/notes";
+import { normalizeNewlines } from "../domain/text";
+import { clockOf, dateKeyOf, formatLocalIso } from "../domain/time";
 import type {
   MemoListItem,
   MemoProblem,
@@ -17,7 +25,7 @@ import type {
 import { showCardMenu } from "./cardMenu";
 import { ConfirmModal } from "./confirmModal";
 import { MemoCaptureModal } from "./memoCaptureModal";
-import { PromoteMemoModal } from "./promoteMemoModal";
+import { AppendToNoteModal, PromoteMemoModal } from "./promoteMemoModal";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
 import { CalendarPicker } from "./tsubuyaki/calendar";
 import { TsubuyakiComposer } from "./tsubuyaki/composer";
@@ -77,6 +85,7 @@ export class SeitonTsubuyakiView extends ItemView {
   private calendarPicker: CalendarPicker | null = null;
   private statusSelect: SelectControl | null = null;
   private sortSelect: SelectControl | null = null;
+  private bulkPromoteButton: HTMLButtonElement | null = null;
 
   private readonly editor: TsubuyakiEditor;
 
@@ -173,6 +182,7 @@ export class SeitonTsubuyakiView extends ItemView {
     this.calendarPicker = null;
     this.statusSelect = null;
     this.sortSelect = null;
+    this.bulkPromoteButton = null;
   }
 
   private renderCompose(parent: HTMLElement): void {
@@ -263,6 +273,45 @@ export class SeitonTsubuyakiView extends ItemView {
 
     this.countEl = tools.createSpan({ cls: "seiton-tsubuyaki-count" });
 
+    const bulkBtn = tools.createEl("button", {
+      attr: {
+        "aria-label": "表示中のつぶやきをまとめて昇格",
+        title: "表示中のつぶやきをまとめてノート化（最大20件）",
+        type: "button",
+      },
+      cls: "seiton-bulk-promote-button is-quiet",
+    });
+    setIcon(
+      bulkBtn.createSpan({ cls: "seiton-bulk-promote-icon" }),
+      "folder-plus"
+    );
+    bulkBtn.createSpan({
+      cls: "seiton-bulk-promote-label",
+      text: "まとめ昇格",
+    });
+    bulkBtn.addEventListener("click", () => {
+      this.openBulkPromote();
+    });
+    bulkBtn.style.display = "none";
+    this.bulkPromoteButton = bulkBtn;
+
+    const digestBtn = tools.createEl("button", {
+      attr: {
+        "aria-label": "直近7日間の振り返りノートを作成",
+        title: "直近7日間の振り返りノートを作成",
+        type: "button",
+      },
+      cls: "seiton-weekly-digest-button is-quiet",
+    });
+    setIcon(
+      digestBtn.createSpan({ cls: "seiton-digest-icon" }),
+      "calendar-check"
+    );
+    digestBtn.createSpan({ text: "週次まとめ" });
+    digestBtn.addEventListener("click", () => {
+      void this.generateWeeklyReview();
+    });
+
     this.tagChipsEl = parent.createDiv({ cls: "seiton-tsubuyaki-tags" });
   }
 
@@ -281,6 +330,10 @@ export class SeitonTsubuyakiView extends ItemView {
         this.activeTag = "";
       }
       this.calendarPicker?.setMemoItems(this.items);
+      const topTags = tagEntries(this.items)
+        .slice(0, 6)
+        .map((e) => e.label);
+      this.composer?.setRecentTags(topTags);
       this.renderProblems();
       this.renderMeta();
       this.renderTagChips();
@@ -419,6 +472,7 @@ export class SeitonTsubuyakiView extends ItemView {
 
     const filtered = this.filteredItems();
     this.updateCount(filtered.length);
+    this.updateBulkPromoteButton();
     if (filtered.length === 0) {
       const message =
         this.visibleItems().length === 0
@@ -728,6 +782,14 @@ export class SeitonTsubuyakiView extends ItemView {
           }).open();
         },
       });
+      actions.push({
+        label: "既存ノートへ追記",
+        run: () => {
+          new AppendToNoteModal(this.app, this.memoService, item, () => {
+            void this.refresh();
+          }).open();
+        },
+      });
     }
     actions.push({
       label: "週ファイルを開く",
@@ -845,12 +907,242 @@ export class SeitonTsubuyakiView extends ItemView {
         },
       },
       {
+        label: "表示中をまとめ昇格",
+        run: () => {
+          this.openBulkPromote();
+        },
+      },
+      {
+        label: "週次まとめを作成",
+        run: () => {
+          void this.generateWeeklyReview();
+        },
+      },
+      {
         label: "最新の状態に更新",
         run: () => {
           void this.refresh();
         },
       },
     ]);
+  }
+
+  private updateBulkPromoteButton(): void {
+    if (!this.bulkPromoteButton) {
+      return;
+    }
+    const promotable = this.filteredItems()
+      .filter((item) => item.entry.state !== "deleted")
+      .slice(0, 20);
+    if (promotable.length >= 2) {
+      this.bulkPromoteButton.style.display = "";
+      this.bulkPromoteButton.disabled = false;
+      const label = this.bulkPromoteButton.querySelector(
+        ".seiton-bulk-promote-label"
+      );
+      if (label) {
+        label.textContent = `まとめ昇格 (${promotable.length})`;
+      }
+    } else {
+      this.bulkPromoteButton.style.display = "none";
+      this.bulkPromoteButton.disabled = true;
+    }
+  }
+
+  private openBulkPromote(): void {
+    const promotable = this.filteredItems()
+      .filter((item) => item.entry.state !== "deleted")
+      .slice(0, 20);
+    if (promotable.length < 2) {
+      showToast("まとめ昇格には2件以上のつぶやきが必要です。");
+      return;
+    }
+    new PromoteMemoModal(this.app, this.memoService, promotable, (result) => {
+      showToast("まとめノートを作成しました。");
+      void this.refresh();
+      if ("path" in result && typeof result.path === "string") {
+        void this.openPath(result.path);
+      } else if ("notePath" in result && typeof result.notePath === "string") {
+        void this.openPath(result.notePath);
+      }
+    }).open();
+  }
+
+  private async generateWeeklyReview(): Promise<void> {
+    try {
+      showToast("週次振り返りノートを作成中…");
+      const now = new Date();
+      const todayKey = localDateKey(now);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 86_400_000);
+      const sevenDaysAgoTime = sevenDaysAgo.getTime();
+      const sevenDaysAgoKey = localDateKey(sevenDaysAgo);
+
+      // 1. 直近7日間のつぶやき一覧
+      const recentMemos = this.items
+        .filter((item) => {
+          if (item.entry.state === "deleted") {
+            return false;
+          }
+          const itemDateKey = dateKeyOf(item.entry.at);
+          return itemDateKey >= sevenDaysAgoKey && itemDateKey <= todayKey;
+        })
+        .sort((a, b) => a.entry.at.localeCompare(b.entry.at));
+
+      const memosByDay = new Map<string, MemoListItem[]>();
+      for (const item of recentMemos) {
+        const d = dateKeyOf(item.entry.at) || "日付不明";
+        const list = memosByDay.get(d) ?? [];
+        list.push(item);
+        memosByDay.set(d, list);
+      }
+
+      let memoSection = "### つぶやき\n\n";
+      if (memosByDay.size === 0) {
+        memoSection += "直近7日間のつぶやきはありません。\n\n";
+      } else {
+        for (const [day, dayItems] of memosByDay.entries()) {
+          memoSection += `#### ${day}\n\n`;
+          for (const item of dayItems) {
+            const time = clockOf(item.entry.at) || "--:--";
+            const body = normalizeNewlines(item.entry.body).replace(
+              /\n/gu,
+              " "
+            );
+            memoSection += `- **${time}** ${body}\n`;
+          }
+          memoSection += "\n";
+        }
+      }
+
+      // 2. 直近7日間に作成・更新されたノート＆Webクリップ一覧
+      // 3. 読書中の本・読了の本
+      const allFiles = this.app.vault
+        .getMarkdownFiles()
+        .filter((file) => !file.path.startsWith(`${SYSTEM_FOLDER}/`));
+
+      const updatedNotes: { basename: string; path: string }[] = [];
+      const webClips: { basename: string; path: string }[] = [];
+      const booksReading: string[] = [];
+      const booksFinished: string[] = [];
+
+      for (const file of allFiles) {
+        const cache = this.app.metadataCache.getFileCache(file);
+        const frontmatter = (cache?.frontmatter ?? {}) as Record<
+          string,
+          unknown
+        >;
+        const kind = String(frontmatter.kind ?? frontmatter.type ?? "note");
+        const mtime = file.stat.mtime;
+        const createdStr = String(frontmatter.created ?? "");
+        const createdTime = createdStr ? Date.parse(createdStr) : 0;
+        const isRecent =
+          mtime >= sevenDaysAgoTime ||
+          (!Number.isNaN(createdTime) && createdTime >= sevenDaysAgoTime);
+
+        const readingStatus = String(frontmatter.reading_status ?? "");
+        const bookFinished = String(frontmatter.book_finished ?? "");
+        const isBook = Boolean(frontmatter.book_isbn || readingStatus);
+
+        if (isBook) {
+          if (readingStatus === "reading") {
+            booksReading.push(file.basename);
+          } else if (
+            readingStatus === "finished" ||
+            (bookFinished && bookFinished >= sevenDaysAgoKey)
+          ) {
+            booksFinished.push(file.basename);
+          }
+        }
+
+        if (isRecent) {
+          if (kind === "webclip") {
+            webClips.push({
+              basename: file.basename,
+              path: file.path,
+            });
+          } else if (kind !== "memo-log") {
+            updatedNotes.push({ basename: file.basename, path: file.path });
+          }
+        }
+      }
+
+      let notesSection = "### ノート\n\n";
+      if (updatedNotes.length === 0) {
+        notesSection += "直近7日間に作成・更新されたノートはありません。\n\n";
+      } else {
+        for (const note of updatedNotes) {
+          notesSection += `- [[${note.basename}]]\n`;
+        }
+        notesSection += "\n";
+      }
+
+      let webClipsSection = "### Webクリップ\n\n";
+      if (webClips.length === 0) {
+        webClipsSection += "直近7日間のWebクリップはありません。\n\n";
+      } else {
+        for (const clip of webClips) {
+          webClipsSection += `- [[${clip.basename}]]\n`;
+        }
+        webClipsSection += "\n";
+      }
+
+      let booksSection = "### 読書\n\n";
+      if (booksReading.length === 0 && booksFinished.length === 0) {
+        booksSection += "読書記録はありません。\n\n";
+      } else {
+        if (booksReading.length > 0) {
+          booksSection += "#### 読書中\n";
+          for (const book of booksReading) {
+            booksSection += `- [[${book}]]\n`;
+          }
+          booksSection += "\n";
+        }
+        if (booksFinished.length > 0) {
+          booksSection += "#### 読了\n";
+          for (const book of booksFinished) {
+            booksSection += `- [[${book}]]\n`;
+          }
+          booksSection += "\n";
+        }
+      }
+
+      const title = `週次振り返り ${todayKey}`;
+      const baseNotePath = `${NOTES_FOLDER}/${title}.md`;
+      let notePath = baseNotePath;
+      let suffix = 1;
+      while (this.app.vault.getAbstractFileByPath(notePath) !== null) {
+        notePath = withPathSuffix(baseNotePath, String(suffix));
+        suffix += 1;
+      }
+
+      const nowIso = formatLocalIso(now);
+      const frontmatterText = buildFrontmatter(
+        {
+          created: yamlQuoted(nowIso),
+          kind: "note",
+          tags: "[週次レビュー]",
+        },
+        "\n"
+      );
+
+      const documentText = `${frontmatterText}\n# ${title}\n\n${memoSection}${notesSection}${webClipsSection}${booksSection}`;
+
+      const existingNotesFolder =
+        this.app.vault.getAbstractFileByPath(NOTES_FOLDER);
+      if (!existingNotesFolder) {
+        try {
+          await this.app.vault.createFolder(NOTES_FOLDER);
+        } catch {
+          // 既に存在する場合は無視
+        }
+      }
+      await this.app.vault.create(notePath, documentText);
+
+      showToast("週次振り返りノートを作成しました。");
+      await this.openPath(notePath);
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
   }
 
   private registerVaultEvents(): void {

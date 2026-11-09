@@ -4,9 +4,10 @@
  */
 
 import type { App, WorkspaceLeaf } from "obsidian";
-import { ItemView, Menu, Modal } from "obsidian";
+import { ItemView, Menu, Modal, type TFile } from "obsidian";
 import { VIEW_TYPE_PROMPT } from "../config";
 import { userMessageOf } from "../domain/errors";
+import { bodyAfterFrontmatter } from "../domain/frontmatter";
 import type {
   PromptService,
   PromptSessionSummary,
@@ -229,6 +230,83 @@ class PromptSessionPickerModal extends Modal {
   }
 }
 
+class PromptContextNotePickerModal extends Modal {
+  private readonly onSelect: (file: TFile) => void;
+
+  constructor(app: App, onSelect: (file: TFile) => void) {
+    super(app);
+    this.onSelect = onSelect;
+  }
+
+  override onOpen(): void {
+    markSeitonModal(this);
+    this.setTitle("コンテキスト引用するノートを選択");
+    const body = this.contentEl.createDiv({ cls: "seiton-context-picker" });
+
+    const searchInput = body.createEl("input", {
+      attr: {
+        placeholder: "ノート名で検索...",
+        type: "search",
+      },
+      cls: "st-input seiton-context-picker-search",
+    });
+
+    const listEl = body.createDiv({ cls: "seiton-context-picker-list" });
+
+    const allFiles = this.app.vault
+      .getMarkdownFiles()
+      .filter((file) => !file.path.startsWith("Seiton/System/"))
+      .sort((a, b) => b.stat.mtime - a.stat.mtime);
+
+    const renderList = (filterQuery: string) => {
+      listEl.empty();
+      const q = filterQuery.toLowerCase().trim();
+      const filtered =
+        q === ""
+          ? allFiles.slice(0, 30)
+          : allFiles
+              .filter(
+                (f) =>
+                  f.basename.toLowerCase().includes(q) ||
+                  f.path.toLowerCase().includes(q)
+              )
+              .slice(0, 30);
+
+      if (filtered.length === 0) {
+        listEl.createDiv({
+          cls: "seiton-empty",
+          text: "一致するノートがありません。",
+        });
+        return;
+      }
+
+      for (const file of filtered) {
+        const row = listEl.createEl("button", {
+          attr: { type: "button" },
+          cls: "seiton-session-row seiton-context-picker-row",
+        });
+        const head = row.createDiv({ cls: "seiton-session-row-head" });
+        head.createSpan({
+          cls: "seiton-session-row-title",
+          text: file.basename,
+        });
+        row.createDiv({ cls: "seiton-session-row-meta", text: file.path });
+        row.addEventListener("click", () => {
+          this.onSelect(file);
+          this.close();
+        });
+      }
+    };
+
+    searchInput.addEventListener("input", () => {
+      renderList(searchInput.value);
+    });
+
+    renderList("");
+    window.setTimeout(() => searchInput.focus(), 50);
+  }
+}
+
 export class PromptWorkbenchView extends ItemView {
   readonly promptService: PromptService;
   private session: PromptSessionSummary | null = null;
@@ -308,6 +386,7 @@ export class PromptWorkbenchView extends ItemView {
       copyToClipboard,
       getSession: () => this.session,
       isOpen: () => this.isOpenSession,
+      onAttachNote: () => this.openNotePickerForContext(),
       onCopied: (path, status) => this.openSession(path, status),
       promptService: this.promptService,
     });
@@ -514,6 +593,24 @@ export class PromptWorkbenchView extends ItemView {
         void this.openSession(session.path);
       }
     ).open();
+  }
+
+  private openNotePickerForContext(): void {
+    if (!this.isOpenSession) {
+      this.setStatus("終了したセッションには添付できません。", "error");
+      return;
+    }
+    new PromptContextNotePickerModal(this.app, async (file) => {
+      try {
+        const content = await this.app.vault.cachedRead(file);
+        const body = bodyAfterFrontmatter(content).trim();
+        const excerpt =
+          body.length > 3000 ? `${body.slice(0, 3000)}\n...` : body;
+        this.composer?.attachContext(file.basename, excerpt);
+      } catch (error) {
+        this.setStatus(userMessageOf(error), "error");
+      }
+    }).open();
   }
 
   private setStatus(message: string, kind: "idle" | "success" | "error"): void {

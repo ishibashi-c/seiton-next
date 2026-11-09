@@ -15,9 +15,33 @@ export interface PromptComposerOptions {
   copyToClipboard: (text: string) => Promise<boolean>;
   getSession: () => PromptSessionSummary | null;
   isOpen: () => boolean;
+  onAttachNote?: () => Promise<void> | void;
   onCopied: (path: string, status: PromptComposerStatus) => Promise<void>;
   promptService: PromptService;
 }
+
+export const PROMPT_TEMPLATES: Array<{ label: string; template: string }> = [
+  {
+    label: "要約・構造化",
+    template:
+      "以下の内容を要約し、要点を箇条書きで構造化して整理してください。\n\n# 前提 / 目的\n\n\n# 対象テキスト\n\n\n# 出力フォーマット\n- 要約（3行以内）\n- 主要な論点・決定事項\n- ネクストアクション",
+  },
+  {
+    label: "文章推敲",
+    template:
+      "以下の文章を推敲し、より読みやすく論理的な構成に改善してください。誤字脱字の修正、冗長な表現の簡潔化、敬体/常体の統一も行ってください。\n\n# 対象テキスト\n\n\n# 改善の方針 / トーン\n",
+  },
+  {
+    label: "アイデア壁打ち",
+    template:
+      "以下のテーマ・課題について壁打ち相手になってください。多角的な視点からアイデアを出し、懸念点や前提の問い直しも提示してください。\n\n# テーマ / 課題\n\n\n# 現在の思考\n\n\n# 欲しいフィードバック\n",
+  },
+  {
+    label: "コード・論理検証",
+    template:
+      "以下のコードまたはロジックを検証してください。エッジケース、パフォーマンス、セキュリティ、型安全性の観点から問題点があれば指摘し、改善コード例を提示してください。\n\n# コンテキスト / 目的\n\n\n# 対象コード / 仕様\n```\n\n```\n\n# 検証観点\n",
+  },
+];
 
 export class PromptComposer {
   private readonly options: PromptComposerOptions;
@@ -40,6 +64,31 @@ export class PromptComposer {
       cls: "seiton-prompt-pane-label",
       text: "次の指示",
     });
+
+    const toolbar = host.createDiv({ cls: "seiton-prompt-composer-toolbar" });
+    const pills = toolbar.createDiv({ cls: "seiton-prompt-template-pills" });
+    for (const tpl of PROMPT_TEMPLATES) {
+      const pill = pills.createEl("button", {
+        attr: { type: "button" },
+        cls: "seiton-pill seiton-prompt-template-pill",
+        text: tpl.label,
+      });
+      pill.addEventListener("click", () => {
+        this.insertText(tpl.template);
+      });
+    }
+
+    if (this.options.onAttachNote) {
+      const attachBtn = toolbar.createEl("button", {
+        attr: { type: "button" },
+        cls: "seiton-text-action seiton-prompt-attach-btn",
+        text: "ノート引用",
+      });
+      attachBtn.addEventListener("click", () => {
+        void this.options.onAttachNote?.();
+      });
+    }
+
     const input = host.createEl("textarea", {
       attr: {
         "aria-label": "次のプロンプト指示",
@@ -150,6 +199,42 @@ export class PromptComposer {
     );
     this.updateDraftButton();
     this.scheduleDraftSave();
+  }
+
+  insertText(text: string): void {
+    if (!this.options.isOpen()) {
+      this.setStatus("終了したセッションでは編集できません。", "error");
+      return;
+    }
+    if (!this.input) {
+      return;
+    }
+    const current = this.input.value;
+    const start = this.input.selectionStart ?? current.length;
+    const end = this.input.selectionEnd ?? current.length;
+
+    let newValue: string;
+    if (current.trim() === "") {
+      newValue = text;
+    } else if (start !== end || (start > 0 && start < current.length)) {
+      newValue = `${current.slice(0, start)}${text}${current.slice(end)}`;
+    } else {
+      newValue = `${current.trimEnd()}\n\n${text}`;
+    }
+
+    this.input.value = newValue;
+    this.draft = newValue;
+    this.draftDirty = true;
+    this.setStatus("未保存", "idle");
+    this.updateDraftButton();
+    this.scheduleDraftSave();
+    this.input.focus();
+  }
+
+  attachContext(title: string, body: string): void {
+    const formatted = `\n<context title="${title}">\n${body.trim()}\n</context>\n`;
+    this.insertText(formatted);
+    this.setStatus(`「${title}」をコンテキスト引用しました。`, "success");
   }
 
   /** ビューを閉じる前に、未保存の下書きを書き出す。 */

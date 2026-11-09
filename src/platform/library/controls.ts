@@ -3,6 +3,13 @@ import { createSelect, type SelectControl } from "../ui/select";
 import type { LibrarySort } from "./query";
 import type { LibrarySelection } from "./selection";
 
+export const SORT_LABELS: Array<{ key: LibrarySort; label: string }> = [
+  { key: "updated", label: "更新順" },
+  { key: "created", label: "作成順" },
+  { key: "lecture", label: "講義日順" },
+  { key: "random", label: "シャッフル" },
+];
+
 export interface LibraryControlsOptions {
   getActiveFilterCount: () => number;
   getLayout: () => "cards" | "list";
@@ -95,15 +102,14 @@ export class LibraryControls {
 
     // 並び順
     this.sortSelect = createSelect({
-      choices: [
-        { label: "更新順", value: "updated" },
-        { label: "作成順", value: "created" },
-        { label: "講義日順", value: "lecture" },
-      ],
-      onChange: (value) =>
-        this.options.onSortChange(
-          value === "created" || value === "lecture" ? value : "updated"
-        ),
+      choices: SORT_LABELS.map((item) => ({
+        label: item.label,
+        value: item.key,
+      })),
+      onChange: (value) => {
+        const match = SORT_LABELS.find((item) => item.key === value);
+        this.options.onSortChange(match ? match.key : "updated");
+      },
       title: "並び順",
       value: this.options.getSort(),
     });
@@ -150,6 +156,36 @@ export class LibraryControls {
       text: "選択",
     });
     this.options.selection.bindToggle(selectToggle);
+
+    // クイック抽出ピル群
+    const quickBar = parent.createDiv({ cls: "seiton-library-quick-pills" });
+    const unreadWebBtn = quickBar.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-text-action seiton-library-quick-pill",
+      text: "未読Web",
+    });
+    const unreadWebIcon = unreadWebBtn.createSpan({ cls: "seiton-btn-icon" });
+    setIcon(unreadWebIcon, "globe");
+    unreadWebBtn.prepend(unreadWebIcon);
+    unreadWebBtn.addEventListener("click", () => {
+      this.options.onQueryChange("kind:webclip");
+      this.setQuery("kind:webclip");
+      this.options.onRefresh();
+    });
+
+    const shuffleBtn = quickBar.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-text-action seiton-library-quick-pill",
+      text: "シャッフル",
+    });
+    const shuffleIcon = shuffleBtn.createSpan({ cls: "seiton-btn-icon" });
+    setIcon(shuffleIcon, "shuffle");
+    shuffleBtn.prepend(shuffleIcon);
+    shuffleBtn.addEventListener("click", () => {
+      this.options.onSortChange("random");
+      this.setSortState("random", false);
+      this.options.onRefresh();
+    });
 
     this.updateFilterBadge();
   }

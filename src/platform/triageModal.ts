@@ -1,6 +1,6 @@
-import type { App } from "obsidian";
-import { Modal } from "obsidian";
+import { type App, Modal, TFile } from "obsidian";
 import { userMessageOf } from "../domain/errors";
+import { bodyAfterFrontmatter } from "../domain/frontmatter";
 import type { PropertyValue } from "../services/propertyService";
 import type { TriageService } from "../services/triageService";
 import type { NoteRecord } from "../services/vaultIndex";
@@ -24,6 +24,9 @@ export class TriageModal extends Modal {
   private busy = false;
   private bodyEl: HTMLElement | null = null;
   private statusEl: HTMLElement | null = null;
+  private showFullText = false;
+  private topTags: string[] = [];
+  private projectList: Array<{ path: string; title: string }> = [];
 
   constructor(app: App, triage: TriageService, onChanged: () => void) {
     super(app);
@@ -39,7 +42,7 @@ export class TriageModal extends Modal {
     this.statusEl = this.contentEl.createDiv({ cls: "seiton-triage-status" });
     this.statusEl.setAttribute("aria-live", "polite");
     this.registerKeys();
-    void this.reload();
+    void this.loadMetadataCache().then(() => this.reload());
   }
 
   override onClose(): void {
@@ -47,6 +50,7 @@ export class TriageModal extends Modal {
     this.bodyEl = null;
     this.statusEl = null;
     this.queue = [];
+    this.showFullText = false;
   }
 
   private registerKeys(): void {
@@ -139,9 +143,88 @@ export class TriageModal extends Modal {
     progress.createSpan({ text: note.kind });
 
     host.createDiv({ cls: "seiton-triage-title", text: note.title });
-    if (note.excerpt) {
-      host.createDiv({ cls: "seiton-triage-excerpt", text: note.excerpt });
+
+    // 全文プレビュー / 抜粋トグル
+    const textContainer = host.createDiv({ cls: "seiton-triage-content-box" });
+    const toggleBtn = textContainer.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-text-action seiton-triage-toggle-body",
+      text: this.showFullText ? "抜粋表示に戻す" : "全文を表示",
+    });
+    const previewEl = textContainer.createDiv({
+      cls: this.showFullText
+        ? "seiton-triage-fulltext"
+        : "seiton-triage-excerpt",
+    });
+
+    if (this.showFullText) {
+      previewEl.setText("読み込み中…");
+      void this.loadFullText(note, previewEl);
+    } else {
+      previewEl.setText(note.excerpt || "（本文なし）");
     }
+
+    toggleBtn.addEventListener("click", () => {
+      this.showFullText = !this.showFullText;
+      this.render();
+    });
+
+    // タグ付与ピルバー（Vault頻出上位6件のトグル）
+    if (this.topTags.length > 0) {
+      const tagsSection = host.createDiv({
+        cls: "seiton-triage-tags-section",
+      });
+      tagsSection.createSpan({
+        cls: "seiton-triage-label",
+        text: "タグ付与:",
+      });
+      const tagPills = tagsSection.createDiv({ cls: "seiton-triage-tags" });
+      for (const tag of this.topTags) {
+        const isActive = note.tags.includes(tag);
+        const pill = tagPills.createEl("button", {
+          attr: { "aria-pressed": String(isActive), type: "button" },
+          cls: `seiton-triage-tag-pill${isActive ? " is-active" : ""}`,
+          text: `#${tag}`,
+        });
+        pill.addEventListener("click", () => {
+          void this.toggleTag(note, tag);
+        });
+      }
+    }
+
+    // プロジェクト割り当てセレクト
+    if (this.projectList.length > 0) {
+      const projectSection = host.createDiv({
+        cls: "seiton-triage-project-section",
+      });
+      projectSection.createSpan({
+        cls: "seiton-triage-label",
+        text: "プロジェクト:",
+      });
+      const select = projectSection.createEl("select", {
+        cls: "seiton-triage-project-select dropdown",
+      });
+      const emptyOption = select.createEl("option", {
+        text: "プロジェクト未設定",
+        value: "",
+      });
+      emptyOption.selected = note.projects.length === 0;
+
+      const currentProject = note.projects[0] ?? "";
+      for (const p of this.projectList) {
+        const opt = select.createEl("option", {
+          text: p.title,
+          value: p.title,
+        });
+        if (currentProject === p.title) {
+          opt.selected = true;
+        }
+      }
+      select.addEventListener("change", () => {
+        void this.setProject(note, select.value);
+      });
+    }
+
     const meta = [
       note.tags.length > 0 ? note.tags.map((tag) => `#${tag}`).join(" ") : "",
       note.projects.length > 0
@@ -234,6 +317,7 @@ export class TriageModal extends Modal {
       await this.triage.decide(note, patch);
       this.onChanged();
       this.position += 1;
+      this.showFullText = false;
       this.render();
     } catch (error) {
       showToast(userMessageOf(error));
@@ -248,6 +332,7 @@ export class TriageModal extends Modal {
     if (!this.current()) {
       return;
     }
+    this.showFullText = false;
     this.position += 1;
     this.render();
   }
@@ -261,6 +346,7 @@ export class TriageModal extends Modal {
       const path = await this.triage.undo();
       if (path) {
         this.onChanged();
+        this.showFullText = false;
         await this.reload(path);
       }
     } catch (error) {
@@ -268,6 +354,127 @@ export class TriageModal extends Modal {
     } finally {
       this.busy = false;
       this.render();
+    }
+  }
+
+  private async loadMetadataCache(): Promise<void> {
+    const counts = new Map<string, number>();
+    const rawTags = (
+      this.app.metadataCache as unknown as {
+        getTags?: () => Record<string, number>;
+      }
+    ).getTags?.();
+    if (rawTags && Object.keys(rawTags).length > 0) {
+      for (const [tag, count] of Object.entries(rawTags)) {
+        const clean = tag.replace(/^#/u, "").trim();
+        if (clean) {
+          counts.set(clean, (counts.get(clean) ?? 0) + count);
+        }
+      }
+    } else {
+      for (const file of this.app.vault.getMarkdownFiles()) {
+        const cache = this.app.metadataCache.getFileCache(file);
+        const tags = cache?.frontmatter?.tags;
+        if (Array.isArray(tags)) {
+          for (const t of tags) {
+            if (typeof t === "string") {
+              const clean = t.replace(/^#/u, "").trim();
+              if (clean) {
+                counts.set(clean, (counts.get(clean) ?? 0) + 1);
+              }
+            }
+          }
+        }
+      }
+    }
+    this.topTags = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map((e) => e[0]);
+
+    const projects: Array<{ path: string; title: string }> = [];
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      const cache = this.app.metadataCache.getFileCache(file);
+      const fm = cache?.frontmatter;
+      if (
+        fm &&
+        (fm.kind === "project" || fm.type === "project") &&
+        !fm.archived
+      ) {
+        const title =
+          typeof fm.title === "string" && fm.title.trim()
+            ? fm.title.trim()
+            : file.basename;
+        projects.push({ path: file.path, title });
+      }
+    }
+    this.projectList = projects.sort((a, b) =>
+      a.title.localeCompare(b.title, "ja")
+    );
+  }
+
+  private async loadFullText(note: NoteRecord, el: HTMLElement): Promise<void> {
+    try {
+      const file = this.app.vault.getAbstractFileByPath(note.path);
+      if (file instanceof TFile) {
+        const content = await this.app.vault.cachedRead(file);
+        const body = bodyAfterFrontmatter(content).trim();
+        el.setText(body || "（本文なし）");
+      }
+    } catch {
+      el.setText(note.excerpt || "（読み込み失敗）");
+    }
+  }
+
+  private async toggleTag(note: NoteRecord, tag: string): Promise<void> {
+    const exists = note.tags.includes(tag);
+    const nextTags = exists
+      ? note.tags.filter((t) => t !== tag)
+      : [...note.tags, tag];
+    note.tags = nextTags;
+    try {
+      const file = this.app.vault.getAbstractFileByPath(note.path);
+      if (file instanceof TFile) {
+        await this.app.fileManager.processFrontMatter(file, (fm) => {
+          if (nextTags.length > 0) {
+            fm.tags = nextTags;
+          } else {
+            delete fm.tags;
+          }
+        });
+        showToast(`タグ「#${tag}」を${exists ? "解除" : "追加"}しました`);
+        this.render();
+      }
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  private async setProject(
+    note: NoteRecord,
+    projectName: string
+  ): Promise<void> {
+    const val = projectName.trim();
+    note.projects = val ? [val] : [];
+    try {
+      const file = this.app.vault.getAbstractFileByPath(note.path);
+      if (file instanceof TFile) {
+        await this.app.fileManager.processFrontMatter(file, (fm) => {
+          if (val) {
+            fm.project = val;
+          } else {
+            delete fm.project;
+          }
+        });
+        showToast(
+          val
+            ? `プロジェクト「${val}」に割り当てました`
+            : "プロジェクト設定を解除しました"
+        );
+        this.render();
+      }
+    } catch (error) {
+      showToast(userMessageOf(error));
     }
   }
 

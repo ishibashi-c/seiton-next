@@ -105,4 +105,13 @@ describe("library query", () => {
     expect(hits[0]).toBe(newNote);
     expect(hits[1]).toBe(oldNote);
   });
+
+  it("シャッフル（random）ソートで全件を欠落なく返す", () => {
+    const hits = queryHits(
+      index,
+      { ...state, filter: "all", sort: "random" },
+      200
+    );
+    expect(hits).toHaveLength(3);
+  });
 });

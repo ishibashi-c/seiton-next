@@ -29,6 +29,9 @@ export class SnapshotModal extends Modal {
   private balanceInputs = new Map<string, HTMLInputElement>();
   private dateInput: HTMLInputElement | null = null;
   private noteInput: HTMLInputElement | null = null;
+  private prevBalances = new Map<string, number>();
+  private diffBadges = new Map<string, HTMLElement>();
+  private totalDiffEl: HTMLElement | null = null;
 
   // 同時入力する収入リスト
   private pendingIncomes: Omit<AssetIncome, "createdAt" | "id">[] = [];
@@ -79,6 +82,14 @@ export class SnapshotModal extends Modal {
       placeholder: "例: 給料日、月末締めなど",
     });
 
+    // 前回比トータル差分プレビュー
+    const totalDiffWrap = container.createDiv({
+      cls: "seiton-snapshot-total-wrap",
+    });
+    this.totalDiffEl = totalDiffWrap.createDiv({
+      cls: "seiton-snapshot-total-diff",
+    });
+
     // 2. 口座一覧（生活資金 vs 特別資金）
     const accounts = [...this.dataset.accounts].sort(
       (a, b) => a.order - b.order
@@ -96,6 +107,8 @@ export class SnapshotModal extends Modal {
       for (const acc of groupAccounts) {
         const prevBalance =
           latestSnapshot?.balances[acc.id] ?? acc.initialBalance ?? 0;
+        this.prevBalances.set(acc.id, prevBalance);
+
         const row = grid.createDiv({ cls: "seiton-asset-input-row" });
 
         const labelWrap = row.createDiv({
@@ -105,10 +118,18 @@ export class SnapshotModal extends Modal {
           cls: "seiton-asset-input-name",
           text: acc.name,
         });
-        labelWrap.createSpan({
+
+        const prevWrap = labelWrap.createSpan({
+          cls: "seiton-asset-input-prev-wrap",
+        });
+        prevWrap.createSpan({
           cls: "seiton-asset-input-prev",
           text: `前回: ¥${prevBalance.toLocaleString()}`,
         });
+        const diffBadge = prevWrap.createSpan({
+          cls: "seiton-snapshot-diff",
+        });
+        this.diffBadges.set(acc.id, diffBadge);
 
         const input = row.createEl("input", {
           attr: {
@@ -119,11 +140,17 @@ export class SnapshotModal extends Modal {
           cls: "st-input seiton-asset-number-input",
         });
         this.balanceInputs.set(acc.id, input);
+
+        input.addEventListener("input", () => {
+          this.updateDiffs();
+        });
       }
     };
 
     renderGroup("生活資金（日常口座・電子マネー・クレカ）", livingAccounts);
     renderGroup("特別資金（奨学金口座など）", specialAccounts);
+
+    this.updateDiffs();
 
     // 3. この期間の収入（任意）
     const incomeSection = container.createDiv({
@@ -256,4 +283,43 @@ export class SnapshotModal extends Modal {
       );
     }
   }
+
+  private updateDiffs(): void {
+    let totalPrev = 0;
+    let totalCurrent = 0;
+
+    for (const [accId, input] of this.balanceInputs.entries()) {
+      const prev = this.prevBalances.get(accId) ?? 0;
+      const current = Number(input.value) || 0;
+      totalPrev += prev;
+      totalCurrent += current;
+
+      const diff = current - prev;
+      const badge = this.diffBadges.get(accId);
+      if (badge) {
+        badge.setText(formatDiff(diff));
+        badge.toggleClass("is-positive", diff > 0);
+        badge.toggleClass("is-negative", diff < 0);
+        badge.toggleClass("is-zero", diff === 0);
+      }
+    }
+
+    if (this.totalDiffEl) {
+      const totalDiff = totalCurrent - totalPrev;
+      this.totalDiffEl.setText(`前回純資産比: ${formatDiff(totalDiff)}`);
+      this.totalDiffEl.toggleClass("is-positive", totalDiff > 0);
+      this.totalDiffEl.toggleClass("is-negative", totalDiff < 0);
+      this.totalDiffEl.toggleClass("is-zero", totalDiff === 0);
+    }
+  }
+}
+
+function formatDiff(diff: number): string {
+  if (diff > 0) {
+    return `+¥${diff.toLocaleString()}`;
+  }
+  if (diff < 0) {
+    return `-¥${Math.abs(diff).toLocaleString()}`;
+  }
+  return "±¥0";
 }

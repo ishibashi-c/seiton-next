@@ -11,6 +11,7 @@ export interface TsubuyakiComposerOptions {
   app: App;
   memoService: MemoService;
   onSaved: () => Promise<void>;
+  recentTags?: string[];
 }
 
 function readDraft(): string {
@@ -42,12 +43,15 @@ export class TsubuyakiComposer {
   private inputEl: HTMLTextAreaElement | null = null;
   private saveButtonEl: HTMLButtonElement | null = null;
   private statusEl: HTMLElement | null = null;
+  private pillsContainerEl: HTMLElement | null = null;
+  private recentTags: string[] = [];
 
   constructor(options: TsubuyakiComposerOptions) {
     // app は呼び出し側の画面コンテキストを表す。入力欄自身は使わない。
     void options.app;
     this.memoService = options.memoService;
     this.onSaved = options.onSaved;
+    this.recentTags = options.recentTags ?? [];
     this.value = readDraft();
   }
 
@@ -65,6 +69,11 @@ export class TsubuyakiComposer {
     textarea.value = this.value;
     this.inputEl = textarea;
 
+    this.pillsContainerEl = card.createDiv({
+      cls: "seiton-composer-tag-pills",
+    });
+    this.renderTagPills();
+
     const footer = card.createDiv({ cls: "seiton-tsubuyaki-compose-foot" });
     footer.createSpan({ cls: "seiton-keyhint", text: "⌘/Ctrl + Enter" });
     const save = footer.createEl("button", {
@@ -81,16 +90,12 @@ export class TsubuyakiComposer {
     this.statusEl = card.createDiv({ cls: "seiton-tsubuyaki-status" });
     this.statusEl.setAttribute("aria-live", "polite");
 
-    const resize = (): void => {
-      textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-    };
     textarea.addEventListener("input", () => {
       this.value = textarea.value;
       writeDraft(this.value);
       save.disabled = this.value.trim() === "";
       this.setStatus("", "idle");
-      resize();
+      this.resize();
     });
     textarea.addEventListener("keydown", (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
@@ -98,7 +103,67 @@ export class TsubuyakiComposer {
         void this.submit();
       }
     });
-    window.setTimeout(resize, 0);
+    window.setTimeout(() => this.resize(), 0);
+  }
+
+  setRecentTags(tags: string[]): void {
+    this.recentTags = tags;
+    this.renderTagPills();
+  }
+
+  private renderTagPills(): void {
+    if (!this.pillsContainerEl) {
+      return;
+    }
+    this.pillsContainerEl.empty();
+    if (this.recentTags.length === 0) {
+      this.pillsContainerEl.style.display = "none";
+      return;
+    }
+    this.pillsContainerEl.style.display = "";
+    for (const tag of this.recentTags) {
+      const pill = this.pillsContainerEl.createEl("button", {
+        attr: { type: "button" },
+        cls: "seiton-composer-tag-pill",
+        text: `#${tag}`,
+      });
+      pill.addEventListener("click", () => {
+        this.insertTag(tag);
+      });
+    }
+  }
+
+  private insertTag(tag: string): void {
+    const tagText = `#${tag}`;
+    if (!this.value.includes(tagText)) {
+      const textarea = this.inputEl;
+      if (textarea) {
+        const start = textarea.selectionStart ?? this.value.length;
+        const end = textarea.selectionEnd ?? this.value.length;
+        const insert = `${tagText} `;
+        this.value =
+          this.value.slice(0, start) + insert + this.value.slice(end);
+        textarea.value = this.value;
+        const newPos = start + insert.length;
+        textarea.setSelectionRange(newPos, newPos);
+      } else {
+        this.value = `${this.value} ${tagText} `.trim();
+      }
+      writeDraft(this.value);
+      if (this.saveButtonEl) {
+        this.saveButtonEl.disabled = this.value.trim() === "";
+      }
+      this.resize();
+    }
+    this.inputEl?.focus();
+  }
+
+  private resize(): void {
+    if (!this.inputEl) {
+      return;
+    }
+    this.inputEl.style.height = "auto";
+    this.inputEl.style.height = `${Math.min(this.inputEl.scrollHeight, 200)}px`;
   }
 
   setStatus(message: string, kind: ComposerStatusKind): void {
