@@ -521,35 +521,60 @@ and the two-choice list. */
   padding: 10px 0 0;
 }.st-status.is-error{
   color: var(--text-error);
-}.st-choice.st-choice{
-  align-items: flex-start;
-  background: var(--background-secondary);
-  border: 1px solid transparent;
-  border-radius: var(--st-radius-md);
+}.st-modal button.st-choice,
+button.st-choice.st-choice{
+  align-items: flex-start !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: var(--background-secondary) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--st-radius-md) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-interface);
-  gap: 2px;
-  margin-bottom: 8px;
-  padding: 13px 14px;
-  text-align: left;
+  display: flex !important;
+  flex-direction: column !important;
+  font-family: var(--font-interface) !important;
+  gap: 3px !important;
+  height: auto !important;
+  justify-content: flex-start !important;
+  line-height: normal !important;
+  margin-bottom: 8px !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  padding: 12px 14px !important;
+  text-align: left !important;
   transition: background var(--st-transition), border-color var(--st-transition);
-  width: 100%;
-}.st-choice:hover{
-  background: var(--st-hover);
-  border-color: var(--background-modifier-border-hover);
-}.st-choice:focus-visible{
-  outline: 2px solid var(--st-ink);
-  outline-offset: 2px;
-}.st-choice-title.st-choice-title{
-  color: var(--st-ink);
-  font-size: var(--st-text-sm);
-  font-weight: 560;
-}.st-choice-desc.st-choice-desc{
-  color: var(--st-muted);
-  font-size: var(--st-text-xs);
-  line-height: 1.5;
+  white-space: normal !important;
+  width: 100% !important;
+}
+.st-modal button.st-choice:hover,
+button.st-choice:hover{
+  background: var(--st-hover) !important;
+  border-color: var(--background-modifier-border-hover) !important;
+}
+.st-modal button.st-choice:focus-visible,
+button.st-choice:focus-visible{
+  outline: 2px solid var(--st-ink) !important;
+  outline-offset: 2px !important;
+}
+.st-choice-title.st-choice-title{
+  color: var(--st-ink) !important;
+  display: block !important;
+  font-size: var(--st-text-sm) !important;
+  font-weight: 560 !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.st-choice-desc.st-choice-desc{
+  color: var(--st-muted) !important;
+  display: block !important;
+  font-size: var(--st-text-xs) !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }/* Toast ------------------------------------------------------------------ */
 
 .st-toasts.st-toasts{

@@ -153,9 +153,9 @@ describe("normalizeSettings calilLastResults", () => {
 });
 
 describe("normalizeSettings academic / courses", () => {
-  it("defaults grade to 3年 and term to 後期", () => {
+  it("defaults grade to 1年 and term to 後期", () => {
     const settings = normalizeSettings({});
-    expect(settings.currentGrade).toBe("3年");
+    expect(settings.currentGrade).toBe("1年");
     expect(settings.currentTerm).toBe("後期");
     expect(settings.courses).toEqual([]);
   });
@@ -172,7 +172,7 @@ describe("normalizeSettings academic / courses", () => {
       currentGrade: "5年" as never,
       currentTerm: "春学期" as never,
     });
-    expect(invalid.currentGrade).toBe("3年");
+    expect(invalid.currentGrade).toBe("1年");
     expect(invalid.currentTerm).toBe("後期");
   });
 

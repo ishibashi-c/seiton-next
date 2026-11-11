@@ -924,4 +924,83 @@ button.seiton-context-picker-row:hover {
   gap: 6px;
 }
 
+/* 講義ノート台帳リスト行（幅圧縮解消・クリーンな台帳表示） */
+.seiton-class-note-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.seiton-class-empty-row {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  padding: 10px 0;
+}
+
+.seiton-class-note-row {
+  align-items: baseline;
+  border-top: 1px solid var(--st-hairline);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 9px 0;
+}
+
+.seiton-class-note-row:first-child {
+  border-top: 0;
+}
+
+.seiton-class-note-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.seiton-class-note-title {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--st-text-sm);
+  font-weight: 560;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  transition: color var(--st-transition);
+  word-break: auto-phrase;
+}
+
+.seiton-class-note-title:hover {
+  color: var(--st-accent);
+  text-decoration: underline;
+}
+
+.seiton-class-note-excerpt {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-class-note-side {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-left: 12px;
+}
+
+.seiton-class-note-date {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 

@@ -1251,25 +1251,24 @@ export class SeitonClassesView extends ItemView {
       // 講義ノート一覧台帳行
       if (group.notes.length === 0) {
         const emptyRow = courseBox.createDiv({
-          cls: "seiton-item seiton-class-empty-row",
+          cls: "seiton-class-empty-row",
         });
-        const content = emptyRow.createDiv({ cls: "seiton-item-content" });
-        content.createSpan({
+        emptyRow.createSpan({
           cls: "st-muted",
           text: "講義ノートはまだありません。",
         });
       } else {
         const listGrid = courseBox.createDiv({
-          cls: "seiton-card-grid is-list",
+          cls: "seiton-class-note-list",
         });
         for (const note of group.notes) {
           const row = listGrid.createEl("article", {
-            cls: "seiton-item",
+            cls: "seiton-class-note-row",
           });
 
-          const content = row.createDiv({ cls: "seiton-item-content" });
+          const content = row.createDiv({ cls: "seiton-class-note-content" });
           const titleBtn = content.createEl("button", {
-            cls: "seiton-item-title",
+            cls: "seiton-class-note-title",
             text: note.title,
             type: "button",
           });
@@ -1279,14 +1278,14 @@ export class SeitonClassesView extends ItemView {
 
           if (note.excerpt) {
             content.createDiv({
-              cls: "seiton-item-excerpt",
+              cls: "seiton-class-note-excerpt",
               text: note.excerpt,
             });
           }
 
-          const side = row.createDiv({ cls: "seiton-item-side" });
+          const side = row.createDiv({ cls: "seiton-class-note-side" });
           side.createSpan({
-            cls: "seiton-item-updated",
+            cls: "seiton-class-note-date",
             text: note.lectureDate,
           });
         }

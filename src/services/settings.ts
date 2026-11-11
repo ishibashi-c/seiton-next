@@ -56,7 +56,7 @@ export const DEFAULT_SETTINGS: SeitonSettings = {
   calilLastResults: {},
   calilLibrary: "",
   courses: [],
-  currentGrade: "3年",
+  currentGrade: "1年",
   currentTerm: "後期",
   enableUrlPreview: true,
   googleBooksApiKey: "",
@@ -178,7 +178,7 @@ const VALID_TERMS: AcademicTerm[] = ["前期", "後期", "通年", "集中"];
 export function normalizeGrade(value: unknown): AcademicGrade {
   return typeof value === "string" && (VALID_GRADES as string[]).includes(value)
     ? (value as AcademicGrade)
-    : "3年";
+    : "1年";
 }
 
 export function normalizeTerm(value: unknown): AcademicTerm {
