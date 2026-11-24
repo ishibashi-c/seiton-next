@@ -1,6 +1,7 @@
 import { type App, Modal, setIcon } from "obsidian";
 import type { VaultIndex } from "../../services/vaultIndex";
 import { allCourses, allLists, allTags } from "../../services/vaultIndex";
+import { createSelect } from "../ui/select";
 import { computeLibraryCounts } from "./indexView";
 import { type LibraryFilter, type LibraryQueryState, queryHits } from "./query";
 
@@ -290,11 +291,6 @@ export class LibraryFilterModal extends Modal {
     // プロジェクト
     const projectCol = row.createDiv({ cls: "seiton-filter-col" });
     projectCol.createEl("h3", { text: "プロジェクト" });
-    const projectSelect = projectCol.createEl("select", {
-      cls: "seiton-filter-select",
-    });
-    projectSelect.createEl("option", { text: "指定なし", value: "" });
-
     const projects = [
       ...new Set(
         this.index.notes
@@ -302,55 +298,55 @@ export class LibraryFilterModal extends Modal {
           .map((note) => note.title)
       ),
     ].sort((a, b) => a.localeCompare(b, "ja"));
-
-    for (const p of projects) {
-      const opt = projectSelect.createEl("option", { text: p, value: p });
-      if (this.state.project === p) {
-        opt.selected = true;
-      }
-    }
-    projectSelect.addEventListener("change", () => {
-      this.state.project = projectSelect.value;
-      this.renderAll();
+    const projectSelect = createSelect({
+      choices: [
+        { label: "指定なし", value: "" },
+        ...projects.map((p) => ({ label: p, value: p })),
+      ],
+      onChange: (value) => {
+        this.state.project = value;
+        this.renderAll();
+      },
+      title: "プロジェクトを選択",
+      value: this.state.project,
     });
+    projectCol.append(projectSelect.element);
 
     // 科目
     const courseCol = row.createDiv({ cls: "seiton-filter-col" });
     courseCol.createEl("h3", { text: "科目" });
-    const courseSelect = courseCol.createEl("select", {
-      cls: "seiton-filter-select",
+    const courseSelect = createSelect({
+      choices: [
+        { label: "指定なし", value: "" },
+        ...allCourses(this.index).map((c) => ({ label: c, value: c })),
+      ],
+      onChange: (value) => {
+        this.state.course = value;
+        this.renderAll();
+      },
+      title: "科目を選択",
+      value: this.state.course,
     });
-    courseSelect.createEl("option", { text: "指定なし", value: "" });
-    for (const c of allCourses(this.index)) {
-      const opt = courseSelect.createEl("option", { text: c, value: c });
-      if (this.state.course === c) {
-        opt.selected = true;
-      }
-    }
-    courseSelect.addEventListener("change", () => {
-      this.state.course = courseSelect.value;
-      this.renderAll();
-    });
+    courseCol.append(courseSelect.element);
 
     // リスト
     const lists = allLists(this.index);
     if (lists.length > 0) {
       const listCol = row.createDiv({ cls: "seiton-filter-col" });
       listCol.createEl("h3", { text: "リスト" });
-      const listSelect = listCol.createEl("select", {
-        cls: "seiton-filter-select",
+      const listSelect = createSelect({
+        choices: [
+          { label: "指定なし", value: "" },
+          ...lists.map((l) => ({ label: l, value: l })),
+        ],
+        onChange: (value) => {
+          this.state.list = value;
+          this.renderAll();
+        },
+        title: "リストを選択",
+        value: this.state.list,
       });
-      listSelect.createEl("option", { text: "指定なし", value: "" });
-      for (const l of lists) {
-        const opt = listSelect.createEl("option", { text: l, value: l });
-        if (this.state.list === l) {
-          opt.selected = true;
-        }
-      }
-      listSelect.addEventListener("change", () => {
-        this.state.list = listSelect.value;
-        this.renderAll();
-      });
+      listCol.append(listSelect.element);
     }
   }
 

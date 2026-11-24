@@ -160,6 +160,7 @@
 
 .modal.seiton-filter-modal .seiton-filter-search-input,
 .modal.seiton-filter-modal select.seiton-filter-select,
+.modal.seiton-filter-modal .st-select-trigger.st-select-trigger,
 .modal.st-modal .st-input,
 .modal.st-modal .st-textarea,
 .seiton-capture-modal .seiton-capture-textarea,
@@ -170,8 +171,21 @@
   color: var(--st-ink-strong);
 }
 
+.modal.seiton-filter-modal .st-select-trigger.st-select-trigger {
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  height: 34px;
+  padding: 0 12px;
+}
+
+.modal.seiton-filter-modal .st-select-trigger.st-select-trigger:hover {
+  border-color: var(--st-ink-strong);
+}
+
 .modal.seiton-filter-modal .seiton-filter-search-input:focus,
 .modal.seiton-filter-modal select.seiton-filter-select:focus,
+.modal.seiton-filter-modal .st-select-trigger.st-select-trigger:focus-visible,
+.modal.seiton-filter-modal .st-select-trigger.st-select-trigger[aria-expanded="true"],
 .modal.st-modal .st-input:focus,
 .modal.st-modal .st-textarea:focus,
 .seiton-capture-modal .seiton-capture-textarea:focus,
