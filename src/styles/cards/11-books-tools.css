@@ -26,7 +26,7 @@
 .seiton-bookshelf input.seiton-library-search {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 999px;
+  border-radius: var(--st-radius-md);
   box-shadow: none;
   font-family: var(--font-interface);
   font-size: var(--st-text-sm);
@@ -51,7 +51,7 @@
 .seiton-bookshelf .seiton-bookshelf-pill-select .st-select-trigger {
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
-  border-radius: 999px;
+  border-radius: var(--st-radius-md);
   color: var(--st-ink);
   font-size: var(--st-text-xs);
   font-weight: 500;
@@ -84,7 +84,105 @@
 }
 
 .seiton-bookshelf-body {
-  margin-top: 14px;
+  margin-top: 20px;
+}
+
+.seiton-book-spotlight-section {
+  border-bottom: 1px solid var(--st-hairline);
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+}
+
+.seiton-book-spotlight-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-top: 10px;
+}
+
+.seiton-book-spotlight-card {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-left: 3px solid var(--st-data);
+  border-radius: var(--st-radius-md);
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.seiton-book-spotlight-card:hover {
+  background: var(--st-hover);
+  border-color: var(--st-ink);
+  border-left-color: var(--st-data);
+}
+
+.seiton-book-spotlight-cover {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  flex: 0 0 auto;
+  height: 56px;
+  overflow: hidden;
+  width: 40px;
+}
+
+.seiton-book-spotlight-cover .seiton-book-cover-image {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.seiton-book-spotlight-cover .seiton-book-cover-fallback {
+  font-size: 9px;
+  height: 100%;
+  padding: 4px;
+  width: 100%;
+}
+
+.seiton-book-spotlight-info {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.seiton-home button.seiton-book-spotlight-title {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink);
+  display: -webkit-box;
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  height: auto;
+  justify-content: flex-start;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.seiton-book-spotlight-meta {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-bookshelf-body .seiton-zone-head {
+  margin-bottom: 10px;
 }
 
 .seiton-bookshelf .seiton-card-grid.is-shelf {
@@ -518,7 +616,7 @@
 .seiton-calil-chip {
   background: transparent;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 999px;
+  border-radius: var(--st-radius-md);
   color: var(--seiton-meta);
   cursor: pointer;
   font-size: var(--st-text-xs);
@@ -586,7 +684,7 @@
 
 .seiton-calil-badge {
   border: 1px solid var(--background-modifier-border);
-  border-radius: 999px;
+  border-radius: var(--st-radius-sm);
   font-size: var(--st-text-2xs);
   line-height: 1.8;
   padding: 0 7px;
@@ -600,7 +698,7 @@
 
 .seiton-calil-badge.is-held,
 .seiton-calil-state.is-held {
-  color: var(--text-accent);
+  color: var(--st-data);
 }
 
 .seiton-calil-badge.is-lent,

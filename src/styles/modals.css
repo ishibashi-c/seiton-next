@@ -37,7 +37,7 @@
 
 .seiton-capture-modal .seiton-capture-textarea:focus,
 .seiton-edit-textarea:focus {
-  border-color: var(--st-accent);
+  border-color: var(--st-data);
   box-shadow: none;
   outline: none;
 }
@@ -46,13 +46,19 @@
   min-height: 250px;
 }
 
+.modal.seiton-modal .mod-cta,
+.modal.st-modal .mod-cta,
 .modal.seiton-capture-modal .mod-cta,
 .modal.seiton-edit-modal .mod-cta,
 .modal.seiton-promote-modal .mod-cta,
+.modal.seiton-append-modal .mod-cta,
 .modal.seiton-book-modal .mod-cta,
+.modal.seiton-scanner-modal .mod-cta,
+.modal.seiton-triage-modal .mod-cta,
 .modal.seiton-migration-modal .mod-cta,
 .modal.seiton-webclip-modal .mod-cta {
   background: var(--st-primary);
+  border-radius: var(--st-radius-md);
   color: var(--st-on-primary);
 }
 

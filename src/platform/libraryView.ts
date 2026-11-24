@@ -114,9 +114,14 @@ export class SeitonLibraryView extends ItemView {
     });
     this.controls = new LibraryControls({
       getActiveFilterCount: () => this.getActiveFilterCount(),
+      getFilter: () => this.filter,
       getLayout: () => this.layout,
       getQuery: () => this.query,
       getSort: () => this.sort,
+      onFilterChange: (filter) => {
+        this.filter = filter;
+        void this.refresh();
+      },
       onLayoutChange: (layout) => {
         this.layout = layout;
         void this.refresh();
@@ -269,18 +274,35 @@ export class SeitonLibraryView extends ItemView {
       this.webClipByPath = this.webClips
         ? buildWebClipMap(index.notes)
         : new Map();
+      const allLists: string[][] = [];
+      const allProjects: string[][] = [];
+      const allTags: string[][] = [];
+      let activeNoteCount = 0;
+      for (const note of index.notes) {
+        if (!note.archived) {
+          activeNoteCount += 1;
+        }
+        allLists.push(note.lists);
+        allProjects.push(note.projects);
+        allTags.push(note.tags);
+      }
+      let activeMemoCount = 0;
+      for (const memo of index.memos) {
+        if (memo.state !== "deleted") {
+          activeMemoCount += 1;
+        }
+      }
       this.totalDataCount =
-        index.notes.filter((note) => !note.archived).length +
-        index.memos.filter((memo) => memo.state !== "deleted").length +
-        index.prompts.length;
+        activeNoteCount + activeMemoCount + index.prompts.length;
       this.controls.setSortState(this.sort, this.query.trim() !== "");
+      this.controls.setActiveFilter(this.filter, this.query);
       this.controls.updateFilterBadge();
       this.renderActiveFilters();
       this.currentIndex = index;
       this.vocabulary = {
-        lists: buildVocabulary(index.notes.map((note) => note.lists)),
-        projects: buildVocabulary(index.notes.map((note) => note.projects)),
-        tags: buildVocabulary(index.notes.map((note) => note.tags)),
+        lists: buildVocabulary(allLists),
+        projects: buildVocabulary(allProjects),
+        tags: buildVocabulary(allTags),
       };
       const hits = this.queryHits(index);
       this.renderProblems(index.problems);

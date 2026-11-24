@@ -3,6 +3,16 @@ import { ItemView, Modal, TFile } from "obsidian";
 import { VIEW_TYPE_PROJECTS } from "../config";
 import { userMessageOf } from "../domain/errors";
 import { normalizeLink, wikiLink } from "../domain/links";
+import {
+  appendProjectLinkToMarkdown,
+  appendTaskToMarkdown,
+  type ProjectStatus,
+  type ProjectTask,
+  projectTagName,
+  removeProjectLinkFromMarkdown,
+  toggleTaskLineInMarkdown,
+} from "../domain/projects";
+import type { MemoService } from "../services/memoService";
 import type { NoteService } from "../services/noteService";
 import type { PromptService } from "../services/promptService";
 import type { PropertyService } from "../services/propertyService";
@@ -12,10 +22,33 @@ import { ProjectsRenderer } from "./projects/view";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
 import { markSeitonModal } from "./ui/modal";
 import { Setting, type TextComponent } from "./ui/setting";
-
 import { showToast } from "./ui/toast";
+
 export interface ProjectsHost {
   openPrompt(path: string): void;
+}
+
+function normalizeUrlInput(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed || /\s/u.test(trimmed)) {
+    return null;
+  }
+  const candidate = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//u.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  try {
+    const parsed = new URL(candidate);
+    if (
+      parsed.protocol !== "http:" &&
+      parsed.protocol !== "https:" &&
+      parsed.protocol !== "obsidian:"
+    ) {
+      return null;
+    }
+    return candidate;
+  } catch {
+    return null;
+  }
 }
 
 export class SeitonProjectsView extends ItemView {
@@ -23,6 +56,7 @@ export class SeitonProjectsView extends ItemView {
   private readonly properties: PropertyService;
   private readonly notes: NoteService;
   private readonly prompts: PromptService;
+  private readonly memoService: MemoService;
   private readonly host: ProjectsHost;
   private readonly renderer: ProjectsRenderer;
   private selectedPath: string | null = null;
@@ -38,6 +72,7 @@ export class SeitonProjectsView extends ItemView {
     properties: PropertyService,
     notes: NoteService,
     prompts: PromptService,
+    memoService: MemoService,
     host: ProjectsHost
   ) {
     super(leaf);
@@ -45,21 +80,29 @@ export class SeitonProjectsView extends ItemView {
     this.properties = properties;
     this.notes = notes;
     this.prompts = prompts;
+    this.memoService = memoService;
     this.host = host;
     this.renderer = new ProjectsRenderer({
       app: this.app,
       host,
       indexService,
       notes,
+      onAddLink: (project, label, url) => this.addLink(project, label, url),
+      onAddProjectMemo: (project, text) => this.addProjectMemo(project, text),
+      onAddTask: (project, text) => this.addTask(project, text),
+      onChangeStatus: (project, status) => this.changeStatus(project, status),
       onCreateSession: (project) => this.createSession(project),
       onInvalidate: () => this.invalidateAndRefresh(),
       onLinkNotes: (index, project) => this.openLinkNotes(index, project),
       onOpenPath: (path) => this.openPath(path),
+      onRemoveLink: (project, url) => this.removeLink(project, url),
       onSelect: (path) => {
         this.selectedPath = path;
         void this.refresh();
       },
-      onToggleArchived: (project) => this.toggleArchived(project),
+      onSetNextAction: (project, nextAction) =>
+        this.setNextAction(project, nextAction),
+      onToggleTask: (task) => this.toggleTask(task),
       onUnlink: (notePath, project) => this.unlink(notePath, project),
       prompts,
     });
@@ -181,11 +224,132 @@ export class SeitonProjectsView extends ItemView {
     }
   }
 
-  private async toggleArchived(project: NoteRecord): Promise<void> {
+  private async changeStatus(
+    project: NoteRecord,
+    status: ProjectStatus
+  ): Promise<void> {
     try {
       await this.properties.update(project.path, {
-        archived: !project.archived,
+        archived: status === "done",
+        project_status: status,
       });
+      project.archived = status === "done";
+      project.frontmatter.project_status = status;
+      this.invalidateAndRefresh(project.path);
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  private async setNextAction(
+    project: NoteRecord,
+    nextAction: string
+  ): Promise<void> {
+    const trimmed = nextAction.trim();
+    try {
+      await this.properties.update(project.path, {
+        next_action: trimmed || null,
+      });
+      if (trimmed) {
+        project.frontmatter.next_action = trimmed;
+      } else {
+        delete project.frontmatter.next_action;
+      }
+      this.invalidateAndRefresh(project.path);
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  private async addTask(project: NoteRecord, text: string): Promise<void> {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+    const file = this.app.vault.getAbstractFileByPath(project.path);
+    if (!(file instanceof TFile)) {
+      showToast("プロジェクトノートが見つかりません。");
+      return;
+    }
+    try {
+      await this.app.vault.process(file, (data) =>
+        appendTaskToMarkdown(data, trimmed)
+      );
+      this.invalidateAndRefresh(project.path);
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  private async toggleTask(task: ProjectTask): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(task.sourcePath);
+    if (!(file instanceof TFile)) {
+      showToast("対象ノートが見つかりません。");
+      return;
+    }
+    try {
+      await this.app.vault.process(file, (data) =>
+        toggleTaskLineInMarkdown(data, task.lineIndex, task.line)
+      );
+      this.invalidateAndRefresh(task.sourcePath);
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  private async addLink(
+    project: NoteRecord,
+    label: string,
+    rawUrl: string
+  ): Promise<void> {
+    const normalized = normalizeUrlInput(rawUrl);
+    if (!normalized) {
+      showToast("有効なURLを入力してください。");
+      return;
+    }
+    const file = this.app.vault.getAbstractFileByPath(project.path);
+    if (!(file instanceof TFile)) {
+      showToast("プロジェクトノートが見つかりません。");
+      return;
+    }
+    try {
+      await this.app.vault.process(file, (data) =>
+        appendProjectLinkToMarkdown(data, label, normalized)
+      );
+      this.invalidateAndRefresh(project.path);
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  private async removeLink(project: NoteRecord, url: string): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(project.path);
+    if (!(file instanceof TFile)) {
+      return;
+    }
+    try {
+      await this.app.vault.process(file, (data) =>
+        removeProjectLinkFromMarkdown(data, url)
+      );
+      this.invalidateAndRefresh(project.path);
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  private async addProjectMemo(
+    project: NoteRecord,
+    text: string
+  ): Promise<void> {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+    const tag = `#${projectTagName(project.title)}`;
+    const body = trimmed.includes(tag) ? trimmed : `${tag} ${trimmed}`;
+    try {
+      await this.memoService.addMemo(body);
+      showToast("プロジェクトメモを保存しました。");
       this.invalidateAndRefresh();
     } catch (error) {
       showToast(userMessageOf(error));
@@ -199,7 +363,7 @@ export class SeitonProjectsView extends ItemView {
         "projects",
         wikiLink(project.title)
       );
-      this.invalidateAndRefresh();
+      this.invalidateAndRefresh(notePath);
     } catch (error) {
       showToast(userMessageOf(error));
     }
@@ -214,8 +378,8 @@ export class SeitonProjectsView extends ItemView {
     await this.app.workspace.getLeaf(false).openFile(file);
   }
 
-  private invalidateAndRefresh(): void {
-    this.indexService.invalidate();
+  private invalidateAndRefresh(changedPath?: string): void {
+    this.indexService.invalidate(changedPath);
     void this.refresh();
   }
 
@@ -240,7 +404,8 @@ export class SeitonProjectsView extends ItemView {
       this.app.vault.on("modify", (file) => handler(file)),
       this.app.vault.on("create", (file) => handler(file)),
       this.app.vault.on("delete", (file) => handler(file)),
-      this.app.vault.on("rename", (file, oldPath) => handler(file, oldPath))
+      this.app.vault.on("rename", (file, oldPath) => handler(file, oldPath)),
+      this.app.metadataCache.on("changed", (file) => handler(file))
     );
     for (const ref of this.eventRefs) {
       this.registerEvent(ref);
@@ -266,7 +431,7 @@ class NewProjectModal extends Modal {
     this.setTitle("新しいプロジェクト");
     this.contentEl.createEl("p", {
       cls: "seiton-prompt-hint",
-      text: "1プロジェクト = 1 Markdown。目的や経緯は標準エディターで書きます。",
+      text: "1プロジェクト = 1 Markdown。ワンテーマの情報をここに集約します。",
     });
     new Setting(this.contentEl)
       .setName("プロジェクト名")

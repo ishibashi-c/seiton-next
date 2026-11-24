@@ -1,20 +1,35 @@
 import type { App, TAbstractFile, WorkspaceLeaf } from "obsidian";
-import { ItemView, Modal, normalizePath, TFile } from "obsidian";
+import { ItemView, Modal, normalizePath, setIcon, TFile } from "obsidian";
 import { COURSES_FILE, SYSTEM_FOLDER, VIEW_TYPE_CLASSES } from "../config";
+import {
+  classNotePreview,
+  countUncheckedTasks,
+  currentPeriodOf,
+  partitionCoursesForTimetable,
+  timetableCellKey,
+  weekdayLabelOf,
+} from "../domain/classes";
 import { userMessageOf } from "../domain/errors";
 import {
   buildFrontmatter,
   scanFrontmatter,
   yamlQuoted,
 } from "../domain/frontmatter";
+import { normalizeLectureDate } from "../domain/lectureDate";
 import type { NoteService } from "../services/noteService";
+import type { PropertyService } from "../services/propertyService";
 import type {
   AcademicGrade,
   AcademicTerm,
   CourseRegistration,
   SeitonSettings,
 } from "../services/settings";
-import type { NoteRecord, VaultIndexService } from "../services/vaultIndex";
+import type {
+  NoteRecord,
+  VaultIndex,
+  VaultIndexService,
+} from "../services/vaultIndex";
+import { makeCardClickable } from "./cardClick";
 import { NewNoteModal } from "./newNoteModal";
 import { closeTabShell, finishTabShell, mountTabShell } from "./tabs/shell";
 import { button, selectField, textField } from "./ui/field";
@@ -206,7 +221,8 @@ export class CourseManageModal extends Modal {
     getSettings: () => SeitonSettings,
     saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>,
     onSaved: () => void,
-    courseToEdit?: CourseRegistration
+    courseToEdit?: CourseRegistration,
+    initialSlot?: { dayOfWeek?: string; period?: string }
   ) {
     super(app);
     this.notes = notes;
@@ -218,8 +234,8 @@ export class CourseManageModal extends Modal {
     this.name = courseToEdit?.name ?? "";
     this.grade = courseToEdit?.grade ?? current.currentGrade;
     this.term = courseToEdit?.term ?? current.currentTerm;
-    this.dayOfWeek = courseToEdit?.dayOfWeek ?? "";
-    this.period = courseToEdit?.period ?? "";
+    this.dayOfWeek = courseToEdit?.dayOfWeek ?? initialSlot?.dayOfWeek ?? "";
+    this.period = courseToEdit?.period ?? initialSlot?.period ?? "";
   }
 
   override onOpen(): void {
@@ -634,17 +650,23 @@ export class ChangeCourseTermModal extends Modal {
   }
 }
 
-/** 授業専用ビュー */
+/** 授業専用ビュー（Keep理念：執筆中を上に固定 ＋ 蓄積カードウォール ＋ 週間時間割） */
 export class SeitonClassesView extends ItemView {
   private readonly indexService: VaultIndexService;
   private readonly notes: NoteService;
+  private readonly properties: PropertyService;
   private readonly getSettings: () => SeitonSettings;
   private readonly saveSettings: (
     patch: Partial<SeitonSettings>
   ) => Promise<void>;
   private readonly openFile: (path: string) => Promise<void>;
   private activeFilter = "current"; // "current" | "all" | "${grade} ${term}"
+  private selectedCourse = "";
+  private timetableOpen = false;
+  private timetableUserToggled = false;
   private bodyEl: HTMLElement | null = null;
+  private sublineEl: HTMLElement | null = null;
+  private lastIndex: VaultIndex | null = null;
   private refreshTimer: number | null = null;
   private refreshing = false;
   private refreshAgain = false;
@@ -653,6 +675,7 @@ export class SeitonClassesView extends ItemView {
     leaf: WorkspaceLeaf,
     indexService: VaultIndexService,
     notes: NoteService,
+    properties: PropertyService,
     getSettings: () => SeitonSettings,
     saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>,
     openFile: (path: string) => Promise<void>
@@ -660,6 +683,7 @@ export class SeitonClassesView extends ItemView {
     super(leaf);
     this.indexService = indexService;
     this.notes = notes;
+    this.properties = properties;
     this.getSettings = getSettings;
     this.saveSettings = saveSettings;
     this.openFile = openFile;
@@ -679,12 +703,12 @@ export class SeitonClassesView extends ItemView {
 
   override async onOpen(): Promise<void> {
     const settings = this.getSettings();
-    const { body } = mountTabShell(this, {
+    const { body, header } = mountTabShell(this, {
       actions: [
         {
           kind: "primary",
           label: "講義ノートを作成",
-          onClick: () => this.openNewClassNote(),
+          onClick: () => this.openNewClassNote(this.selectedCourse),
         },
         {
           kind: "text",
@@ -698,12 +722,13 @@ export class SeitonClassesView extends ItemView {
         },
       ],
       rootClasses: ["seiton-home", "seiton-classes"],
-      subline: `${settings.currentGrade} ${settings.currentTerm} · 科目別の講義ノートと履修台帳`,
+      subline: `${settings.currentGrade} ${settings.currentTerm} · 執筆中を上に固定・講義メモの蓄積`,
       tab: "classes",
       title: "授業",
     });
     body.addClass("seiton-classes-body");
     this.bodyEl = body;
+    this.sublineEl = header.sublineEl;
     this.registerVaultEvents();
     finishTabShell(this, VIEW_TYPE_CLASSES);
     void this.refresh();
@@ -717,6 +742,8 @@ export class SeitonClassesView extends ItemView {
     }
     this.contentEl.empty();
     this.bodyEl = null;
+    this.sublineEl = null;
+    this.lastIndex = null;
   }
 
   async refresh(): Promise<void> {
@@ -735,6 +762,7 @@ export class SeitonClassesView extends ItemView {
       if (!this.bodyEl) {
         return;
       }
+      this.lastIndex = index;
       this.render(index);
     } catch (error) {
       showToast(userMessageOf(error));
@@ -771,6 +799,9 @@ export class SeitonClassesView extends ItemView {
     this.registerEvent(
       this.app.vault.on("rename", (file, old) => handler(file, old))
     );
+    this.registerEvent(
+      this.app.metadataCache.on("changed", (file) => handler(file))
+    );
   }
 
   private openNewClassNote(defaultCourse = ""): void {
@@ -790,7 +821,10 @@ export class SeitonClassesView extends ItemView {
     ).open();
   }
 
-  private openCourseManage(courseToEdit?: CourseRegistration): void {
+  private openCourseManage(
+    courseToEdit?: CourseRegistration,
+    initialSlot?: { dayOfWeek?: string; period?: string }
+  ): void {
     new CourseManageModal(
       this.app,
       this.notes,
@@ -800,7 +834,8 @@ export class SeitonClassesView extends ItemView {
         this.indexService.invalidate();
         void this.refresh();
       },
-      courseToEdit
+      courseToEdit,
+      initialSlot
     ).open();
   }
 
@@ -833,13 +868,19 @@ export class SeitonClassesView extends ItemView {
     ).open();
   }
 
-  private render(index: { notes: NoteRecord[] }): void {
+  private render(index: VaultIndex): void {
     if (!this.bodyEl) {
       return;
     }
     this.bodyEl.empty();
 
     const settings = this.getSettings();
+    if (this.sublineEl) {
+      this.sublineEl.setText(
+        `${settings.currentGrade} ${settings.currentTerm} · 執筆中を上に固定・講義メモの蓄積`
+      );
+    }
+
     const registeredCourses = settings.courses ?? [];
     const registeredCourseMap = new Map<string, CourseRegistration>(
       registeredCourses.map((c) => [c.name.trim(), c])
@@ -853,10 +894,8 @@ export class SeitonClassesView extends ItemView {
       }
       const course = note.course.trim() || "(科目未設定)";
       const lectureDate =
-        typeof note.frontmatter.lecture_date === "string" &&
-        note.frontmatter.lecture_date.trim() !== ""
-          ? note.frontmatter.lecture_date.trim()
-          : (note.created ?? "").slice(0, 10);
+        normalizeLectureDate(note.frontmatter.lecture_date) ||
+        (note.created ?? "").slice(0, 10);
 
       const reg = registeredCourseMap.get(course);
 
@@ -881,7 +920,6 @@ export class SeitonClassesView extends ItemView {
         }
       }
 
-      // 回次（第N回）の抽出
       const roundMatch =
         /第\s*(\d+)\s*回/.exec(note.title) ??
         /第\s*(\d+)\s*回/.exec(note.basename);
@@ -904,8 +942,6 @@ export class SeitonClassesView extends ItemView {
 
     // 2. 科目ごとにグループ化
     const courseGroupsMap = new Map<string, CourseGroup>();
-
-    // まず登録科目を登録
     for (const reg of registeredCourses) {
       courseGroupsMap.set(reg.name.trim(), {
         courseName: reg.name.trim(),
@@ -918,7 +954,6 @@ export class SeitonClassesView extends ItemView {
       });
     }
 
-    // ノートを追加
     for (const note of classNotes) {
       let group = courseGroupsMap.get(note.course);
       if (!group) {
@@ -938,7 +973,6 @@ export class SeitonClassesView extends ItemView {
       }
     }
 
-    // 各グループのノートを回次昇順（回次がなければ日付昇順）で並べる
     for (const group of courseGroupsMap.values()) {
       group.notes.sort((a, b) => {
         if (a.round && b.round) {
@@ -953,105 +987,149 @@ export class SeitonClassesView extends ItemView {
 
     // 3. 学期スイッチャー用データの集計
     const currentTermKey = `${settings.currentGrade} ${settings.currentTerm}`;
-    const allTerms = new Set<string>();
-    allTerms.add(currentTermKey);
-
+    const allTerms = new Set<string>([currentTermKey]);
     for (const group of courseGroupsMap.values()) {
       allTerms.add(`${group.grade} ${group.term}`);
     }
 
-    // 現在のフィルターで表示するノートと科目
-    const filteredGroups = [...courseGroupsMap.values()].filter((group) => {
+    const matchesScope = (
+      grade: AcademicGrade,
+      term: AcademicTerm
+    ): boolean => {
       if (this.activeFilter === "all") {
         return true;
       }
-      const groupTermKey = `${group.grade} ${group.term}`;
-      if (this.activeFilter === "current") {
-        return groupTermKey === currentTermKey;
-      }
-      return groupTermKey === this.activeFilter;
-    });
+      const key = `${grade} ${term}`;
+      return this.activeFilter === "current"
+        ? key === currentTermKey
+        : key === this.activeFilter;
+    };
 
-    // 4. 最上段：授業インデックス＆学期スイッチャー
-    this.renderIndex(
+    const scopeNotes = classNotes.filter((note) =>
+      matchesScope(note.grade, note.term)
+    );
+
+    const scopeCourseCounts = new Map<string, number>();
+    for (const note of scopeNotes) {
+      scopeCourseCounts.set(
+        note.course,
+        (scopeCourseCounts.get(note.course) ?? 0) + 1
+      );
+    }
+
+    const courseBarNames = new Set<string>(scopeCourseCounts.keys());
+    for (const reg of registeredCourses) {
+      if (matchesScope(reg.grade, reg.term)) {
+        courseBarNames.add(reg.name.trim());
+      }
+    }
+
+    const courseBarItems = [...courseBarNames]
+      .sort((a, b) => a.localeCompare(b, "ja"))
+      .map((name) => {
+        const reg = registeredCourseMap.get(name);
+        const group = courseGroupsMap.get(name);
+        return {
+          count: scopeCourseCounts.get(name) ?? 0,
+          courseName: name,
+          grade: reg?.grade ?? group?.grade ?? settings.currentGrade,
+          registration: reg,
+          term: reg?.term ?? group?.term ?? settings.currentTerm,
+        };
+      });
+
+    if (
+      this.selectedCourse !== "" &&
+      !courseBarItems.some((item) => item.courseName === this.selectedCourse)
+    ) {
+      this.selectedCourse = "";
+    }
+
+    const visibleNotes = this.selectedCourse
+      ? scopeNotes.filter((note) => note.course === this.selectedCourse)
+      : scopeNotes;
+
+    const pinnedNotes = visibleNotes
+      .filter((note) => note.record.pinned)
+      .sort((a, b) => b.mtime - a.mtime);
+    const archivedNotes = visibleNotes
+      .filter((note) => !note.record.pinned)
+      .sort(
+        (a, b) =>
+          b.lectureDate.localeCompare(a.lectureDate) || b.mtime - a.mtime
+      );
+
+    // 4. 最上段：学期スイッチャー＆科目フィルタバー
+    this.renderIndexAndFilters(
       this.bodyEl,
       classNotes,
+      scopeNotes.length,
+      pinnedNotes.length,
+      courseBarItems,
       allTerms,
       currentTermKey,
       settings
     );
 
-    // 5. 当学期の履修科目（1タップで今日の講義ノート作成）セクション
-    const currentTermGroups = [...courseGroupsMap.values()].filter(
-      (group) => `${group.grade} ${group.term}` === currentTermKey
-    );
-    this.renderTodayActionSection(this.bodyEl, currentTermGroups, settings);
+    // 5. 時間割 / クイック起動ストリップ（当学期表示時）
+    if (
+      this.activeFilter === "current" ||
+      this.activeFilter === currentTermKey
+    ) {
+      const currentTermGroups = [...courseGroupsMap.values()].filter(
+        (group) => `${group.grade} ${group.term}` === currentTermKey
+      );
+      this.renderTimetableStrip(this.bodyEl, currentTermGroups, settings);
+    }
 
-    // 6. 科目別の講義ノート台帳セクション
-    this.renderCourseLedgers(this.bodyEl, filteredGroups);
+    // 6. 「執筆中（固定済み）」セクション
+    this.renderPinnedWall(this.bodyEl, pinnedNotes);
+
+    // 7. 「これまでの記録（蓄積）」カードウォール
+    this.renderArchiveWall(this.bodyEl, archivedNotes, courseBarItems);
   }
 
-  /** 最上段：インデックスと学期フィルターバー */
-  private renderIndex(
+  /** 最上段：学期フィルター・サマリー・科目フィルター（すべて左軸揃え） */
+  private renderIndexAndFilters(
     container: HTMLElement,
     allNotes: EnrichedClassNote[],
+    scopeCount: number,
+    pinnedCount: number,
+    courseBarItems: Array<{
+      count: number;
+      courseName: string;
+      grade: AcademicGrade;
+      registration?: CourseRegistration;
+      term: AcademicTerm;
+    }>,
     allTerms: Set<string>,
     currentTermKey: string,
     settings: SeitonSettings
   ): void {
-    const indexTop = container.createDiv({ cls: "seiton-index-top" });
+    const toolbar = container.createDiv({ cls: "seiton-classes-toolbar" });
+    const termRow = toolbar.createDiv({ cls: "seiton-classes-term-row" });
+    const termTabs = termRow.createDiv({ cls: "seiton-classes-term-tabs" });
 
-    // 表示中の対象スコープでのノート数を集計
-    let activeNotesCount = 0;
-    let activeScopeLabel = "";
-    if (this.activeFilter === "current") {
-      activeNotesCount = allNotes.filter(
-        (n) => `${n.grade} ${n.term}` === currentTermKey
-      ).length;
-      activeScopeLabel = `${settings.currentGrade} ${settings.currentTerm}`;
-    } else if (this.activeFilter === "all") {
-      activeNotesCount = allNotes.length;
-      activeScopeLabel = "全学期";
-    } else {
-      activeNotesCount = allNotes.filter(
-        (n) => `${n.grade} ${n.term}` === this.activeFilter
-      ).length;
-      activeScopeLabel = this.activeFilter;
-    }
-
-    const totalEl = indexTop.createDiv({ cls: "seiton-index-total" });
-    totalEl.createSpan({
-      cls: "seiton-index-total-number",
-      text: String(activeNotesCount),
-    });
-    totalEl.createSpan({
-      cls: "seiton-index-total-label",
-      text: `回の記録（${activeScopeLabel}）`,
-    });
-
-    const labelsBar = container.createDiv({ cls: "seiton-index-labels" });
-
-    // 当学期ボタン
     const currentCount = allNotes.filter(
       (n) => `${n.grade} ${n.term}` === currentTermKey
     ).length;
-    const currentBtn = labelsBar.createEl("button", {
-      cls: `seiton-index-label${this.activeFilter === "current" ? " is-active" : ""}`,
+    const currentBtn = termTabs.createEl("button", {
+      cls: `seiton-classes-term-tab${this.activeFilter === "current" ? " is-active" : ""}`,
       type: "button",
     });
     currentBtn.createSpan({
-      text: `当学期 (${settings.currentGrade}${settings.currentTerm})`,
+      text: `当学期 (${settings.currentGrade} ${settings.currentTerm})`,
     });
     currentBtn.createSpan({
-      cls: "seiton-index-count",
+      cls: "seiton-classes-term-count",
       text: String(currentCount),
     });
     currentBtn.addEventListener("click", () => {
       this.activeFilter = "current";
-      void this.refresh();
+      this.selectedCourse = "";
+      this.rerenderCached();
     });
 
-    // 他学期ボタン
     const sortedOtherTerms = [...allTerms]
       .filter((termKey) => termKey !== currentTermKey)
       .sort((a, b) => b.localeCompare(a, "ja"));
@@ -1060,246 +1138,633 @@ export class SeitonClassesView extends ItemView {
       const termCount = allNotes.filter(
         (n) => `${n.grade} ${n.term}` === termKey
       ).length;
-      const termBtn = labelsBar.createEl("button", {
-        cls: `seiton-index-label${this.activeFilter === termKey ? " is-active" : ""}`,
+      const termBtn = termTabs.createEl("button", {
+        cls: `seiton-classes-term-tab${this.activeFilter === termKey ? " is-active" : ""}`,
         type: "button",
       });
       termBtn.createSpan({ text: termKey });
       termBtn.createSpan({
-        cls: "seiton-index-count",
+        cls: "seiton-classes-term-count",
         text: String(termCount),
       });
       termBtn.addEventListener("click", () => {
         this.activeFilter = termKey;
-        void this.refresh();
+        this.selectedCourse = "";
+        this.rerenderCached();
       });
     }
 
-    // すべての学期ボタン
-    const allBtn = labelsBar.createEl("button", {
-      cls: `seiton-index-label${this.activeFilter === "all" ? " is-active" : ""}`,
+    const allBtn = termTabs.createEl("button", {
+      cls: `seiton-classes-term-tab${this.activeFilter === "all" ? " is-active" : ""}`,
       type: "button",
     });
-    allBtn.createSpan({ text: "すべての学期" });
+    allBtn.createSpan({ text: "すべて" });
     allBtn.createSpan({
-      cls: "seiton-index-count",
+      cls: "seiton-classes-term-count",
       text: String(allNotes.length),
     });
     allBtn.addEventListener("click", () => {
       this.activeFilter = "all";
-      void this.refresh();
-    });
-  }
-
-  /** 当学期の履修科目（1タップで今日の講義ノート作成）セクション */
-  private renderTodayActionSection(
-    container: HTMLElement,
-    currentTermGroups: CourseGroup[],
-    settings: SeitonSettings
-  ): void {
-    const section = container.createDiv({
-      cls: "seiton-zone seiton-classes-today-section",
-    });
-    const head = section.createDiv({ cls: "seiton-zone-head" });
-    head.createEl("h2", {
-      text: `当学期（${settings.currentGrade} ${settings.currentTerm}）の履修科目`,
+      this.selectedCourse = "";
+      this.rerenderCached();
     });
 
-    if (currentTermGroups.length === 0) {
-      const empty = section.createDiv({ cls: "st-empty" });
-      empty.createSpan({
-        text: "当学期に登録されている科目はありません。右上の「＋ 科目を登録」から科目を登録できます。",
+    const summaryEl = termRow.createDiv({ cls: "seiton-classes-summary" });
+    summaryEl.createSpan({
+      cls: "seiton-classes-summary-num",
+      text: String(scopeCount),
+    });
+    const scopeLabel =
+      this.activeFilter === "current"
+        ? `${settings.currentGrade} ${settings.currentTerm}`
+        : this.activeFilter === "all"
+          ? "全学期"
+          : this.activeFilter;
+    summaryEl.createSpan({
+      cls: "seiton-classes-summary-label",
+      text: `回の記録（${scopeLabel}）`,
+    });
+    if (pinnedCount > 0) {
+      summaryEl.createSpan({
+        cls: "seiton-classes-pinned-badge",
+        text: `執筆中 ${pinnedCount}`,
       });
-      return;
     }
 
-    const pills = section.createDiv({ cls: "seiton-quick-class-pills" });
-    for (const group of currentTermGroups) {
-      const nextRound = group.maxRound + 1;
-      const scheduleParts: string[] = [];
-      if (group.registration?.dayOfWeek) {
-        scheduleParts.push(group.registration.dayOfWeek);
-      }
-      if (group.registration?.period) {
-        scheduleParts.push(group.registration.period);
-      }
-      const scheduleText =
-        scheduleParts.length > 0 ? ` (${scheduleParts.join(" ")})` : "";
-
-      const pill = pills.createEl("button", {
-        attr: {
-          title: `「${todayKey()} ${group.courseName}（第${nextRound}回）」を作成`,
-          type: "button",
-        },
-        cls: "seiton-quick-class-pill st-pill",
+    if (courseBarItems.length > 0) {
+      const courseBar = toolbar.createDiv({
+        cls: "seiton-classes-course-bar",
       });
-      pill.createSpan({
-        text: `${group.courseName}${scheduleText} · 次は第${nextRound}回`,
-      });
-      pill.createSpan({
-        cls: "seiton-quick-class-add",
-        text: " ＋ 今日の講義ノート",
-      });
-      pill.addEventListener("click", () => {
-        void this.createClassNote(group.courseName, nextRound);
-      });
-    }
-  }
-
-  /** 科目別の講義ノート台帳セクション */
-  private renderCourseLedgers(
-    container: HTMLElement,
-    courseGroups: CourseGroup[]
-  ): void {
-    const section = container.createDiv({
-      cls: "seiton-zone seiton-classes-ledger-section",
-    });
-    const head = section.createDiv({ cls: "seiton-zone-head" });
-    head.createEl("h2", { text: "科目別 講義ノート台帳" });
-
-    if (courseGroups.length === 0) {
-      const empty = section.createDiv({ cls: "st-empty" });
-      empty.createSpan({ text: "表示対象の科目がありません。" });
-      return;
-    }
-
-    // 科目名順でソート
-    const sortedGroups = [...courseGroups].sort((a, b) =>
-      a.courseName.localeCompare(b.courseName, "ja")
-    );
-
-    for (const group of sortedGroups) {
-      const courseBox = section.createDiv({ cls: "seiton-class-course-box" });
-
-      // 科目ヘッダー
-      const courseHead = courseBox.createDiv({
-        cls: "seiton-class-course-head",
-      });
-
-      const titleWrap = courseHead.createDiv({
-        cls: "seiton-class-course-title-wrap",
-      });
-      titleWrap.createEl("h3", {
-        cls: "seiton-class-course-name",
-        text: group.courseName,
-      });
-
-      const metaWrap = titleWrap.createDiv({
-        cls: "seiton-class-course-meta",
-      });
-      const badgeText = `${group.grade} ${group.term}${
-        group.registration?.dayOfWeek
-          ? ` · ${group.registration.dayOfWeek}`
-          : ""
-      }${group.registration?.period ? ` ${group.registration.period}` : ""}${
-        group.isInferred ? " (推定)" : ""
-      }`;
-      metaWrap.createSpan({
-        cls: "st-pill is-subtle",
-        text: badgeText,
-      });
-      metaWrap.createSpan({
-        cls: "seiton-class-course-count",
-        text: `全${group.notes.length}回`,
-      });
-
-      const actionsWrap = courseHead.createDiv({
-        cls: "seiton-class-course-actions",
-      });
-
-      // 編集 / 学期変更ボタン
-      if (group.registration) {
-        const editBtn = actionsWrap.createEl("button", {
-          cls: "st-btn is-ghost is-sm",
-          text: "設定",
-          type: "button",
-        });
-        editBtn.addEventListener("click", () => {
-          this.openCourseManage(group.registration);
-        });
-      } else {
-        const regBtn = actionsWrap.createEl("button", {
-          cls: "st-btn is-secondary is-sm",
-          text: "当学期に登録",
-          type: "button",
-        });
-        regBtn.addEventListener("click", () => {
-          void this.registerToCurrentTerm(group.courseName);
-        });
-
-        const termBtn = actionsWrap.createEl("button", {
-          cls: "st-btn is-ghost is-sm",
-          text: "学期を変更",
-          type: "button",
-        });
-        termBtn.addEventListener("click", () => {
-          this.openChangeCourseTerm(group.courseName, group.grade, group.term);
-        });
-      }
-
-      // ノート追加ボタン
-      const nextRound = group.maxRound + 1;
-      const addNoteBtn = actionsWrap.createEl("button", {
-        cls: "st-btn is-secondary is-sm",
-        text: "＋ ノート追加",
+      const allCoursesBtn = courseBar.createEl("button", {
+        cls: `seiton-course-filter-chip${this.selectedCourse === "" ? " is-active" : ""}`,
         type: "button",
       });
-      addNoteBtn.addEventListener("click", () => {
-        void this.createClassNote(group.courseName, nextRound);
+      allCoursesBtn.createSpan({ text: "すべて" });
+      allCoursesBtn.addEventListener("click", () => {
+        this.selectedCourse = "";
+        this.rerenderCached();
       });
 
-      // 講義ノート一覧台帳行
-      if (group.notes.length === 0) {
-        const emptyRow = courseBox.createDiv({
-          cls: "seiton-class-empty-row",
+      for (const item of courseBarItems) {
+        const active = this.selectedCourse === item.courseName;
+        const chip = courseBar.createEl("button", {
+          cls: `seiton-course-filter-chip${active ? " is-active" : ""}`,
+          type: "button",
         });
-        emptyRow.createSpan({
-          cls: "st-muted",
-          text: "講義ノートはまだありません。",
+        chip.createSpan({ text: item.courseName });
+        chip.createSpan({
+          cls: "seiton-course-filter-count",
+          text: String(item.count),
         });
-      } else {
-        const listGrid = courseBox.createDiv({
-          cls: "seiton-class-note-list",
+        chip.addEventListener("click", () => {
+          this.selectedCourse = active ? "" : item.courseName;
+          this.rerenderCached();
         });
-        for (const note of group.notes) {
-          const row = listGrid.createEl("article", {
-            cls: "seiton-class-note-row",
-          });
+      }
 
-          const content = row.createDiv({ cls: "seiton-class-note-content" });
-          const titleBtn = content.createEl("button", {
-            cls: "seiton-class-note-title",
-            text: note.title,
+      if (this.selectedCourse) {
+        const selectedItem = courseBarItems.find(
+          (item) => item.courseName === this.selectedCourse
+        );
+        if (selectedItem) {
+          const actions = courseBar.createDiv({
+            cls: "seiton-course-bar-actions",
+          });
+          const writeBtn = actions.createEl("button", {
+            cls: "st-btn is-secondary is-sm",
+            text: "＋ 今日のノート",
             type: "button",
           });
-          titleBtn.addEventListener("click", () => {
-            void this.openFile(note.path);
+          writeBtn.addEventListener("click", () => {
+            void this.createClassNote(selectedItem.courseName);
           });
-
-          if (note.excerpt) {
-            content.createDiv({
-              cls: "seiton-class-note-excerpt",
-              text: note.excerpt,
+          if (selectedItem.registration) {
+            const editBtn = actions.createEl("button", {
+              cls: "st-btn is-ghost is-sm",
+              text: "科目設定",
+              type: "button",
+            });
+            editBtn.addEventListener("click", () => {
+              this.openCourseManage(selectedItem.registration);
+            });
+          } else {
+            const regBtn = actions.createEl("button", {
+              cls: "st-btn is-ghost is-sm",
+              text: "当学期に登録",
+              type: "button",
+            });
+            regBtn.addEventListener("click", () => {
+              void this.registerToCurrentTerm(selectedItem.courseName);
+            });
+            const termBtn = actions.createEl("button", {
+              cls: "st-btn is-ghost is-sm",
+              text: "学期変更",
+              type: "button",
+            });
+            termBtn.addEventListener("click", () => {
+              this.openChangeCourseTerm(
+                selectedItem.courseName,
+                selectedItem.grade,
+                selectedItem.term
+              );
             });
           }
-
-          const side = row.createDiv({ cls: "seiton-class-note-side" });
-          side.createSpan({
-            cls: "seiton-class-note-date",
-            text: note.lectureDate,
-          });
         }
       }
     }
   }
 
-  /** 1タップで今日の講義ノートを作成して開く */
-  private async createClassNote(
-    courseName: string,
-    round: number
-  ): Promise<void> {
+  /** 時間割ストリップ（配置済み科目がなければコンパクトバー、配置済みまたは展開時は週間時間割を表示） */
+  private renderTimetableStrip(
+    container: HTMLElement,
+    currentTermGroups: CourseGroup[],
+    settings: SeitonSettings
+  ): void {
+    const currentRegistrations = (settings.courses ?? []).filter(
+      (c) =>
+        c.grade === settings.currentGrade && c.term === settings.currentTerm
+    );
+    const groupByName = new Map(
+      currentTermGroups.map((group) => [group.courseName, group])
+    );
+    const unregisteredGroups = currentTermGroups.filter(
+      (group) => !group.registration
+    );
+
     const today = todayKey();
-    const title = `${today} ${courseName}（第${round}回）`;
+    const hasTodayNote = (courseName: string): boolean => {
+      const group = groupByName.get(courseName);
+      return Boolean(group?.notes.some((note) => note.lectureDate === today));
+    };
+
+    const { scheduled, unscheduled, visibleDays, visiblePeriods } =
+      partitionCoursesForTimetable(currentRegistrations);
+
+    const isOpen = this.timetableUserToggled
+      ? this.timetableOpen
+      : scheduled.size > 0;
+
+    if (!isOpen) {
+      const strip = container.createDiv({
+        cls: "seiton-classes-quick-strip",
+      });
+      const left = strip.createDiv({ cls: "seiton-classes-quick-left" });
+      left.createSpan({
+        cls: "seiton-timetable-ondemand-label",
+        text: "今日のノート",
+      });
+      const chips = left.createDiv({ cls: "seiton-timetable-ondemand-list" });
+      this.renderOndemandChips(
+        chips,
+        unscheduled,
+        unregisteredGroups,
+        groupByName,
+        hasTodayNote
+      );
+
+      if (unscheduled.length === 0 && unregisteredGroups.length === 0) {
+        chips.createSpan({
+          cls: "seiton-classes-quick-empty",
+          text: "科目を登録すると1クリックで今日のノートを開けます",
+        });
+      }
+
+      const openBtn = strip.createEl("button", {
+        cls: "st-btn is-ghost is-sm seiton-classes-timetable-toggle",
+        text: "時間割を開く",
+        type: "button",
+      });
+      openBtn.addEventListener("click", () => {
+        this.timetableUserToggled = true;
+        this.timetableOpen = true;
+        this.rerenderCached();
+      });
+      return;
+    }
+
+    const box = container.createDiv({
+      cls: "seiton-zone seiton-classes-timetable-box",
+    });
+    const head = box.createDiv({ cls: "seiton-classes-timetable-head" });
+    const headLeft = head.createDiv({
+      cls: "seiton-classes-timetable-head-left",
+    });
+    headLeft.createEl("h2", {
+      cls: "seiton-classes-timetable-title",
+      text: `週間時間割（${settings.currentGrade} ${settings.currentTerm}）`,
+    });
+    headLeft.createSpan({
+      cls: "seiton-classes-timetable-hint",
+      text: "クリックで今日のノートを書く · 空きコマで科目登録",
+    });
+    const closeBtn = head.createEl("button", {
+      cls: "st-btn is-ghost is-sm seiton-classes-timetable-toggle",
+      text: "折りたたむ",
+      type: "button",
+    });
+    closeBtn.addEventListener("click", () => {
+      this.timetableUserToggled = true;
+      this.timetableOpen = false;
+      this.rerenderCached();
+    });
+
+    const now = new Date();
+    const todayWeekday = weekdayLabelOf(now);
+    const activePeriod = currentPeriodOf(now);
+
+    const tableWrap = box.createDiv({ cls: "seiton-timetable-wrap" });
+    const grid = tableWrap.createDiv({ cls: "seiton-timetable-grid" });
+    grid.style.gridTemplateColumns = `44px repeat(${visibleDays.length}, minmax(0, 1fr))`;
+
+    // ヘッダー行
+    grid.createDiv({ cls: "seiton-timetable-corner" });
+    for (const day of visibleDays) {
+      grid.createDiv({
+        cls: `seiton-timetable-day-head${day === todayWeekday ? " is-today" : ""}`,
+        text: day,
+      });
+    }
+
+    // 時限行
+    for (const period of visiblePeriods) {
+      grid.createDiv({
+        cls: `seiton-timetable-period-head${period === activePeriod ? " is-now" : ""}`,
+        text: period,
+      });
+
+      for (const day of visibleDays) {
+        const isTodayCol = day === todayWeekday;
+        const isNowCell = isTodayCol && period === activePeriod;
+        const cell = grid.createDiv({
+          cls: `seiton-timetable-cell${isTodayCol ? " is-today" : ""}${isNowCell ? " is-now" : ""}`,
+        });
+        const slotCourses = scheduled.get(timetableCellKey(day, period)) ?? [];
+
+        if (slotCourses.length === 0) {
+          const emptyBtn = cell.createEl("button", {
+            attr: {
+              "aria-label": `${day}曜 ${period} に科目を登録`,
+              title: `${day}曜 ${period} に科目を登録`,
+              type: "button",
+            },
+            cls: "seiton-timetable-empty-slot",
+          });
+          emptyBtn.createSpan({
+            cls: "seiton-timetable-empty-plus",
+            text: "＋",
+          });
+          emptyBtn.addEventListener("click", () => {
+            this.openCourseManage(undefined, { dayOfWeek: day, period });
+          });
+          continue;
+        }
+
+        for (const reg of slotCourses) {
+          const count = groupByName.get(reg.name.trim())?.notes.length ?? 0;
+          const todayExists = hasTodayNote(reg.name.trim());
+          const slotBtn = cell.createDiv({
+            attr: {
+              role: "button",
+              tabindex: "0",
+              title: todayExists
+                ? `${reg.name} の今日のノートを開く`
+                : `${reg.name} の今日のノートを作成`,
+            },
+            cls: `seiton-timetable-slot${todayExists ? " has-today" : ""}`,
+          });
+
+          const top = slotBtn.createDiv({ cls: "seiton-timetable-slot-top" });
+          top.createSpan({
+            cls: "seiton-timetable-slot-name",
+            text: reg.name,
+          });
+
+          const gearBtn = top.createEl("button", {
+            attr: {
+              "aria-label": `${reg.name} を編集`,
+              title: "科目を編集",
+              type: "button",
+            },
+            cls: "seiton-timetable-slot-edit",
+          });
+          setIcon(gearBtn, "settings");
+          gearBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            this.openCourseManage(reg);
+          });
+
+          const meta = slotBtn.createDiv({
+            cls: "seiton-timetable-slot-meta",
+          });
+          if (todayExists) {
+            meta.createSpan({ cls: "seiton-timetable-today-dot" });
+          }
+          meta.createSpan({
+            text: todayExists ? `今日あり · ${count}回` : `${count}回`,
+          });
+
+          const activate = () => {
+            void this.createClassNote(reg.name);
+          };
+          slotBtn.addEventListener("click", (event) => {
+            if ((event.target as Element).closest("button")) {
+              return;
+            }
+            activate();
+          });
+          slotBtn.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              activate();
+            }
+          });
+        }
+      }
+    }
+
+    // オンデマンド / 時間割外・未登録科目帯
+    if (unscheduled.length > 0 || unregisteredGroups.length > 0) {
+      const band = box.createDiv({ cls: "seiton-timetable-ondemand" });
+      band.createSpan({
+        cls: "seiton-timetable-ondemand-label",
+        text: "オンデマンド・時間割外",
+      });
+      const chips = band.createDiv({ cls: "seiton-timetable-ondemand-list" });
+      this.renderOndemandChips(
+        chips,
+        unscheduled,
+        unregisteredGroups,
+        groupByName,
+        hasTodayNote
+      );
+    }
+  }
+
+  private renderOndemandChips(
+    chips: HTMLElement,
+    unscheduled: CourseRegistration[],
+    unregisteredGroups: CourseGroup[],
+    groupByName: Map<string, CourseGroup>,
+    hasTodayNote: (courseName: string) => boolean
+  ): void {
+    for (const reg of unscheduled) {
+      const count = groupByName.get(reg.name.trim())?.notes.length ?? 0;
+      const todayExists = hasTodayNote(reg.name.trim());
+      const chip = chips.createDiv({
+        cls: `seiton-ondemand-chip${todayExists ? " has-today" : ""}`,
+      });
+      const openBtn = chip.createEl("button", {
+        attr: {
+          title: todayExists
+            ? `${reg.name} の今日のノートを開く`
+            : `${reg.name} の今日のノートを作成`,
+          type: "button",
+        },
+        cls: "seiton-ondemand-chip-main",
+      });
+      if (todayExists) {
+        openBtn.createSpan({ cls: "seiton-timetable-today-dot" });
+      }
+      openBtn.createSpan({ text: reg.name });
+      openBtn.createSpan({
+        cls: "seiton-ondemand-chip-count",
+        text: `${count}回`,
+      });
+      openBtn.addEventListener("click", () => {
+        void this.createClassNote(reg.name);
+      });
+
+      const editBtn = chip.createEl("button", {
+        attr: {
+          "aria-label": `${reg.name} を設定`,
+          title: "曜日・時限を設定",
+          type: "button",
+        },
+        cls: "seiton-ondemand-chip-edit",
+      });
+      setIcon(editBtn, "settings");
+      editBtn.addEventListener("click", () => {
+        this.openCourseManage(reg);
+      });
+    }
+
+    for (const group of unregisteredGroups) {
+      const todayExists = hasTodayNote(group.courseName);
+      const chip = chips.createDiv({
+        cls: `seiton-ondemand-chip is-inferred${todayExists ? " has-today" : ""}`,
+      });
+      const openBtn = chip.createEl("button", {
+        cls: "seiton-ondemand-chip-main",
+        type: "button",
+      });
+      openBtn.createSpan({ text: group.courseName });
+      openBtn.createSpan({
+        cls: "seiton-ondemand-chip-count",
+        text: `${group.notes.length}回`,
+      });
+      openBtn.addEventListener("click", () => {
+        void this.createClassNote(group.courseName);
+      });
+
+      const regBtn = chip.createEl("button", {
+        attr: {
+          title: "当学期に登録",
+          type: "button",
+        },
+        cls: "seiton-ondemand-chip-reg",
+        text: "登録",
+        type: "button",
+      });
+      regBtn.addEventListener("click", () => {
+        void this.registerToCurrentTerm(group.courseName);
+      });
+    }
+  }
+
+  /** Keep理念: 執筆中（固定済み）エリア */
+  private renderPinnedWall(
+    container: HTMLElement,
+    pinnedNotes: EnrichedClassNote[]
+  ): void {
+    const section = container.createDiv({
+      cls: "seiton-zone seiton-keep-section seiton-keep-pinned-section",
+    });
+    const head = section.createDiv({ cls: "seiton-zone-head" });
+    head.createEl("h2", { text: "執筆中（固定済み）" });
+    if (pinnedNotes.length > 0) {
+      head.createSpan({
+        cls: "seiton-zone-count",
+        text: `${pinnedNotes.length}件`,
+      });
+    }
+
+    if (pinnedNotes.length === 0) {
+      section.createDiv({
+        cls: "seiton-keep-empty-hint",
+        text: "時間割や科目から新しいノートを作成すると、執筆中としてここに固定されます。",
+      });
+      return;
+    }
+
+    const wall = section.createDiv({ cls: "seiton-keep-wall is-pinned" });
+    for (const note of pinnedNotes) {
+      this.renderKeepCard(wall, note, true);
+    }
+  }
+
+  /** Keep理念: これまでの記録（蓄積）カードウォール */
+  private renderArchiveWall(
+    container: HTMLElement,
+    archivedNotes: EnrichedClassNote[],
+    courseBarItems: Array<{ courseName: string }>
+  ): void {
+    const section = container.createDiv({
+      cls: "seiton-zone seiton-keep-section seiton-keep-archive-section",
+    });
+    const head = section.createDiv({ cls: "seiton-zone-head" });
+    head.createEl("h2", {
+      text: this.selectedCourse
+        ? `${this.selectedCourse} の記録`
+        : "これまでの記録",
+    });
+    head.createSpan({
+      cls: "seiton-zone-count",
+      text: `${archivedNotes.length}件`,
+    });
+
+    if (archivedNotes.length === 0) {
+      if (courseBarItems.length === 0) {
+        const empty = section.createDiv({ cls: "st-empty" });
+        empty.createSpan({
+          text: "この条件に一致する授業ノートはありません。",
+        });
+      } else {
+        section.createDiv({
+          cls: "seiton-keep-empty-hint",
+          text: "書き終えたノートの固定を解除すると、ここに時系列で蓄積していきます。",
+        });
+      }
+      return;
+    }
+
+    const wall = section.createDiv({ cls: "seiton-keep-wall" });
+    for (const note of archivedNotes) {
+      this.renderKeepCard(wall, note, false);
+    }
+  }
+
+  private renderKeepCard(
+    parent: HTMLElement,
+    note: EnrichedClassNote,
+    isPinned: boolean
+  ): void {
+    const card = parent.createEl("article", {
+      cls: `seiton-keep-card${isPinned ? " is-pinned" : ""}`,
+    });
+
+    const top = card.createDiv({ cls: "seiton-keep-card-top" });
+    top.createSpan({
+      cls: "seiton-keep-card-course",
+      text: note.course,
+    });
+    const pinBtn = top.createEl("button", {
+      attr: {
+        "aria-label": isPinned
+          ? "固定を解除して下の記録へ移す"
+          : "執筆中として上に固定する",
+        title: isPinned ? "固定を解除（書き終わり）" : "執筆中に固定（上へ）",
+        type: "button",
+      },
+      cls: `seiton-keep-pin-btn${isPinned ? " is-pinned" : ""}`,
+    });
+    const pinIcon = pinBtn.createSpan({ cls: "seiton-keep-pin-icon" });
+    setIcon(pinIcon, isPinned ? "pin-off" : "pin");
+    if (isPinned) {
+      pinBtn.createSpan({ text: "固定解除" });
+    }
+    pinBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      void this.toggleNotePinned(note, !isPinned);
+    });
+
+    const titleBtn = card.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-keep-card-title",
+      text: note.title,
+    });
+    titleBtn.addEventListener("click", () => {
+      void this.openFile(note.path);
+    });
+
+    const preview = classNotePreview(note.record.searchText);
+    if (preview) {
+      card.createDiv({
+        cls: "seiton-keep-card-preview",
+        text: preview,
+      });
+    } else {
+      card.createDiv({
+        cls: "seiton-keep-card-preview is-blank",
+        text: "まだ本文はありません（クリックして書く）",
+      });
+    }
+
+    const unchecked = countUncheckedTasks(note.record.searchText);
+    const foot = card.createDiv({ cls: "seiton-keep-card-foot" });
+    foot.createSpan({
+      cls: "seiton-keep-card-date",
+      text: note.lectureDate || "日付なし",
+    });
+    if (unchecked > 0) {
+      foot.createSpan({
+        cls: "seiton-keep-card-tasks",
+        text: `課題 ${unchecked}件`,
+      });
+    } else if (isPinned) {
+      foot.createSpan({
+        cls: "seiton-keep-card-action-hint",
+        text: "続きを書く →",
+      });
+    }
+
+    makeCardClickable(card, () => {
+      void this.openFile(note.path);
+    });
+  }
+
+  private rerenderCached(): void {
+    if (this.lastIndex) {
+      this.render(this.lastIndex);
+      return;
+    }
+    void this.refresh();
+  }
+
+  private async toggleNotePinned(
+    note: EnrichedClassNote,
+    nextPinned: boolean
+  ): Promise<void> {
+    try {
+      await this.properties.update(note.path, {
+        pinned: nextPinned ? true : null,
+      });
+      note.record.pinned = nextPinned;
+      note.record.frontmatter.pinned = nextPinned;
+      this.indexService.invalidate(note.path);
+      if (this.lastIndex) {
+        this.render(this.lastIndex);
+      } else {
+        void this.refresh();
+      }
+      showToast(nextPinned ? "執筆中に固定しました。" : "固定を解除しました。");
+    } catch (error) {
+      showToast(userMessageOf(error));
+    }
+  }
+
+  /** 同日・同科目ノートがあれば開き、なければ白紙で作成して即書き始める */
+  private async createClassNote(courseName: string): Promise<void> {
+    const today = todayKey();
     const settings = this.getSettings();
     const reg = (settings.courses ?? []).find(
       (c) => c.name.trim() === courseName.trim()
@@ -1308,18 +1773,18 @@ export class SeitonClassesView extends ItemView {
     const term = reg?.term ?? settings.currentTerm;
 
     try {
-      showToast(`「${title}」を作成中…`);
-      const path = await this.notes.createNote({
+      const result = await this.notes.findOrCreateClassNote({
         course: courseName,
         grade,
         lectureDate: today,
-        project: null,
-        template: "class",
         term,
-        title,
       });
-
-      await this.openFile(path);
+      showToast(
+        result.created
+          ? `「${today} ${courseName}」を作成しました`
+          : `今日の「${courseName}」を開きます`
+      );
+      await this.openFile(result.path);
       this.indexService.invalidate();
       void this.refresh();
     } catch (error) {

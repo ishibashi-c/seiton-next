@@ -46,6 +46,71 @@ export interface LibraryIndexOptions {
   onRefresh: () => void;
 }
 
+export function computeLibraryCounts(
+  index: VaultIndex
+): Record<LibraryFilter, number> {
+  const counts: Record<LibraryFilter, number> = {
+    all: 0,
+    archived: 0,
+    article: 0,
+    book: 0,
+    class: 0,
+    idea: 0,
+    memo: 0,
+    other: 0,
+    pinned: 0,
+    prompt: index.prompts.length,
+    review: 0,
+    webclip: 0,
+  };
+
+  let activeNotes = 0;
+  for (const note of index.notes) {
+    if (note.archived) {
+      counts.archived += 1;
+      continue;
+    }
+    activeNotes += 1;
+    if (note.pinned) {
+      counts.pinned += 1;
+    }
+    if (note.review) {
+      counts.review += 1;
+    }
+    switch (note.kind) {
+      case "article":
+        counts.article += 1;
+        break;
+      case "book":
+        counts.book += 1;
+        break;
+      case "class":
+        counts.class += 1;
+        break;
+      case "idea":
+        counts.idea += 1;
+        break;
+      case "webclip":
+        counts.webclip += 1;
+        break;
+      default:
+        if (OTHER_KINDS.includes(note.kind)) {
+          counts.other += 1;
+        }
+        break;
+    }
+  }
+
+  for (const memo of index.memos) {
+    if (memo.state !== "deleted") {
+      counts.memo += 1;
+    }
+  }
+
+  counts.all = activeNotes + counts.memo + counts.prompt;
+  return counts;
+}
+
 export class LibraryIndex {
   private readonly options: LibraryIndexOptions;
   private filterEl: HTMLElement | null = null;
@@ -178,27 +243,7 @@ export class LibraryIndex {
     if (!this.filterEl) {
       return;
     }
-    const activeNotes = index.notes.filter((note) => !note.archived);
-    const counts: Record<LibraryFilter, number> = {
-      all:
-        activeNotes.length +
-        index.memos.filter((memo) => memo.state !== "deleted").length +
-        index.prompts.length,
-      archived: index.notes.filter((note) => note.archived).length,
-      article: activeNotes.filter((note) => note.kind === "article").length,
-      book: activeNotes.filter((note) => note.kind === "book").length,
-      class: activeNotes.filter((note) => note.kind === "class").length,
-      idea: activeNotes.filter((note) => note.kind === "idea").length,
-      memo: index.memos.filter((memo) => memo.state !== "deleted").length,
-      other: activeNotes.filter((note) => OTHER_KINDS.includes(note.kind))
-        .length,
-      pinned: index.notes.filter((note) => note.pinned && !note.archived)
-        .length,
-      prompt: index.prompts.length,
-      review: index.notes.filter((note) => note.review && !note.archived)
-        .length,
-      webclip: activeNotes.filter((note) => note.kind === "webclip").length,
-    };
+    const counts = computeLibraryCounts(index);
 
     this.totalEl?.setText(String(counts.all));
 

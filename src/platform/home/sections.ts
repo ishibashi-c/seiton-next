@@ -1,6 +1,7 @@
 import type { App } from "obsidian";
 import { TFile } from "obsidian";
 import { NOTES_FOLDER, PROMPTS_FOLDER } from "../../config";
+import { normalizeProjectStatus } from "../../domain/projects";
 import type { PromptSessionSummary } from "../../services/promptService";
 import type { NoteRecord, VaultIndex } from "../../services/vaultIndex";
 import { makeCardClickable } from "../cardClick";
@@ -31,12 +32,9 @@ interface HomeCard {
 }
 
 export interface HomeSectionElements {
-  favoritesBody: HTMLElement;
-  favoritesCount: HTMLElement | null;
-  favoritesSection: HTMLElement;
-  recentBody: HTMLElement;
-  recentCount: HTMLElement | null;
-  recentSection: HTMLElement;
+  activeProjectsBody: HTMLElement;
+  activeProjectsCount: HTMLElement | null;
+  activeProjectsSection: HTMLElement;
   resumeBody: HTMLElement;
   resumeCount: HTMLElement | null;
   resumeSection: HTMLElement;
@@ -72,7 +70,6 @@ export class HomeSections {
   private readonly openProject: (path: string) => void;
   private readonly openPromptSession: (path: string) => void;
   private elements: HomeSectionElements | null = null;
-  private resumePaths = new Set<string>();
   private rediscoverySection: HTMLElement | null = null;
   private rediscoveryBody: HTMLElement | null = null;
   private rediscoveryCount: HTMLElement | null = null;
@@ -92,7 +89,6 @@ export class HomeSections {
 
   reset(): void {
     this.elements = null;
-    this.resumePaths.clear();
     this.rediscoverySection = null;
     this.rediscoveryBody = null;
     this.rediscoveryCount = null;
@@ -163,10 +159,43 @@ export class HomeSections {
       });
     }
 
-    if (cards.length === 0) {
+    if (cards.length < 4) {
       for (const note of index.notes
-        .filter((candidate) => candidate.pinned && !candidate.archived)
-        .slice(0, 3)) {
+        .filter(
+          (candidate) =>
+            candidate.pinned &&
+            !candidate.archived &&
+            candidate.kind !== "project" &&
+            !seen.has(candidate.path)
+        )
+        .sort((left, right) => right.mtime - left.mtime)) {
+        if (cards.length >= 4) {
+          break;
+        }
+        seen.add(note.path);
+        cards.push({
+          action: () => this.openPath(note.path),
+          date: shortDateOf(note.mtime),
+          kind: HOME_KIND_LABELS[note.kind] ?? note.kind,
+          meta: this.noteContext(note),
+          state: "ピン",
+          title: note.title,
+        });
+      }
+    }
+
+    if (cards.length < 4) {
+      for (const note of index.notes
+        .filter(
+          (candidate) =>
+            !candidate.archived &&
+            candidate.kind !== "project" &&
+            !seen.has(candidate.path)
+        )
+        .sort((left, right) => right.mtime - left.mtime)) {
+        if (cards.length >= 4) {
+          break;
+        }
         seen.add(note.path);
         cards.push({
           action: () => this.openPath(note.path),
@@ -178,19 +207,16 @@ export class HomeSections {
       }
     }
 
-    const featuredIndex = Math.max(
-      0,
-      cards.findIndex((card) => card.state === "下書き")
-    );
-    const featured = cards[featuredIndex];
+    const featuredIndex = cards.findIndex((card) => card.state === "下書き");
+    const featured = featuredIndex >= 0 ? cards[featuredIndex] : undefined;
     if (featured) {
       featured.featured = true;
-      this.renderHomeCard(body, featured);
+      this.renderResumeRow(body, featured);
     }
     for (const card of cards
       .filter((candidate) => candidate !== featured)
-      .slice(0, 3)) {
-      this.renderHomeCard(body, card);
+      .slice(0, featured ? 3 : 4)) {
+      this.renderResumeRow(body, card);
     }
 
     const count = Math.min(cards.length, 4);
@@ -198,96 +224,102 @@ export class HomeSections {
       elements.resumeCount.setText(count > 0 ? `${count}件` : "");
     }
     section.style.display = count > 0 ? "" : "none";
-    this.resumePaths = seen;
   }
 
-  renderFavorites(index: VaultIndex): void {
+  renderActiveProjects(index: VaultIndex): void {
     const elements = this.elements;
     if (!elements) {
       return;
     }
-    const { favoritesBody: body, favoritesSection: section } = elements;
+    const {
+      activeProjectsBody: body,
+      activeProjectsCount: countEl,
+      activeProjectsSection: section,
+    } = elements;
     body.empty();
-    const items: Array<{ label: string; note: NoteRecord }> = [];
-    const add = (note: NoteRecord, label: string) => {
-      if (this.resumePaths.has(note.path) || note.archived) {
-        return;
-      }
-      if (items.some((item) => item.note.path === note.path)) {
-        return;
-      }
-      items.push({ label, note });
-    };
-    for (const note of index.notes.filter(
-      (candidate) => candidate.pinned && !candidate.archived
-    )) {
-      add(note, "ピン留め");
-    }
-    for (const project of index.notes.filter(
-      (candidate) => candidate.kind === "project" && !candidate.archived
-    )) {
-      add(project, "プロジェクト");
-    }
-    for (const item of items.slice(0, 3)) {
-      this.renderHomeCard(body, {
-        action:
-          item.note.kind === "project"
-            ? () => this.openProject(item.note.path)
-            : () => this.openPath(item.note.path),
-        date: shortDateOf(item.note.mtime),
-        kind: HOME_KIND_LABELS[item.note.kind] ?? item.note.kind,
-        meta: this.noteContext(item.note),
-        state: item.label === "プロジェクト" ? "" : "ピン",
-        title: item.note.title,
-      });
-    }
-    if (elements.favoritesCount) {
-      elements.favoritesCount.setText(
-        items.length > 0 ? `${Math.min(items.length, 3)}件` : ""
-      );
-    }
-    section.style.display = items.length > 0 ? "" : "none";
-  }
 
-  renderRecent(index: VaultIndex): void {
-    const elements = this.elements;
-    if (!elements) {
+    const activeProjects = index.notes
+      .filter(
+        (note) =>
+          note.kind === "project" &&
+          normalizeProjectStatus(note.frontmatter, note.archived) === "active"
+      )
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.mtime - a.mtime);
+
+    if (activeProjects.length === 0) {
+      section.style.display = "none";
+      if (countEl) {
+        countEl.setText("");
+      }
       return;
     }
-    const { recentBody: body, recentSection: section } = elements;
-    body.empty();
-    const notes = index.notes
-      .filter((note) => !note.archived && !this.resumePaths.has(note.path))
-      .sort((left, right) => right.mtime - left.mtime)
-      .slice(0, 2);
-    for (const note of notes) {
-      this.renderHomeCard(body, {
-        action: () => this.openPath(note.path),
-        date: shortDateOf(note.mtime),
-        kind: HOME_KIND_LABELS[note.kind] ?? note.kind,
-        meta: "",
-        title: note.title,
+
+    for (const project of activeProjects.slice(0, 4)) {
+      const card = body.createEl("article", {
+        cls: "st2-home-project",
       });
+      const head = card.createDiv({ cls: "st2-home-project-head" });
+      const link = head.createEl("button", {
+        attr: { type: "button" },
+        cls: "st2-home-project-title",
+        text: project.title,
+      });
+      link.addEventListener("click", (event) => {
+        event.stopPropagation();
+        this.openProject(project.path);
+      });
+      head.createSpan({
+        cls: "st2-home-project-date",
+        text: shortDateOf(project.mtime),
+      });
+
+      const nextAction =
+        typeof project.frontmatter.next_action === "string"
+          ? project.frontmatter.next_action.trim()
+          : "";
+      const nextRow = card.createDiv({
+        cls: `st2-home-project-next${nextAction ? "" : " is-empty"}`,
+      });
+      if (nextAction) {
+        nextRow.createSpan({
+          cls: "st2-badge is-focus",
+          text: "Next",
+        });
+        nextRow.createSpan({
+          cls: "st2-home-project-next-text",
+          text: nextAction,
+        });
+      } else {
+        nextRow.createSpan({
+          cls: "st2-home-project-next-text",
+          text: project.excerpt || "次の一歩を設定する",
+        });
+      }
+
+      makeCardClickable(card, () => this.openProject(project.path));
     }
-    if (elements.recentCount) {
-      elements.recentCount.setText(notes.length > 0 ? `${notes.length}件` : "");
+
+    if (countEl) {
+      countEl.setText(`${activeProjects.length}件`);
     }
-    section.style.display = notes.length > 0 ? "" : "none";
+    section.style.display = "";
   }
 
   renderRediscoverySection(parent: HTMLElement): HTMLElement {
     const section = parent.createDiv({
-      cls: "seiton-zone seiton-home-section seiton-home-rediscovery is-minor",
+      cls: "st2-home-rediscovery",
     });
     section.style.display = "none";
 
-    const head = section.createDiv({ cls: "seiton-zone-head" });
-    head.createEl("h2", { text: "過去の今日・再発見" });
-
-    const actions = head.createDiv({ cls: "seiton-zone-actions" });
-    const shuffleBtn = actions.createEl("button", {
+    const head = section.createDiv({ cls: "st2-section-head" });
+    head.createEl("h2", {
+      cls: "st2-section-title",
+      text: "過去の今日・再発見",
+    });
+    const countEl = head.createSpan({ cls: "st2-section-count" });
+    const shuffleBtn = head.createEl("button", {
       attr: { "aria-label": "入れ替え", type: "button" },
-      cls: "seiton-text-action seiton-rediscovery-shuffle-btn",
+      cls: "st2-quiet-btn st2-section-action",
       text: "入れ替え",
     });
     shuffleBtn.addEventListener("click", () => {
@@ -297,9 +329,8 @@ export class HomeSections {
       }
     });
 
-    const countEl = head.createSpan({ cls: "seiton-zone-count" });
     const bodyEl = section.createDiv({
-      cls: "seiton-home-section-body seiton-home-cards seiton-rediscovery-cards",
+      cls: "st2-home-rediscovery-grid",
     });
 
     this.rediscoverySection = section;
@@ -337,7 +368,7 @@ export class HomeSections {
     const picked = deterministicPick(candidates, seed, 3);
 
     for (const note of picked) {
-      this.renderHomeCard(body, {
+      this.renderRediscoveryCard(body, {
         action: () => this.openPath(note.path),
         date: shortDateOf(note.mtime),
         kind: HOME_KIND_LABELS[note.kind] ?? note.kind,
@@ -396,47 +427,79 @@ export class HomeSections {
     return createdMatches || updatedMatches;
   }
 
-  private renderHomeCard(parent: HTMLElement, item: HomeCard): void {
-    const card = parent.createEl("article", {
-      cls: `seiton-home-card${item.featured ? " is-featured" : ""}`,
+  private renderResumeRow(parent: HTMLElement, item: HomeCard): void {
+    const row = parent.createEl("div", {
+      cls: `st2-ledger-row st2-home-resume-row${item.featured ? " is-focus" : ""}`,
     });
-    card.dataset.kind = item.kind;
 
-    const head = card.createDiv({ cls: "seiton-home-card-head" });
-    head.createSpan({ cls: "seiton-home-card-kind", text: item.kind });
-    head.createSpan({ cls: "seiton-home-card-date", text: item.date });
+    row.createSpan({
+      cls: `st2-badge${item.featured ? " is-focus" : ""}`,
+      text: item.kind,
+    });
 
-    const title = card.createEl("h3", { cls: "seiton-home-card-title" });
-    const link = title.createEl("button", {
+    const main = row.createDiv({ cls: "st2-home-resume-body" });
+    const link = main.createEl("button", {
       attr: { type: "button" },
-      cls: "seiton-home-card-link",
+      cls: "st2-home-resume-title",
       text: item.title,
     });
-    link.addEventListener("click", item.action);
+    link.addEventListener("click", (event) => {
+      event.stopPropagation();
+      item.action();
+    });
+    if (item.meta) {
+      main.createDiv({ cls: "st2-home-resume-meta", text: item.meta });
+    }
+
+    const side = row.createDiv({ cls: "st2-home-resume-side" });
+    if (item.state) {
+      side.createSpan({
+        cls: `st2-badge${item.featured ? " is-focus" : ""}`,
+        text: item.state,
+      });
+    }
+    side.createSpan({
+      cls: "st2-home-resume-date",
+      text: item.date,
+    });
+
+    makeCardClickable(row, item.action);
+  }
+
+  private renderRediscoveryCard(parent: HTMLElement, item: HomeCard): void {
+    const card = parent.createEl("article", {
+      cls: "st2-home-rediscovery-card",
+    });
+
+    const head = card.createDiv({ cls: "st2-home-rediscovery-head" });
+    head.createSpan({ cls: "st2-badge", text: item.kind });
+    head.createSpan({ cls: "st2-home-resume-date", text: item.date });
+
+    const titleBtn = card.createEl("button", {
+      attr: { type: "button" },
+      cls: "st2-home-rediscovery-title",
+      text: item.title,
+    });
+    titleBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      item.action();
+    });
 
     if (item.meta) {
-      card.createDiv({ cls: "seiton-home-card-meta", text: item.meta });
+      card.createDiv({ cls: "st2-home-rediscovery-meta", text: item.meta });
     }
 
-    if (item.state || item.featured) {
-      const foot = card.createDiv({ cls: "seiton-home-card-foot" });
-      foot.createSpan({
-        cls: "seiton-home-card-state",
-        text: item.state ?? "",
-      });
-      if (item.featured) {
-        const again = foot.createEl("button", {
-          cls: "seiton-home-card-action",
-          text: "再開",
-        });
-        again.type = "button";
-        again.addEventListener("click", item.action);
-      }
-    }
     makeCardClickable(card, item.action);
   }
 
   private noteContext(note: NoteRecord): string {
+    if (note.kind === "project") {
+      const nextAction =
+        typeof note.frontmatter.next_action === "string"
+          ? note.frontmatter.next_action.trim()
+          : "";
+      return nextAction ? `次: ${nextAction}` : "";
+    }
     if (note.kind === "book") {
       return [note.book.book_author, readingStatusOf(note.book.reading_status)]
         .filter(Boolean)

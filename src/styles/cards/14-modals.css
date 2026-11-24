@@ -278,7 +278,7 @@ button.seiton-composer-tag-pill {
   -webkit-appearance: none;
   background: var(--background-secondary) !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-muted) !important;
   cursor: pointer;
@@ -304,7 +304,7 @@ button.seiton-weekly-digest-button {
   -webkit-appearance: none;
   background: var(--background-secondary) !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-ink) !important;
   cursor: pointer;
@@ -348,14 +348,14 @@ button.seiton-rediscovery-shuffle-btn {
   -webkit-appearance: none;
   background: transparent !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-muted) !important;
   cursor: pointer;
   display: inline-flex;
   font-size: 11.5px;
   gap: 4px;
-  height: 24px;
+  height: 26px;
   padding: 0 9px !important;
 }
 
@@ -383,28 +383,29 @@ button.seiton-library-quick-pill {
   align-items: center;
   appearance: none;
   -webkit-appearance: none;
-  background: var(--background-secondary) !important;
+  background: transparent !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-muted) !important;
   cursor: pointer;
   display: inline-flex;
-  font-size: 11.5px;
+  font-size: var(--st-text-xs);
   font-weight: 500;
   gap: 4px;
-  height: 26px;
+  height: 28px;
   padding: 0 10px !important;
 }
 
 button.seiton-library-quick-pill:hover {
+  background: var(--st-hover) !important;
   color: var(--st-ink) !important;
 }
 
 button.seiton-library-quick-pill.is-active {
-  background: var(--interactive-accent) !important;
-  border-color: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
+  background: var(--st-ink) !important;
+  border-color: var(--st-ink) !important;
+  color: var(--st-on-primary) !important;
 }
 
 /* #7: TriageModal enhancements */
@@ -478,7 +479,7 @@ button.seiton-triage-tag-pill {
   -webkit-appearance: none;
   background: var(--background-secondary) !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-muted) !important;
   cursor: pointer;
@@ -488,9 +489,9 @@ button.seiton-triage-tag-pill {
 }
 
 button.seiton-triage-tag-pill.is-active {
-  background: var(--interactive-accent) !important;
-  border-color: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
+  background: var(--st-ink) !important;
+  border-color: var(--st-ink) !important;
+  color: var(--st-on-primary) !important;
 }
 
 /* #8: Quick Class Creation Pills in NewNoteModal */
@@ -523,7 +524,7 @@ button.seiton-quick-class-pill {
   -webkit-appearance: none;
   background: var(--background-primary) !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-ink) !important;
   cursor: pointer;
@@ -534,8 +535,8 @@ button.seiton-quick-class-pill {
 }
 
 button.seiton-quick-class-pill:hover {
-  border-color: var(--interactive-accent) !important;
-  color: var(--interactive-accent) !important;
+  border-color: var(--st-data) !important;
+  color: var(--st-ink) !important;
 }
 
 /* #9: WebClip Clean Reader & Excerpt Memo */
@@ -641,31 +642,32 @@ input.seiton-book-quick-quote-text-input {
 button.seiton-series-toggle-btn {
   appearance: none;
   -webkit-appearance: none;
-  background: var(--background-secondary) !important;
+  background: transparent !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-muted) !important;
   cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 550;
-  height: 26px;
+  font-size: var(--st-text-xs);
+  font-weight: 500;
+  height: 28px;
   padding: 0 10px !important;
 }
 
 button.seiton-series-toggle-btn.is-active {
-  background: var(--interactive-accent) !important;
-  border-color: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
+  background: var(--st-ink) !important;
+  border-color: var(--st-ink) !important;
+  color: var(--st-on-primary) !important;
+  font-weight: 600;
 }
 
 .seiton-book-series-badge {
-  background: var(--interactive-accent);
-  border-radius: 999px;
-  color: var(--text-on-accent);
+  background: var(--st-ink);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-on-primary);
   font-size: 10.5px;
   font-weight: 600;
-  padding: 1px 7px;
+  padding: 2px 6px;
 }
 
 /* #13: Projects Interactive Task List & Kind Filter Pills */
@@ -707,7 +709,7 @@ button.seiton-project-kind-pill {
   -webkit-appearance: none;
   background: var(--background-secondary) !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-muted) !important;
   cursor: pointer;
@@ -744,21 +746,22 @@ button.seiton-prompt-template-pill,
 button.seiton-prompt-attach-btn {
   appearance: none;
   -webkit-appearance: none;
-  background: var(--background-secondary) !important;
+  background: transparent !important;
   border: 1px solid var(--st-hairline) !important;
-  border-radius: 999px !important;
+  border-radius: var(--st-radius-md) !important;
   box-shadow: none !important;
   color: var(--st-muted) !important;
   cursor: pointer;
-  font-size: 11.5px;
+  font-size: var(--st-text-xs);
   font-weight: 500;
-  height: 25px;
+  height: 28px;
   padding: 0 10px !important;
 }
 
 button.seiton-prompt-template-pill:hover,
 button.seiton-prompt-attach-btn:hover {
-  border-color: var(--st-border-hover) !important;
+  background: var(--st-hover) !important;
+  border-color: var(--st-hairline) !important;
   color: var(--st-ink) !important;
 }
 

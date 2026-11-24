@@ -30,6 +30,12 @@ export class AssetsView extends ItemView {
   private readonly assetService: AssetService;
   private dataset: AssetDataset | null = null;
   private activeSubTab: "charts" | "history" | "summary" = "summary";
+  private asOfEl: HTMLElement | null = null;
+  private mainAreaEl: HTMLElement | null = null;
+  private subTabButtons = new Map<
+    "charts" | "history" | "summary",
+    HTMLButtonElement
+  >();
 
   constructor(leaf: WorkspaceLeaf, assetService: AssetService) {
     super(leaf);
@@ -49,16 +55,6 @@ export class AssetsView extends ItemView {
   }
 
   override async onOpen(): Promise<void> {
-    void this.renderView();
-  }
-
-  override async onClose(): Promise<void> {
-    closeTabShell(this, VIEW_TYPE_ASSETS);
-  }
-
-  async renderView(): Promise<void> {
-    this.dataset = await this.assetService.loadDataset();
-
     const { body } = mountTabShell(this, {
       actions: [
         {
@@ -66,7 +62,7 @@ export class AssetsView extends ItemView {
           label: "残高を記録",
           onClick: () => {
             new SnapshotModal(this.app, this.assetService, {
-              onSaved: () => void this.renderView(),
+              onSaved: () => void this.reloadData(),
             }).open();
           },
         },
@@ -74,7 +70,7 @@ export class AssetsView extends ItemView {
           label: "＋ ストック支出",
           onClick: () => {
             new StockModal(this.app, this.assetService, {
-              onSaved: () => void this.renderView(),
+              onSaved: () => void this.reloadData(),
             }).open();
           },
         },
@@ -82,7 +78,7 @@ export class AssetsView extends ItemView {
           label: "＋ 収入",
           onClick: () => {
             new IncomeModal(this.app, this.assetService, {
-              onSaved: () => void this.renderView(),
+              onSaved: () => void this.reloadData(),
             }).open();
           },
         },
@@ -90,7 +86,7 @@ export class AssetsView extends ItemView {
           label: "口座管理",
           onClick: () => {
             new AccountSettingsModal(this.app, this.assetService, {
-              onSaved: () => void this.renderView(),
+              onSaved: () => void this.reloadData(),
             }).open();
           },
         },
@@ -116,17 +112,50 @@ export class AssetsView extends ItemView {
       title: "資産",
     });
 
-    this.renderContent(body);
+    this.mountToolbarAndContainers(body);
     finishTabShell(this, VIEW_TYPE_ASSETS);
+    void this.reloadData();
   }
 
-  private renderContent(container: HTMLElement): void {
-    if (!this.dataset) {
+  override async onClose(): Promise<void> {
+    closeTabShell(this, VIEW_TYPE_ASSETS);
+    this.asOfEl = null;
+    this.mainAreaEl = null;
+    this.subTabButtons.clear();
+    this.dataset = null;
+    this.contentEl.empty();
+  }
+
+  async renderView(): Promise<void> {
+    await this.reloadData();
+  }
+
+  async reloadData(): Promise<void> {
+    this.dataset = await this.assetService.loadDataset();
+    if (!this.mainAreaEl) {
       return;
     }
+    if (this.asOfEl) {
+      if (this.dataset.snapshots.length === 0) {
+        this.asOfEl.setText("スナップショット未登録");
+      } else {
+        const bs = calculateLatestBs(this.dataset);
+        this.asOfEl.setText(
+          `最終記録 ${bs.asOfDate} · ${this.dataset.snapshots.length}件`
+        );
+      }
+    }
+    this.renderActiveSubTab();
+  }
 
-    // 1. サブナビゲーション（タブ切り替え: サマリー / 推移グラフ / 履歴台帳）
-    const subNav = container.createDiv({ cls: "seiton-asset-subnav" });
+  private mountToolbarAndContainers(container: HTMLElement): void {
+    const toolbar = container.createDiv({ cls: "seiton-asset-toolbar" });
+    const termRow = toolbar.createDiv({ cls: "seiton-asset-term-row" });
+
+    const subNav = termRow.createDiv({
+      attr: { "aria-label": "資産表示", role: "tablist" },
+      cls: "seiton-asset-subnav",
+    });
     const tabs: Array<{ id: "charts" | "history" | "summary"; label: string }> =
       [
         { id: "summary", label: "台帳サマリー" },
@@ -134,24 +163,48 @@ export class AssetsView extends ItemView {
         { id: "history", label: "残高履歴" },
       ];
 
+    this.subTabButtons.clear();
     for (const t of tabs) {
+      const active = this.activeSubTab === t.id;
       const btn = subNav.createEl("button", {
-        attr: { type: "button" },
-        cls:
-          this.activeSubTab === t.id
-            ? "seiton-asset-subtab is-active"
-            : "seiton-asset-subtab",
+        attr: {
+          "aria-selected": active ? "true" : "false",
+          role: "tab",
+          type: "button",
+        },
+        cls: `seiton-asset-subtab${active ? " is-active" : ""}`,
         text: t.label,
       });
       btn.addEventListener("click", () => {
-        this.activeSubTab = t.id;
-        this.renderView();
+        this.switchSubTab(t.id);
       });
+      this.subTabButtons.set(t.id, btn);
     }
 
-    const mainArea = container.createDiv({ cls: "seiton-asset-main-area" });
+    this.asOfEl = termRow.createDiv({ cls: "seiton-asset-asof" });
+    this.mainAreaEl = container.createDiv({ cls: "seiton-asset-main-area" });
+  }
 
-    // 2. モード別の描画
+  private switchSubTab(tab: "charts" | "history" | "summary"): void {
+    if (this.activeSubTab === tab) {
+      return;
+    }
+    this.activeSubTab = tab;
+    for (const [id, btn] of this.subTabButtons.entries()) {
+      const active = id === tab;
+      btn.toggleClass("is-active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+    }
+    this.renderActiveSubTab();
+  }
+
+  private renderActiveSubTab(): void {
+    const mainArea = this.mainAreaEl;
+    if (!mainArea || !this.dataset) {
+      return;
+    }
+    mainArea.empty();
+
     if (this.activeSubTab === "summary") {
       this.renderSummaryTab(mainArea);
     } else if (this.activeSubTab === "charts") {
@@ -208,7 +261,7 @@ export class AssetsView extends ItemView {
             }
             new RepayModal(this.app, this.assetService, {
               allRepayments: this.dataset.repayments,
-              onSaved: () => void this.renderView(),
+              onSaved: () => void this.reloadData(),
               stock,
             }).open();
           },

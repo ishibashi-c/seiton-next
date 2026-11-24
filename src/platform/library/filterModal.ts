@@ -1,12 +1,8 @@
 import { type App, Modal, setIcon } from "obsidian";
 import type { VaultIndex } from "../../services/vaultIndex";
 import { allCourses, allLists, allTags } from "../../services/vaultIndex";
-import {
-  type LibraryFilter,
-  type LibraryQueryState,
-  OTHER_KINDS,
-  queryHits,
-} from "./query";
+import { computeLibraryCounts } from "./indexView";
+import { type LibraryFilter, type LibraryQueryState, queryHits } from "./query";
 
 export interface FilterModalState {
   course: string;
@@ -135,27 +131,7 @@ export class LibraryFilterModal extends Modal {
     section.createEl("h3", { text: "種類" });
     const grid = section.createDiv({ cls: "seiton-filter-pill-grid" });
 
-    const activeNotes = this.index.notes.filter((note) => !note.archived);
-    const kindCounts: Record<LibraryFilter, number> = {
-      all:
-        activeNotes.length +
-        this.index.memos.filter((memo) => memo.state !== "deleted").length +
-        this.index.prompts.length,
-      archived: this.index.notes.filter((note) => note.archived).length,
-      article: activeNotes.filter((note) => note.kind === "article").length,
-      book: activeNotes.filter((note) => note.kind === "book").length,
-      class: activeNotes.filter((note) => note.kind === "class").length,
-      idea: activeNotes.filter((note) => note.kind === "idea").length,
-      memo: this.index.memos.filter((memo) => memo.state !== "deleted").length,
-      other: activeNotes.filter((note) => OTHER_KINDS.includes(note.kind))
-        .length,
-      pinned: this.index.notes.filter((note) => note.pinned && !note.archived)
-        .length,
-      prompt: this.index.prompts.length,
-      review: this.index.notes.filter((note) => note.review && !note.archived)
-        .length,
-      webclip: activeNotes.filter((note) => note.kind === "webclip").length,
-    };
+    const kindCounts = computeLibraryCounts(this.index);
 
     for (const item of KIND_ITEMS) {
       const isSelected = this.state.kind === item.id;
@@ -181,11 +157,12 @@ export class LibraryFilterModal extends Modal {
     section.createEl("h3", { text: "整理状態" });
     const grid = section.createDiv({ cls: "seiton-filter-pill-grid" });
 
+    const allCounts = computeLibraryCounts(this.index);
     const counts: Record<"all" | "review" | "pinned" | "archived", number> = {
       all: this.index.notes.length,
-      archived: this.index.notes.filter((n) => n.archived).length,
-      pinned: this.index.notes.filter((n) => n.pinned && !n.archived).length,
-      review: this.index.notes.filter((n) => n.review && !n.archived).length,
+      archived: allCounts.archived,
+      pinned: allCounts.pinned,
+      review: allCounts.review,
     };
 
     for (const item of STATUS_ITEMS) {

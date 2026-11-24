@@ -149,6 +149,25 @@ export class CalendarPicker {
     return this.selection;
   }
 
+  setPreset(period: MemoPeriodFilter): void {
+    this.rangeStart = null;
+    this.rangeEnd = null;
+    const label =
+      period === "today"
+        ? "今日"
+        : period === "week"
+          ? "今週"
+          : period === "month"
+            ? "今月"
+            : "期間: すべて";
+    this.selection = {
+      label,
+      period,
+      selectedDate: "",
+    };
+    this.updateTriggerState();
+  }
+
   destroy(): void {
     this.closePopover();
     this.wrapEl = null;

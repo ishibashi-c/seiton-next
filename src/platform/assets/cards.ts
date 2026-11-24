@@ -209,7 +209,11 @@ export function renderStockCard(
   onRepayClick: () => void,
   dataset?: AssetDataset
 ): void {
-  const card = container.createDiv({ cls: "seiton-asset-stock-card" });
+  const isRepaying =
+    status.stock.isRepaymentRequired && !status.isRepaymentCompleted;
+  const card = container.createDiv({
+    cls: `seiton-asset-stock-card${isRepaying ? " is-repaying" : ""}`,
+  });
 
   const head = card.createDiv({ cls: "seiton-asset-stock-head" });
   const titleWrap = head.createDiv({ cls: "seiton-asset-stock-title-wrap" });

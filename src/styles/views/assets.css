@@ -6,40 +6,72 @@
   /* 無彩色台帳哲学: 独自のビビッドなアクセント色を排除 */
 }
 
-/* サブナビゲーション（静かなアンダーラインテキストタブ） */
-.seiton-asset-subnav {
-  border-bottom: 1px solid var(--st-hairline);
-  display: flex;
-  gap: 18px;
-  margin-bottom: 24px;
-  padding-bottom: 0;
+/* サブナビゲーション & 最終記録ツールバー（左軸揃え） */
+.seiton-asset-toolbar {
+  margin-bottom: 20px;
 }
 
-.seiton-asset-subtab {
+.seiton-asset-term-row {
+  align-items: center;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+.seiton-asset-subnav {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.seiton-home button.seiton-asset-subtab {
+  align-items: center;
   background: transparent;
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
   box-shadow: none;
   color: var(--st-muted);
   cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
   font-family: var(--font-interface);
-  font-size: var(--st-text-sm);
+  font-size: var(--st-text-xs);
   font-weight: 500;
-  padding: 6px 2px 10px;
-  position: relative;
+  height: 28px;
+  justify-content: flex-start;
+  margin: 0;
+  min-height: 28px;
+  padding: 0 10px;
+  text-align: left;
   transition: none;
 }
 
-.seiton-asset-subtab:hover {
-  background: transparent;
+.seiton-home button.seiton-asset-subtab:hover {
+  background: var(--st-hover);
   color: var(--st-ink);
 }
 
-.seiton-asset-subtab.is-active {
-  background: transparent;
-  box-shadow: inset 0 -2px 0 var(--st-ink);
-  color: var(--st-ink);
+.seiton-home button.seiton-asset-subtab.is-active {
+  background: var(--st-ink);
+  border-color: var(--st-ink);
+  color: var(--st-on-primary);
   font-weight: 600;
+}
+
+.seiton-asset-asof {
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
@@ -224,22 +256,21 @@
 .seiton-asset-stock-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 10px;
 }
 
 .seiton-asset-stock-card {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  border-top: 1px solid var(--st-hairline);
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 0 10px;
+  padding: 14px 16px;
 }
 
-.seiton-asset-stock-card:first-child {
-  border-top: 0;
+.seiton-asset-stock-card.is-repaying {
+  border-left: 3px solid var(--st-data);
 }
 
 .seiton-asset-stock-head {

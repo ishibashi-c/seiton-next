@@ -1,0 +1,101 @@
+/* --------------------------------------------------------------------------
+   Assets v2 (src/styles/v2/09-assets.css)
+   High-contrast B&W Ledger + 2px Active Repaying Card + Green Chart/Bar
+   -------------------------------------------------------------------------- */
+
+.seiton-assets .seiton-asset-term-row {
+  border-bottom: 2px solid var(--st-ink-strong);
+}
+
+.seiton-assets button.seiton-asset-subtab {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-weight: 600;
+}
+
+.seiton-assets button.seiton-asset-subtab:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+.seiton-assets button.seiton-asset-subtab.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+/* Ledger Summary Hero */
+
+.seiton-assets .seiton-asset-hero-number {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-assets .seiton-asset-bar {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 2px;
+  height: 10px;
+}
+
+.seiton-assets .seiton-asset-bar-segment.is-living {
+  background: var(--st-ink-strong);
+}
+
+.seiton-assets .seiton-asset-bar-segment.is-special {
+  background: var(--st-data);
+}
+
+/* Stock cards: 1px resting, 2px black emphasis when actively repaying */
+
+.seiton-assets .seiton-asset-stock-card {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}
+
+.seiton-assets .seiton-asset-stock-card:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-assets .seiton-asset-stock-card.is-repaying {
+  border: 2px solid var(--st-ink-strong);
+}
+
+.seiton-assets .seiton-asset-stock-title {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-assets .seiton-asset-progress-repay {
+  background: var(--st-data);
+}
+
+/* Charts & History table */
+
+.seiton-assets .seiton-asset-svg-chart {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}
+
+.seiton-assets .seiton-chart-line-total {
+  stroke: var(--st-data);
+}
+
+.seiton-assets .seiton-chart-dot {
+  fill: var(--st-data);
+}
+
+.seiton-assets .seiton-asset-history-table th {
+  border-bottom: 2px solid var(--st-ink-strong);
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-assets .seiton-asset-history-table td {
+  border-bottom: 1px solid var(--st-border-subtle);
+}

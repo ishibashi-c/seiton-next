@@ -1,0 +1,346 @@
+/* --------------------------------------------------------------------------
+   Seiton UI v2 Primitives
+   High-contrast B&W (#FFFFFF / #111111) + border-weight hierarchy (1px vs 2px)
+   + surgical Green accent (#15803D / #86EFAC) + 4px micro-radius.
+   -------------------------------------------------------------------------- */
+
+.st2-toolbar {
+  border-bottom: 2px solid var(--st-ink-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-bottom: 12px;
+}
+
+.st2-toolbar-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.st2-toolbar-group {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Search field (uniform 32px height, 4px radius, 2px black ring on focus) */
+
+.st2-search-box {
+  align-items: center;
+  display: flex;
+  flex: 1 1 220px;
+  max-width: 340px;
+  min-width: 0;
+  position: relative;
+}
+
+.st2-search-icon {
+  align-items: center;
+  color: var(--st-muted);
+  display: inline-flex;
+  left: 10px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.st2-search-icon svg {
+  height: 14px;
+  width: 14px;
+}
+
+.seiton-tab-body input.st2-input,
+.st2-search-box input.st2-input {
+  appearance: none;
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--st-ink-strong);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  height: 32px;
+  line-height: 1.2;
+  min-height: 32px;
+  padding: 0 10px 0 32px;
+  width: 100%;
+}
+
+.seiton-tab-body input.st2-input::placeholder {
+  color: var(--st-faint);
+}
+
+.seiton-tab-body input.st2-input:focus {
+  border-color: var(--st-ink-strong);
+  box-shadow: inset 0 0 0 1px var(--st-ink-strong);
+  outline: none;
+}
+
+/* Uniform 32px buttons */
+
+.seiton-tab-body button.st2-btn {
+  align-items: center;
+  appearance: none;
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--st-ink-strong);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  gap: 5px;
+  height: 32px;
+  justify-content: center;
+  margin: 0;
+  min-height: 32px;
+  padding: 0 12px;
+  transition: none;
+  white-space: nowrap;
+}
+
+.seiton-tab-body button.st2-btn:hover {
+  background: var(--st-paper);
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-tab-body button.st2-btn.is-active,
+.seiton-tab-body button.st2-btn.is-primary {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.seiton-tab-body button.st2-btn.is-primary:hover {
+  opacity: 0.88;
+}
+
+.seiton-tab-body button.st2-btn svg {
+  height: 14px;
+  width: 14px;
+}
+
+/* Segmented group (solid black active state + green active count) */
+
+.st2-seg {
+  align-items: center;
+  background: var(--st-paper);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 4px;
+  display: inline-flex;
+  flex: 0 1 auto;
+  gap: 2px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px;
+  scrollbar-width: none;
+}
+
+.st2-seg::-webkit-scrollbar {
+  display: none;
+}
+
+.seiton-tab-body button.st2-seg-btn {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: none;
+  color: var(--st-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  gap: 5px;
+  height: 26px;
+  justify-content: center;
+  margin: 0;
+  min-height: 26px;
+  padding: 0 10px;
+  transition: none;
+  white-space: nowrap;
+}
+
+.seiton-tab-body button.st2-seg-btn:hover {
+  color: var(--st-ink-strong);
+}
+
+.seiton-tab-body button.st2-seg-btn.is-active {
+  background: var(--st-ink-strong);
+  box-shadow: none;
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.st2-seg-count {
+  color: var(--st-faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.seiton-tab-body button.st2-seg-btn.is-active .st2-seg-count {
+  color: var(--st-accent-mark);
+  font-weight: 700;
+}
+
+/* Select triggers (32px height, 4px radius, B&W hairline -> ink hover) */
+
+.st2-select .st-select-trigger.st-select-trigger {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.st2-select .st-select-trigger.st-select-trigger:hover,
+.st2-select .st-select-trigger[aria-expanded="true"] {
+  background: var(--st-paper);
+  border-color: var(--st-ink-strong);
+}
+
+/* Section heads (bold black titles, tabular counts) */
+
+.st2-section-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+
+.st2-section-title {
+  color: var(--st-ink-strong);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.st2-section-count {
+  color: var(--st-muted);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.st2-section-action {
+  margin-left: auto;
+}
+
+.seiton-tab-body button.st2-quiet-btn {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--st-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  gap: 4px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.seiton-tab-body button.st2-quiet-btn:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+/* Badges: B&W resting vs crisp Green highlight marker (.is-focus) */
+
+.st2-badge {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 2px;
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-interface);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.45;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.st2-badge.is-focus {
+  background: var(--st-accent-mark);
+  border-color: var(--st-ink-strong);
+  color: var(--st-accent-mark-ink);
+  font-weight: 700;
+}
+
+/* Tabular ledger rows (2px top anchor, 1px crisp row dividers) */
+
+.st2-ledger-list {
+  border-top: 2px solid var(--st-ink-strong);
+  display: flex;
+  flex-direction: column;
+}
+
+.st2-ledger-row {
+  align-items: center;
+  background: var(--st-paper);
+  border-bottom: 1px solid var(--st-border-subtle);
+  cursor: pointer;
+  display: grid;
+  gap: 10px 12px;
+  padding: 10px 10px;
+  text-align: left;
+}
+
+.st2-ledger-row:hover {
+  background: var(--st-hover);
+}
+
+.st2-ledger-row.is-focus {
+  border-left: 3px solid var(--st-ink-strong);
+  padding-left: 11px;
+}
+
+/* Empty state */
+
+.st2-empty {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  line-height: 1.6;
+  padding: 16px 0;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  .st2-search-box {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}

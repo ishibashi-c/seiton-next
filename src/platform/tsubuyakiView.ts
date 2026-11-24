@@ -86,6 +86,7 @@ export class SeitonTsubuyakiView extends ItemView {
   private statusSelect: SelectControl | null = null;
   private sortSelect: SelectControl | null = null;
   private bulkPromoteButton: HTMLButtonElement | null = null;
+  private presetButtons: Map<MemoPeriodFilter, HTMLButtonElement> = new Map();
 
   private readonly editor: TsubuyakiEditor;
 
@@ -183,14 +184,51 @@ export class SeitonTsubuyakiView extends ItemView {
     this.statusSelect = null;
     this.sortSelect = null;
     this.bulkPromoteButton = null;
+    this.presetButtons.clear();
   }
 
   private renderCompose(parent: HTMLElement): void {
     this.composer?.render(parent);
   }
 
+  private syncPresetButtons(): void {
+    const hasCustomRange =
+      this.selectedDate !== "" || this.startDate !== "" || this.endDate !== "";
+    for (const [key, btn] of this.presetButtons) {
+      const isActive = !hasCustomRange && this.period === key;
+      btn.classList.toggle("is-active", isActive);
+    }
+  }
+
   private renderToolbar(parent: HTMLElement): void {
     const controls = parent.createDiv({ cls: "seiton-tsubuyaki-controls" });
+
+    const presets = controls.createDiv({ cls: "seiton-tsubuyaki-presets" });
+    this.presetButtons.clear();
+    const presetDefs: Array<{ id: MemoPeriodFilter; label: string }> = [
+      { id: "all", label: "すべて" },
+      { id: "today", label: "今日" },
+      { id: "week", label: "今週" },
+    ];
+    for (const def of presetDefs) {
+      const btn = presets.createEl("button", {
+        attr: { type: "button" },
+        cls: `seiton-tsubuyaki-preset${this.period === def.id && !this.selectedDate && !this.startDate ? " is-active" : ""}`,
+        text: def.label,
+      });
+      btn.addEventListener("click", () => {
+        this.period = def.id;
+        this.selectedDate = "";
+        this.startDate = "";
+        this.endDate = "";
+        this.limit = PAGE_SIZE;
+        this.calendarPicker?.setPreset(def.id);
+        this.syncPresetButtons();
+        this.renderTagChips();
+        this.renderList();
+      });
+      this.presetButtons.set(def.id, btn);
+    }
 
     this.calendarPicker = new CalendarPicker({
       onChange: (sel) => {
@@ -199,50 +237,13 @@ export class SeitonTsubuyakiView extends ItemView {
         this.startDate = sel.startDate ?? "";
         this.endDate = sel.endDate ?? "";
         this.limit = PAGE_SIZE;
+        this.syncPresetButtons();
         this.renderTagChips();
         this.renderList();
       },
     });
-    this.calendarPicker.mount(controls);
+    this.calendarPicker.mount(presets);
     this.calendarPicker.setMemoItems(this.items);
-
-    this.statusSelect = createSelect({
-      choices: [
-        { label: "状態: すべて", value: "all" },
-        { label: "未整理", value: "active" },
-        { label: "ノート化済み", value: "promoted" },
-        { label: "削除済み", value: "deleted" },
-      ],
-      onChange: (value) => {
-        this.status = value as MemoStatusFilter;
-        this.showDeleted = this.status === "deleted";
-        this.limit = PAGE_SIZE;
-        this.renderTagChips();
-        this.renderList();
-      },
-      title: "状態",
-      value: this.status,
-    });
-    this.statusSelect.element.addClass("seiton-tsubuyaki-select");
-    this.statusSelect.element.addClass("is-quiet");
-    controls.append(this.statusSelect.element);
-
-    this.sortSelect = createSelect({
-      choices: [
-        { label: "新しい順", value: "newest" },
-        { label: "古い順", value: "oldest" },
-      ],
-      onChange: (value) => {
-        this.sortOrder = value as MemoSortOrder;
-        this.limit = PAGE_SIZE;
-        this.renderList();
-      },
-      title: "並び順",
-      value: this.sortOrder,
-    });
-    this.sortSelect.element.addClass("seiton-tsubuyaki-select");
-    this.sortSelect.element.addClass("is-quiet");
-    controls.append(this.sortSelect.element);
 
     const tools = controls.createDiv({ cls: "seiton-tsubuyaki-tools" });
     const searchWrap = tools.createDiv({ cls: "seiton-tsubuyaki-search-wrap" });
@@ -271,9 +272,53 @@ export class SeitonTsubuyakiView extends ItemView {
       }, 150);
     });
 
+    this.statusSelect = createSelect({
+      choices: [
+        { label: "状態: すべて", value: "all" },
+        { label: "未整理", value: "active" },
+        { label: "ノート化済み", value: "promoted" },
+        { label: "削除済み", value: "deleted" },
+      ],
+      onChange: (value) => {
+        this.status = value as MemoStatusFilter;
+        this.showDeleted = this.status === "deleted";
+        this.limit = PAGE_SIZE;
+        this.renderTagChips();
+        this.renderList();
+      },
+      title: "状態",
+      value: this.status,
+    });
+    this.statusSelect.element.addClass("seiton-tsubuyaki-select");
+    this.statusSelect.element.addClass("is-quiet");
+    tools.append(this.statusSelect.element);
+
+    this.sortSelect = createSelect({
+      choices: [
+        { label: "新しい順", value: "newest" },
+        { label: "古い順", value: "oldest" },
+      ],
+      onChange: (value) => {
+        this.sortOrder = value as MemoSortOrder;
+        this.limit = PAGE_SIZE;
+        this.renderList();
+      },
+      title: "並び順",
+      value: this.sortOrder,
+    });
+    this.sortSelect.element.addClass("seiton-tsubuyaki-select");
+    this.sortSelect.element.addClass("is-quiet");
+    tools.append(this.sortSelect.element);
+
     this.countEl = tools.createSpan({ cls: "seiton-tsubuyaki-count" });
 
-    const bulkBtn = tools.createEl("button", {
+    const subbar = parent.createDiv({ cls: "seiton-tsubuyaki-subbar" });
+    this.tagChipsEl = subbar.createDiv({ cls: "seiton-tsubuyaki-tags" });
+    const subActions = subbar.createDiv({
+      cls: "seiton-tsubuyaki-subbar-actions",
+    });
+
+    const bulkBtn = subActions.createEl("button", {
       attr: {
         "aria-label": "表示中のつぶやきをまとめて昇格",
         title: "表示中のつぶやきをまとめてノート化（最大20件）",
@@ -295,7 +340,7 @@ export class SeitonTsubuyakiView extends ItemView {
     bulkBtn.style.display = "none";
     this.bulkPromoteButton = bulkBtn;
 
-    const digestBtn = tools.createEl("button", {
+    const digestBtn = subActions.createEl("button", {
       attr: {
         "aria-label": "直近7日間の振り返りノートを作成",
         title: "直近7日間の振り返りノートを作成",
@@ -311,8 +356,6 @@ export class SeitonTsubuyakiView extends ItemView {
     digestBtn.addEventListener("click", () => {
       void this.generateWeeklyReview();
     });
-
-    this.tagChipsEl = parent.createDiv({ cls: "seiton-tsubuyaki-tags" });
   }
 
   private async refresh(): Promise<void> {
@@ -405,10 +448,8 @@ export class SeitonTsubuyakiView extends ItemView {
     host.empty();
     const entries = this.tagEntries();
     if (entries.length === 0 && this.activeTag === "") {
-      host.style.display = "none";
       return;
     }
-    host.style.display = "";
 
     const all = host.createEl("button", {
       attr: { type: "button" },

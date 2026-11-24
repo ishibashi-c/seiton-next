@@ -268,7 +268,7 @@
 
 .seiton-scanner-hero.is-dragover {
   background: var(--background-modifier-hover);
-  border-color: var(--interactive-accent);
+  border-color: var(--st-data);
 }
 
 .seiton-scanner-capture-btn {

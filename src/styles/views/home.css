@@ -325,3 +325,116 @@
   font-size: var(--st-text-xs);
   margin-left: 8px;
 }
+
+/* Home Cockpit (2-column primary desk) */
+
+.seiton-home-cockpit {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  margin-top: 20px;
+}
+
+.seiton-home-cockpit-main,
+.seiton-home-cockpit-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.seiton-home-cockpit .seiton-zone:first-child {
+  margin-top: 0;
+}
+
+.seiton-home-cockpit .seiton-zone + .seiton-zone {
+  margin-top: 20px;
+}
+
+.seiton-home-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seiton-home-project-card {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-left: 3px solid var(--st-data);
+  border-radius: var(--st-radius-md);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  transition: none;
+}
+
+.seiton-home-project-card:hover {
+  background: var(--st-hover);
+  border-color: var(--st-ink);
+  border-left-color: var(--st-data);
+}
+
+.seiton-home-project-head {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.seiton-home button.seiton-home-project-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-sm);
+  font-weight: 620;
+  justify-content: flex-start;
+  line-height: 1.4;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  word-break: auto-phrase;
+}
+
+.seiton-home button.seiton-home-project-title:hover {
+  background: transparent;
+  color: var(--st-data);
+}
+
+.seiton-home-project-date {
+  color: var(--st-faint);
+  flex: none;
+  font-size: var(--st-text-2xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.seiton-home-project-next {
+  align-items: baseline;
+  color: var(--st-muted);
+  display: flex;
+  font-size: var(--st-text-xs);
+  gap: 6px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.seiton-home-project-next.is-empty {
+  color: var(--st-faint);
+}
+
+.seiton-home-project-next-tag {
+  background: color-mix(in srgb, var(--st-data) 12%, transparent);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-data);
+  flex: none;
+  font-size: var(--st-text-2xs);
+  font-weight: 600;
+  padding: 1px 5px;
+}
+
+@media (max-width: 860px) {
+  .seiton-home-cockpit {
+    gap: 20px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

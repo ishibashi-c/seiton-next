@@ -42,6 +42,7 @@ import { SeitonLibraryView } from "./libraryView";
 import { MemoCaptureModal } from "./memoCaptureModal";
 import { MigrationModal } from "./migrationModal";
 import { NewNoteModal } from "./newNoteModal";
+import { openMarkdownAtEnd } from "./openNote";
 import { SeitonProjectsView } from "./projectsView";
 import { PromptWorkbenchView } from "./promptView";
 import { openSeitonView } from "./seitonNav";
@@ -485,6 +486,10 @@ export class AppCoordinator {
       return;
     }
     await this.app.workspace.getLeaf(false).openFile(file);
+  }
+
+  async openFileAtEnd(path: string): Promise<void> {
+    await openMarkdownAtEnd(this.app, path);
   }
 
   openMemoCapture(): void {

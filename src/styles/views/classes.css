@@ -1,0 +1,755 @@
+/* --------------------------------------------------------------------------
+   Classes & Home Timetable (Keep-inspired pinned + accumulated wall)
+   -------------------------------------------------------------------------- */
+
+/* Home: Today's Timetable Strip */
+
+.seiton-home-timetable-head {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.seiton-home-timetable-title-wrap {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.seiton-home-timetable-title-wrap h2 {
+  color: var(--st-ink);
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  margin: 0;
+}
+
+.seiton-home-timetable-days {
+  align-items: center;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.seiton-home button.seiton-timetable-day-pill {
+  border-radius: var(--st-radius-sm);
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-height: 24px;
+  min-width: 26px;
+  padding: 2px 6px;
+  position: relative;
+}
+
+.seiton-home button.seiton-timetable-day-pill.is-today {
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-home button.seiton-timetable-day-pill.is-today::after {
+  background: var(--st-data);
+  border-radius: 50%;
+  bottom: 1px;
+  content: "";
+  height: 3px;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  width: 3px;
+}
+
+.seiton-home button.seiton-timetable-day-pill.is-active {
+  background: var(--st-primary);
+  color: var(--st-on-primary);
+  font-weight: 600;
+}
+
+.seiton-home button.seiton-timetable-day-pill.is-active::after {
+  display: none;
+}
+
+.seiton-home-timetable-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seiton-home button.seiton-timetable-chip {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  color: var(--st-ink);
+  display: inline-flex;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.seiton-home button.seiton-timetable-chip:hover {
+  background: var(--background-primary);
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-home button.seiton-timetable-chip.is-now {
+  border-color: var(--st-data);
+  border-left: 3px solid var(--st-data);
+}
+
+.seiton-timetable-chip-slot {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.seiton-home button.seiton-timetable-chip.is-now .seiton-timetable-chip-slot {
+  color: var(--st-data);
+}
+
+.seiton-timetable-chip-name {
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+}
+
+.seiton-timetable-chip-action {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-home button.seiton-timetable-chip.is-existing .seiton-timetable-chip-action {
+  color: var(--st-data);
+  font-weight: 600;
+}
+
+.seiton-home-timetable-empty {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  padding: 6px 0;
+}
+
+/* Classes View */
+
+.seiton-classes-body {
+  margin-top: 20px;
+}
+
+.seiton-classes-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.seiton-classes-term-row {
+  align-items: center;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+.seiton-classes-term-tabs {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+}
+
+.seiton-home button.seiton-classes-term-tab {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--st-radius-md);
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--st-text-xs);
+  gap: 6px;
+  justify-content: flex-start;
+  min-height: 28px;
+  padding: 4px 10px;
+  text-align: left;
+}
+
+.seiton-home button.seiton-classes-term-tab:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-classes-term-tab.is-active {
+  background: var(--background-primary);
+  border-color: var(--st-hairline);
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-classes-term-count {
+  color: var(--st-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.seiton-classes-summary {
+  align-items: baseline;
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.seiton-classes-summary-num {
+  color: var(--st-data);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.seiton-classes-summary-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-classes-pinned-badge {
+  background: color-mix(in srgb, var(--st-data) 12%, transparent);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-data);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  margin-left: 4px;
+  padding: 2px 8px;
+}
+
+.seiton-classes-course-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.seiton-home button.seiton-course-filter-chip {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--st-text-xs);
+  gap: 6px;
+  justify-content: flex-start;
+  min-height: 28px;
+  padding: 3px 10px;
+  text-align: left;
+}
+
+.seiton-home button.seiton-course-filter-chip:hover {
+  border-color: var(--background-modifier-border-hover);
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-course-filter-chip.is-active {
+  background: var(--st-primary);
+  border-color: var(--st-primary);
+  color: var(--st-on-primary);
+  font-weight: 600;
+}
+
+.seiton-course-filter-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.seiton-course-bar-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* Quick Launch Strip / Timetable Box in Classes View */
+
+.seiton-classes-quick-strip {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-lg);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding: 10px 14px;
+}
+
+.seiton-classes-quick-left {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+
+.seiton-classes-quick-empty {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-classes-timetable-box {
+  margin-top: 18px;
+}
+
+.seiton-classes-timetable-head {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.seiton-classes-timetable-head-left {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.seiton-classes-timetable-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-md);
+  font-weight: 600;
+  margin: 0;
+}
+
+.seiton-classes-timetable-hint {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-home button.seiton-classes-timetable-toggle {
+  flex: 0 0 auto;
+  font-size: var(--st-text-xs);
+  margin-left: auto;
+}
+
+.seiton-timetable-wrap {
+  overflow-x: auto;
+}
+
+.seiton-timetable-grid {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-lg);
+  display: grid;
+  min-width: 560px;
+  overflow: hidden;
+}
+
+.seiton-timetable-corner,
+.seiton-timetable-day-head {
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--st-hairline);
+  border-left: 1px solid var(--st-hairline);
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  padding: 7px 8px;
+  text-align: center;
+}
+
+.seiton-timetable-corner {
+  border-left: 0;
+}
+
+.seiton-timetable-day-head.is-today {
+  color: var(--st-data);
+}
+
+.seiton-timetable-period-head {
+  align-items: center;
+  background: var(--background-secondary);
+  border-top: 1px solid var(--st-hairline);
+  color: var(--st-muted);
+  display: flex;
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 46px;
+  padding: 4px;
+}
+
+.seiton-timetable-period-head.is-now {
+  color: var(--st-data);
+}
+
+.seiton-timetable-cell {
+  border-left: 1px solid var(--st-hairline);
+  border-top: 1px solid var(--st-hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 46px;
+  padding: 4px;
+}
+
+.seiton-timetable-cell.is-today {
+  background: color-mix(in srgb, var(--st-data) 3%, transparent);
+}
+
+.seiton-timetable-cell.is-now {
+  box-shadow: inset 0 0 0 1px var(--st-data);
+}
+
+.seiton-home button.seiton-timetable-empty-slot {
+  align-items: center;
+  background: transparent;
+  border-radius: var(--st-radius-sm);
+  color: var(--st-faint);
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-height: 36px;
+  opacity: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.seiton-timetable-cell:hover .seiton-timetable-empty-slot,
+.seiton-home button.seiton-timetable-empty-slot:focus-visible {
+  opacity: 1;
+}
+
+.seiton-home button.seiton-timetable-empty-slot:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-timetable-slot {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-sm);
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: center;
+  min-width: 0;
+  padding: 6px 8px;
+}
+
+.seiton-timetable-slot:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-timetable-slot.has-today {
+  border-color: color-mix(in srgb, var(--st-data) 50%, var(--st-hairline));
+}
+
+.seiton-timetable-slot-top {
+  align-items: flex-start;
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+}
+
+.seiton-timetable-slot-name {
+  color: var(--st-ink);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.seiton-home button.seiton-timetable-slot-edit,
+.seiton-home button.seiton-ondemand-chip-edit {
+  align-items: center;
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: none;
+  height: 20px;
+  justify-content: center;
+  min-height: 20px;
+  opacity: 0;
+  padding: 0;
+  width: 20px;
+}
+
+.seiton-timetable-slot-edit svg,
+.seiton-ondemand-chip-edit svg {
+  height: 12px;
+  width: 12px;
+}
+
+.seiton-timetable-slot:hover .seiton-timetable-slot-edit,
+.seiton-timetable-slot:focus-within .seiton-timetable-slot-edit,
+.seiton-ondemand-chip:hover .seiton-ondemand-chip-edit,
+.seiton-ondemand-chip:focus-within .seiton-ondemand-chip-edit {
+  opacity: 1;
+}
+
+.seiton-timetable-slot-meta {
+  align-items: center;
+  color: var(--st-muted);
+  display: flex;
+  font-size: var(--st-text-2xs);
+  font-variant-numeric: tabular-nums;
+  gap: 5px;
+}
+
+.seiton-timetable-today-dot {
+  background: var(--st-data);
+  border-radius: 50%;
+  display: inline-block;
+  flex: none;
+  height: 6px;
+  width: 6px;
+}
+
+.seiton-timetable-ondemand {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+
+.seiton-timetable-ondemand-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+}
+
+.seiton-timetable-ondemand-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.seiton-ondemand-chip {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  display: inline-flex;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+.seiton-ondemand-chip.has-today {
+  border-color: color-mix(in srgb, var(--st-data) 50%, var(--st-hairline));
+}
+
+.seiton-home button.seiton-ondemand-chip-main {
+  align-items: center;
+  color: var(--st-ink);
+  display: inline-flex;
+  font-size: var(--st-text-xs);
+  font-weight: 560;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 8px;
+}
+
+.seiton-ondemand-chip-count {
+  color: var(--st-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.seiton-home button.seiton-ondemand-chip-reg {
+  color: var(--st-data);
+  font-size: var(--st-text-2xs);
+  font-weight: 600;
+  min-height: 22px;
+  padding: 1px 6px;
+}
+
+/* Keep-Inspired Pinned & Accumulated Card Wall */
+
+.seiton-keep-section {
+  margin-top: 24px;
+}
+
+.seiton-keep-section .seiton-zone-head {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.seiton-keep-empty-hint {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  padding: 6px 0 4px;
+  text-align: left;
+}
+
+.seiton-keep-wall {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+}
+
+.seiton-keep-wall.is-pinned {
+  grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+}
+
+.seiton-keep-card {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-lg);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  text-align: left;
+  transition: border-color var(--st-transition);
+}
+
+.seiton-keep-card:hover {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.seiton-keep-card.is-pinned {
+  border-color: color-mix(in srgb, var(--st-data) 42%, var(--st-hairline));
+  border-left: 3px solid var(--st-data);
+}
+
+.seiton-keep-card-top {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.seiton-keep-card-course {
+  background: var(--background-secondary);
+  border-radius: var(--st-radius-sm);
+  color: var(--st-muted);
+  font-size: var(--st-text-2xs);
+  font-weight: 600;
+  max-width: 170px;
+  overflow: hidden;
+  padding: 2px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seiton-home button.seiton-keep-pin-btn {
+  align-items: center;
+  border-radius: var(--st-radius-sm);
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: none;
+  font-size: var(--st-text-2xs);
+  gap: 4px;
+  min-height: 24px;
+  opacity: 0;
+  padding: 2px 6px;
+}
+
+.seiton-keep-pin-btn svg {
+  height: 13px;
+  width: 13px;
+}
+
+.seiton-keep-card:hover .seiton-keep-pin-btn,
+.seiton-keep-card:focus-within .seiton-keep-pin-btn,
+.seiton-home button.seiton-keep-pin-btn.is-pinned {
+  opacity: 1;
+}
+
+.seiton-home button.seiton-keep-pin-btn.is-pinned {
+  color: var(--st-data);
+  font-weight: 600;
+}
+
+.seiton-home button.seiton-keep-pin-btn:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-keep-card-title {
+  color: var(--st-ink);
+  font-size: var(--st-text-base);
+  font-weight: 620;
+  justify-content: flex-start;
+  line-height: 1.4;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+  word-break: auto-phrase;
+}
+
+.seiton-home button.seiton-keep-card-title:hover {
+  background: transparent;
+  color: var(--st-data);
+}
+
+.seiton-keep-card-preview {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  color: var(--st-muted);
+  display: -webkit-box;
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  line-height: 1.65;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.seiton-keep-card-preview.is-blank {
+  color: var(--st-faint);
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-keep-card-foot {
+  align-items: center;
+  color: var(--st-faint);
+  display: flex;
+  font-size: var(--st-text-2xs);
+  font-variant-numeric: tabular-nums;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.seiton-keep-card-tasks {
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-keep-card-action-hint {
+  color: var(--st-data);
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .seiton-keep-wall,
+  .seiton-keep-wall.is-pinned {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .seiton-home button.seiton-keep-pin-btn {
+    opacity: 1;
+  }
+}

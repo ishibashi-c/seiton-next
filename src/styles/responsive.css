@@ -372,6 +372,7 @@
   }
 
   /* Toolbar quick pills horizontal scroll strips */
+  .seiton-library-kinds,
   .seiton-library-quick-pills,
   .seiton-composer-tag-pills,
   .seiton-project-filter-pills,
@@ -386,6 +387,7 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .seiton-library-kinds::-webkit-scrollbar,
   .seiton-library-quick-pills::-webkit-scrollbar,
   .seiton-composer-tag-pills::-webkit-scrollbar,
   .seiton-project-filter-pills::-webkit-scrollbar,
@@ -393,6 +395,7 @@
     display: none;
   }
 
+  .seiton-home button.seiton-library-kind-btn,
   button.seiton-library-quick-pill,
   button.seiton-composer-tag-pill,
   button.seiton-project-kind-pill,

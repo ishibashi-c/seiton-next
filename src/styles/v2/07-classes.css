@@ -1,0 +1,128 @@
+/* --------------------------------------------------------------------------
+   Classes v2 (src/styles/v2/07-classes.css)
+   High-contrast B&W + 2px Active Timetable & Pinned Note Wall + Green Status
+   -------------------------------------------------------------------------- */
+
+.seiton-classes .seiton-classes-term-row {
+  border-bottom: 2px solid var(--st-ink-strong);
+}
+
+.seiton-classes button.seiton-classes-term-tab {
+  background: var(--st-paper);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-weight: 600;
+}
+
+.seiton-classes button.seiton-classes-term-tab:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+.seiton-classes button.seiton-classes-term-tab.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.seiton-classes button.seiton-classes-term-tab.is-active .seiton-classes-term-count {
+  color: var(--st-accent-mark);
+  font-weight: 700;
+}
+
+.seiton-classes .seiton-classes-summary-num {
+  color: var(--st-data);
+  font-weight: 700;
+}
+
+.seiton-classes .seiton-classes-pinned-badge {
+  background: var(--st-accent-mark);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 2px;
+  color: var(--st-accent-mark-ink);
+  font-weight: 700;
+}
+
+.seiton-classes button.seiton-course-filter-chip {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-weight: 600;
+}
+
+.seiton-classes button.seiton-course-filter-chip:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+.seiton-classes button.seiton-course-filter-chip.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.seiton-classes button.seiton-course-filter-chip.is-active .seiton-course-filter-count {
+  color: var(--st-accent-mark);
+  opacity: 1;
+}
+
+/* Timetable & Quick Launch */
+
+.seiton-classes .seiton-classes-quick-strip {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}
+
+.seiton-classes .seiton-timetable-grid {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+}
+
+.seiton-classes .seiton-timetable-day-head.is-today,
+.seiton-classes .seiton-timetable-period-head.is-now {
+  color: var(--st-data);
+  font-weight: 700;
+}
+
+.seiton-classes .seiton-timetable-cell.is-now {
+  box-shadow: inset 0 0 0 2px var(--st-ink-strong);
+}
+
+/* Keep-style cards: 2px thick black frame on pinned, 1px subtle on accumulated */
+
+.seiton-classes .seiton-keep-card {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}
+
+.seiton-classes .seiton-keep-card:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-classes .seiton-keep-card.is-pinned {
+  border: 2px solid var(--st-ink-strong);
+}
+
+.seiton-classes .seiton-keep-card-course {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 2px;
+  color: var(--st-ink-strong);
+}
+
+.seiton-classes button.seiton-keep-pin-btn.is-pinned {
+  color: var(--st-data);
+  font-weight: 700;
+}
+
+.seiton-classes button.seiton-keep-card-title {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}

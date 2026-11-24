@@ -22,6 +22,7 @@ export interface CreateNoteInput {
   course?: string | null;
   grade?: string | null;
   lectureDate?: string | null;
+  pinned?: boolean;
   project?: string | null;
   template: NoteTemplateId;
   term?: string | null;
@@ -78,6 +79,7 @@ export class NoteService {
       grade: template.id === "class" ? input.grade?.trim() || null : null,
       kind,
       lectureDate: lectureDate || null,
+      pinned: input.pinned,
       project: input.project ?? null,
       term: template.id === "class" ? input.term?.trim() || null : null,
       title,
@@ -90,6 +92,37 @@ export class NoteService {
 
   async createProject(title: string): Promise<string> {
     return this.createNote({ template: "project", title });
+  }
+
+  async findOrCreateClassNote(input: {
+    course: string;
+    grade?: string | null;
+    lectureDate: string;
+    term?: string | null;
+  }): Promise<{ created: boolean; path: string }> {
+    const course = input.course.trim();
+    const lectureDate = normalizeLectureDate(input.lectureDate);
+    if (!course) {
+      throw new Error("授業科目を入力してください。");
+    }
+    if (!lectureDate) {
+      throw new Error("講義日を YYYY-MM-DD で入力してください。");
+    }
+    const candidates = await this.findClassCandidates(course, lectureDate);
+    if (candidates.length > 0 && candidates[0]) {
+      return { created: false, path: candidates[0].path };
+    }
+    const path = await this.createNote({
+      course,
+      grade: input.grade ?? null,
+      lectureDate,
+      pinned: true,
+      project: null,
+      template: "class",
+      term: input.term ?? null,
+      title: `${lectureDate} ${course}`,
+    });
+    return { created: true, path };
   }
 
   async findClassCandidates(

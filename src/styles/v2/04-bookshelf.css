@@ -1,0 +1,333 @@
+/* --------------------------------------------------------------------------
+   Bookshelf v2 (.st2-books)
+   B&W Contrast + Border-Weight (2px Spotlight vs 1px Shelf) + Green Status
+   -------------------------------------------------------------------------- */
+
+.st2-books {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.st2-books-kpi {
+  align-items: center;
+  color: var(--st-muted);
+  display: flex;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.st2-books-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 18px;
+  min-width: 0;
+}
+
+/* Reading Spotlight — 2px solid black cards + Green reading badge */
+
+.st2-books-spotlight {
+  border-bottom: 2px solid var(--st-ink-strong);
+  padding-bottom: 20px;
+}
+
+.st2-books-spotlight-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+.st2-books-spotlight-card {
+  align-items: center;
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.st2-books-spotlight-card:hover {
+  background: var(--st-hover);
+}
+
+.st2-books-spotlight-cover {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 2px;
+  flex: 0 0 auto;
+  height: 58px;
+  overflow: hidden;
+  width: 40px;
+}
+
+.st2-books-spotlight-cover img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.st2-books-spotlight-cover .seiton-book-cover-fallback {
+  font-size: 9px;
+  height: 100%;
+  padding: 4px;
+  width: 100%;
+}
+
+.st2-books-spotlight-info {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.st2-books button.st2-books-spotlight-title {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink-strong);
+  cursor: pointer;
+  display: -webkit-box;
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  font-weight: 700;
+  height: auto;
+  justify-content: flex-start;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: auto-phrase;
+}
+
+.st2-books-spotlight-meta {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cover Wall Grid — 1px subtle border resting, 2px ink focus on hover */
+
+.st2-books-grid {
+  display: grid;
+  gap: 20px 16px;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+}
+
+.st2-books-card {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.st2-books-cover-frame {
+  appearance: none;
+  aspect-ratio: 2 / 3;
+  background: var(--background-secondary);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  box-shadow: none;
+  cursor: pointer;
+  display: block;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  width: 100%;
+}
+
+.st2-books-card:hover .st2-books-cover-frame {
+  border-color: var(--st-ink-strong);
+  outline: 1px solid var(--st-ink-strong);
+}
+
+.st2-books-cover-frame img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.st2-books-cover-frame .seiton-book-cover-fallback {
+  height: 100%;
+  width: 100%;
+}
+
+.st2-books-series-tag {
+  background: var(--st-ink-strong);
+  border-radius: 2px;
+  color: var(--st-paper);
+  font-family: var(--font-interface);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  padding: 2px 6px;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 2;
+}
+
+.st2-books-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.st2-books button.st2-books-card-title {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink-strong);
+  cursor: pointer;
+  display: -webkit-box;
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  height: auto;
+  justify-content: flex-start;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  width: 100%;
+  word-break: auto-phrase;
+}
+
+.st2-books-card:hover button.st2-books-card-title {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.st2-books-card-author {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st2-books-card-tags {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin-top: 2px;
+}
+
+.st2-books-card-meta-text {
+  color: var(--st-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st2-books-calil-note {
+  color: var(--st-faint);
+  font-size: 11px;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ledger List Mode */
+
+.st2-books-list-row {
+  grid-template-columns: 36px minmax(0, 1.6fr) minmax(0, 0.9fr) auto;
+  padding: 9px 8px;
+}
+
+.st2-books-list-thumb {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 2px;
+  flex: 0 0 auto;
+  height: 52px;
+  overflow: hidden;
+  width: 36px;
+}
+
+.st2-books-list-thumb img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.st2-books-list-thumb .seiton-book-cover-fallback {
+  font-size: 8px;
+  height: 100%;
+  padding: 2px;
+  width: 100%;
+}
+
+.st2-books-list-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.st2-books-list-extra {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st2-books-list-right {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.st2-books-list-date {
+  color: var(--st-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .st2-books-grid {
+    gap: 16px 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .st2-books-list-row {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+  }
+
+  .st2-books-list-extra {
+    display: none;
+  }
+}

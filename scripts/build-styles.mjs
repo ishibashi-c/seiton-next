@@ -7,6 +7,7 @@ const FILES = [
   "src/styles/views/home.css",
   "src/styles/views/library.css",
   "src/styles/views/projects.css",
+  "src/styles/views/classes.css",
   "src/styles/views/prompt.css",
   "src/styles/modals.css",
   "src/styles/views/books.css",
@@ -30,6 +31,17 @@ const FILES = [
   "src/styles/views/tsubuyaki.css",
   "src/styles/tabs.css",
   "src/styles/ui/system.css",
+  "src/styles/ui/unified.css",
+  "src/styles/v2/00-primitives.css",
+  "src/styles/v2/01-shell-and-modals.css",
+  "src/styles/v2/03-home.css",
+  "src/styles/v2/04-bookshelf.css",
+  "src/styles/v2/05-tsubuyaki.css",
+  "src/styles/v2/06-library.css",
+  "src/styles/v2/07-classes.css",
+  "src/styles/v2/08-projects.css",
+  "src/styles/v2/09-assets.css",
+  "src/styles/v2/10-prompt.css",
 ];
 
 const HEADER =

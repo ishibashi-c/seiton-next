@@ -1,0 +1,192 @@
+/* --------------------------------------------------------------------------
+   Tsubuyaki v2 (src/styles/v2/05-tsubuyaki.css)
+   High-contrast B&W + 2px Composer & Day Heads + Green Day/Count Accents
+   -------------------------------------------------------------------------- */
+
+.seiton-tsubuyaki .seiton-tsubuyaki-compose {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+  padding: 12px 14px 10px;
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-compose:focus-within {
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-input {
+  color: var(--st-ink-strong);
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-save {
+  background: var(--st-ink-strong);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 4px;
+  color: var(--st-paper);
+  font-size: var(--st-text-xs);
+  font-weight: 700;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 14px;
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-save:disabled {
+  background: var(--background-secondary);
+  border-color: var(--st-border-subtle);
+  color: var(--st-faint);
+}
+
+.seiton-tsubuyaki .seiton-composer-tag-pills button.seiton-composer-tag-pill {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-weight: 600;
+}
+
+.seiton-tsubuyaki .seiton-composer-tag-pills button.seiton-composer-tag-pill:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+/* 2-tier controls framed cleanly */
+
+.seiton-tsubuyaki .seiton-tsubuyaki-controls {
+  border-bottom: 1px solid var(--st-border-subtle);
+  padding-bottom: 10px;
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-preset {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-weight: 600;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 10px;
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-preset:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-preset.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-search-wrap input.seiton-tsubuyaki-search {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+  height: 30px;
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-search-wrap input.seiton-tsubuyaki-search:focus {
+  border-color: var(--st-ink-strong);
+  box-shadow: inset 0 0 0 1px var(--st-ink-strong);
+}
+
+.seiton-tsubuyaki-subbar {
+  border-bottom: 2px solid var(--st-ink-strong);
+  padding-bottom: 10px;
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-tag {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-weight: 600;
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-tag:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+.seiton-tsubuyaki button.seiton-tsubuyaki-tag.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-subbar-actions button.seiton-bulk-promote-button,
+.seiton-tsubuyaki .seiton-tsubuyaki-subbar-actions button.seiton-weekly-digest-button {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+  font-weight: 600;
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-subbar-actions button.seiton-bulk-promote-button:hover,
+.seiton-tsubuyaki .seiton-tsubuyaki-subbar-actions button.seiton-weekly-digest-button:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-count {
+  color: var(--st-data);
+  font-weight: 700;
+}
+
+/* Day groups & memos */
+
+.seiton-tsubuyaki .seiton-day-head {
+  border-bottom: 2px solid var(--st-ink-strong);
+}
+
+.seiton-tsubuyaki .seiton-day-head h3 {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-tsubuyaki .seiton-memo {
+  border-bottom: 1px solid var(--st-border-subtle);
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-footer button {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+  font-weight: 600;
+}
+
+.seiton-tsubuyaki .seiton-tsubuyaki-footer button:hover {
+  border-color: var(--st-ink-strong);
+}
+
+/* Calendar popover accents */
+
+.seiton-calendar-day.is-today {
+  box-shadow: inset 0 0 0 2px var(--st-data);
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-calendar-day-dot {
+  background: var(--st-data);
+}
+
+.seiton-calendar-day.is-selected,
+.seiton-calendar-day.is-range-start,
+.seiton-calendar-day.is-range-end {
+  background: var(--st-ink-strong);
+  border-radius: 4px;
+  color: var(--st-paper);
+}
+
+.seiton-calendar-footer-btn.mod-cta {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  border-radius: 4px;
+  color: var(--st-paper);
+  font-weight: 700;
+}

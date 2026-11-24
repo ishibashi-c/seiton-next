@@ -83,7 +83,7 @@ export function findTemplate(id: string): NoteTemplate {
 export function buildTemplateBody(id: NoteTemplateId): string {
   switch (id) {
     case "class":
-      return "## 授業メモ\n\n## 要点\n\n## 課題\n";
+      return "";
     case "idea":
       return "## アイデア\n\n## 次に試すこと\n";
     case "article":
@@ -111,6 +111,7 @@ export interface NoteDocumentInput {
   grade?: string | null;
   kind: string;
   lectureDate?: string | null;
+  pinned?: boolean;
   project?: string | null;
   term?: string | null;
   title: string;
@@ -124,6 +125,9 @@ export function buildNoteDocument(input: NoteDocumentInput): string {
     created: yamlQuoted(input.createdAt),
     kind: input.kind,
   };
+  if (input.pinned) {
+    fields.pinned = "true";
+  }
   if (input.course?.trim()) {
     fields.course = yamlQuoted(input.course.trim());
   }
@@ -140,6 +144,9 @@ export function buildNoteDocument(input: NoteDocumentInput): string {
     fields.projects = `\n  - ${yamlQuoted(wikiLink(input.project.trim()))}`;
   }
   const frontmatter = buildFrontmatter(fields, eol);
+  if (input.kind === "class" && input.body === "") {
+    return `${frontmatter}${eol}`;
+  }
   return `${frontmatter}${eol}# ${input.title}${eol}${eol}${input.body}`;
 }
 

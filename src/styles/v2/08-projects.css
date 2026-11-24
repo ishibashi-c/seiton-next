@@ -1,0 +1,116 @@
+/* --------------------------------------------------------------------------
+   Projects v2 (src/styles/v2/08-projects.css)
+   High-contrast B&W + 2px Next Action Hero Card + Green Highlight Label
+   -------------------------------------------------------------------------- */
+
+.seiton-projects .seiton-project-term-row {
+  border-bottom: 2px solid var(--st-ink-strong);
+}
+
+.seiton-projects button.seiton-project-term-tab {
+  background: var(--st-paper);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-weight: 600;
+}
+
+.seiton-projects button.seiton-project-term-tab:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+.seiton-projects button.seiton-project-term-tab.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.seiton-projects button.seiton-project-term-tab.is-active .seiton-project-term-count {
+  color: var(--st-accent-mark);
+  font-weight: 700;
+}
+
+.seiton-projects .seiton-project-summary-num {
+  color: var(--st-data);
+  font-weight: 700;
+}
+
+/* Project List Grid — crisp 1px rows/cards snapping to ink hover */
+
+.seiton-projects .seiton-project-list {
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.seiton-projects .seiton-project-list .seiton-project-item {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.seiton-projects .seiton-project-list .seiton-project-item:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-projects .seiton-project-item .seiton-item-title {
+  color: var(--st-ink-strong);
+  font-size: var(--st-text-md);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .seiton-projects .seiton-project-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Project Detail — 2px Next Action Box & Green Label */
+
+.seiton-projects .seiton-project-overview {
+  border-bottom: 2px solid var(--st-ink-strong);
+}
+
+.seiton-projects .seiton-project-title {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-projects .seiton-project-next-card {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+}
+
+.seiton-projects .seiton-project-next-label {
+  background: var(--st-accent-mark);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 2px;
+  color: var(--st-accent-mark-ink);
+  display: inline-flex;
+  font-weight: 700;
+  padding: 1px 6px;
+}
+
+.seiton-projects .seiton-project-next-text {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-projects .seiton-section-head {
+  border-bottom: 2px solid var(--st-ink-strong);
+  padding-bottom: 6px;
+}
+
+.seiton-projects .seiton-project-task-item {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}
+
+.seiton-projects .seiton-project-task-item:hover {
+  border-color: var(--st-ink-strong);
+}

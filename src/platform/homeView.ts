@@ -22,9 +22,11 @@ import type { NoteService } from "../services/noteService";
 import type { PromptService } from "../services/promptService";
 import type { SeitonSettings } from "../services/settings";
 import type { VaultIndexService } from "../services/vaultIndex";
+import { loadCoursesLedgerMarkdown } from "./classesView";
 import { HomeCapture } from "./home/capture";
 import { HomeSections } from "./home/sections";
 import { HomeShortcuts } from "./home/shortcuts";
+import { HomeTimetable } from "./home/timetable";
 import { MemoCaptureModal } from "./memoCaptureModal";
 import { NewNoteModal } from "./newNoteModal";
 import { SeitonProjectsView } from "./projectsView";
@@ -45,12 +47,17 @@ export class SeitonHomeView extends ItemView {
   private readonly indexService: VaultIndexService;
   private readonly promptService: PromptService;
   private readonly notes: NoteService;
+  private readonly getSettings: () => SeitonSettings;
+  private readonly saveSettings: (
+    patch: Partial<SeitonSettings>
+  ) => Promise<void>;
   private starterEl: HTMLElement | null = null;
   private sublineEl: HTMLElement | null = null;
   private sublineText = "";
   private readonly capture: HomeCapture;
   private readonly shortcuts: HomeShortcuts;
   private readonly sections: HomeSections;
+  private readonly timetable: HomeTimetable;
   private refreshing = false;
   private refreshAgain = false;
   private refreshTimer: number | null = null;
@@ -63,6 +70,7 @@ export class SeitonHomeView extends ItemView {
     promptService: PromptService,
     notes: NoteService,
     getSettings: () => SeitonSettings,
+    saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>,
     links: LinkListService
   ) {
     super(leaf);
@@ -70,6 +78,15 @@ export class SeitonHomeView extends ItemView {
     this.indexService = indexService;
     this.promptService = promptService;
     this.notes = notes;
+    this.getSettings = getSettings;
+    this.saveSettings = saveSettings;
+    this.timetable = new HomeTimetable({
+      app: this.app,
+      getSettings,
+      indexService,
+      notes,
+      onChanged: () => this.scheduleRefresh(),
+    });
     this.shortcuts = new HomeShortcuts({
       app: this.app,
       favicons: () => getSettings().shortcutFavicons,
@@ -157,7 +174,7 @@ export class SeitonHomeView extends ItemView {
       tab: "home",
       title: "今日",
     });
-    content.addClass("seiton-home-content");
+    content.addClass("seiton-home-content", "st2-home");
     this.sublineEl = header.sublineEl;
     this.sublineText = subline;
 
@@ -183,6 +200,7 @@ export class SeitonHomeView extends ItemView {
     this.starterEl = null;
     this.sections.reset();
     this.shortcuts.reset();
+    this.timetable.reset();
   }
 
   async refresh(): Promise<void> {
@@ -192,6 +210,11 @@ export class SeitonHomeView extends ItemView {
     }
     this.refreshing = true;
     try {
+      await loadCoursesLedgerMarkdown(
+        this.app,
+        this.getSettings,
+        this.saveSettings
+      );
       const [index, sessionList] = await Promise.all([
         this.indexService.get(),
         this.promptService.listSessions().catch(() => ({
@@ -207,9 +230,9 @@ export class SeitonHomeView extends ItemView {
       }
       void this.shortcuts.reload();
       this.setDayCount(index.memos);
+      this.timetable.render(index);
+      this.sections.renderActiveProjects(index);
       this.sections.renderResume(index, sessionList.sessions);
-      this.sections.renderFavorites(index);
-      this.sections.renderRecent(index);
       this.sections.renderRediscovery(index);
     } catch (error) {
       showToast(userMessageOf(error));
@@ -255,29 +278,75 @@ export class SeitonHomeView extends ItemView {
   }
 
   private renderHomeBody(content: HTMLElement): void {
-    this.renderQuick(content);
+    const grid = content.createDiv({ cls: "st2-home-grid" });
+    const mainCol = grid.createDiv({ cls: "st2-home-main" });
+    const sideCol = grid.createDiv({ cls: "st2-home-side" });
 
-    const shortcutsSection = content.createDiv({
-      cls: "seiton-zone seiton-shortcuts-zone is-minor",
+    this.renderQuick(mainCol);
+    this.timetable.renderSection(mainCol);
+
+    const resumeSection = mainCol.createDiv({
+      cls: "st2-home-section",
     });
-    shortcutsSection.createEl("h2", { text: "ショートカット" });
+    const resumeHead = resumeSection.createDiv({ cls: "st2-section-head" });
+    resumeHead.createEl("h2", {
+      cls: "st2-section-title",
+      text: "続きから",
+    });
+    const resumeCount = resumeHead.createSpan({ cls: "st2-section-count" });
+    const resumeBody = resumeSection.createDiv({
+      cls: "st2-ledger-list st2-home-resume-list",
+    });
+
+    const projectsSection = sideCol.createDiv({
+      cls: "st2-home-section",
+    });
+    projectsSection.style.display = "none";
+    const projectsHead = projectsSection.createDiv({ cls: "st2-section-head" });
+    projectsHead.createEl("h2", {
+      cls: "st2-section-title",
+      text: "進行中プロジェクト",
+    });
+    const projectsCount = projectsHead.createSpan({ cls: "st2-section-count" });
+    const allProjectsBtn = projectsHead.createEl("button", {
+      attr: { type: "button" },
+      cls: "st2-quiet-btn st2-section-action",
+      text: "すべて",
+    });
+    allProjectsBtn.addEventListener("click", () => {
+      void openSeitonView(this.app, VIEW_TYPE_PROJECTS);
+    });
+    const projectsBody = projectsSection.createDiv({
+      cls: "st2-home-projects-list",
+    });
+
+    const shortcutsSection = sideCol.createDiv({
+      cls: "st2-home-section",
+    });
+    const shortcutsHead = shortcutsSection.createDiv({
+      cls: "st2-section-head",
+    });
+    shortcutsHead.createEl("h2", {
+      cls: "st2-section-title",
+      text: "ショートカット",
+    });
     const shortcutsEl = shortcutsSection.createDiv({
       cls: "seiton-shortcuts",
     });
     this.shortcuts.render(shortcutsEl);
 
-    const starter = content.createDiv({ cls: "seiton-starter" });
+    const starter = content.createDiv({ cls: "st2-home-starter" });
     // 索引の構築が終わるまでは「はじめに」を出さない。記録のあるVaultで
     // 一瞬だけ初回導線がちらつくのを防ぐ。
     starter.style.display = "none";
     starter.createEl("h2", { text: "はじめに" });
     starter.createDiv({
-      cls: "seiton-starter-text",
+      cls: "st2-home-starter-text",
       text: "メモを残す、ノートを作る、本を追加する。まずは1つから。",
     });
-    const starterActions = starter.createDiv({ cls: "seiton-starter-actions" });
+    const starterActions = starter.createDiv({ cls: "st2-toolbar-group" });
     const startMemo = starterActions.createEl("button", {
-      cls: "seiton-primary-text",
+      cls: "st2-btn is-primary",
       text: "メモを残す",
       type: "button",
     });
@@ -285,7 +354,7 @@ export class SeitonHomeView extends ItemView {
       this.capture.focus();
     });
     const startNote = starterActions.createEl("button", {
-      cls: "seiton-text-action",
+      cls: "st2-btn",
       text: "ノートを作る",
       type: "button",
     });
@@ -293,7 +362,7 @@ export class SeitonHomeView extends ItemView {
       void this.runCommand("seiton-next:new-note");
     });
     const startBook = starterActions.createEl("button", {
-      cls: "seiton-text-action",
+      cls: "st2-btn",
       text: "本を追加",
       type: "button",
     });
@@ -302,47 +371,10 @@ export class SeitonHomeView extends ItemView {
     });
     this.starterEl = starter;
 
-    const resumeSection = content.createDiv({
-      cls: "seiton-zone seiton-home-section seiton-home-resume",
-    });
-    const resumeHead = resumeSection.createDiv({ cls: "seiton-zone-head" });
-    resumeHead.createEl("h2", { text: "続きから" });
-    const resumeCount = resumeHead.createSpan({ cls: "seiton-zone-count" });
-    const resumeBody = resumeSection.createDiv({
-      cls: "seiton-home-section-body seiton-resume",
-    });
-
-    const recentSection = content.createDiv({
-      cls: "seiton-zone seiton-home-section seiton-home-recent",
-    });
-    const recentHead = recentSection.createDiv({ cls: "seiton-zone-head" });
-    recentHead.createEl("h2", { text: "最近の記録" });
-    const recentCount = recentHead.createSpan({ cls: "seiton-zone-count" });
-    const recentBody = recentSection.createDiv({
-      cls: "seiton-home-section-body seiton-home-cards",
-    });
-
-    const favoritesSection = content.createDiv({
-      cls: "seiton-zone seiton-home-section seiton-home-favorites is-minor",
-    });
-    const favoritesHead = favoritesSection.createDiv({
-      cls: "seiton-zone-head",
-    });
-    favoritesHead.createEl("h2", { text: "よく使うもの" });
-    const favoritesCount = favoritesHead.createSpan({
-      cls: "seiton-zone-count",
-    });
-    const favoritesBody = favoritesSection.createDiv({
-      cls: "seiton-home-section-body seiton-home-cards",
-    });
-
     this.sections.attach({
-      favoritesBody,
-      favoritesCount,
-      favoritesSection,
-      recentBody,
-      recentCount,
-      recentSection,
+      activeProjectsBody: projectsBody,
+      activeProjectsCount: projectsCount,
+      activeProjectsSection: projectsSection,
       resumeBody,
       resumeCount,
       resumeSection,
@@ -353,10 +385,12 @@ export class SeitonHomeView extends ItemView {
 
   private renderQuick(parent: HTMLElement): void {
     const section = parent.createDiv({
-      cls: "seiton-zone seiton-home-section seiton-home-quick",
+      cls: "st2-home-section seiton-home-quick",
     });
-    section.createEl("h2", { text: "すぐ記録" });
-    this.capture.render(section);
+    const head = section.createDiv({ cls: "st2-section-head" });
+    head.createEl("h2", { cls: "st2-section-title", text: "すぐ記録" });
+    const wrap = section.createDiv({ cls: "st2-home-capture-wrap" });
+    this.capture.render(wrap);
   }
 
   private async openPath(path: string): Promise<void> {

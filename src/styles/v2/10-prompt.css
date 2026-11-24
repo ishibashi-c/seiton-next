@@ -1,0 +1,48 @@
+/* --------------------------------------------------------------------------
+   Prompt Workbench v2 (src/styles/v2/10-prompt.css)
+   High-contrast B&W + 2px Composer Frame + Crisp 4px Controls & History
+   -------------------------------------------------------------------------- */
+
+.seiton-prompt-root .seiton-prompt-composer {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+}
+
+.seiton-prompt-root .seiton-prompt-composer:focus-within {
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-prompt-root textarea.seiton-prompt-composer-input {
+  color: var(--st-ink-strong);
+}
+
+.seiton-prompt-root button.seiton-prompt-copy {
+  background: var(--st-ink-strong);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 4px;
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.seiton-prompt-root button.seiton-prompt-copy:hover {
+  background: var(--st-ink-strong);
+  color: var(--st-paper);
+  opacity: 0.88;
+}
+
+.seiton-prompt-root .seiton-prompt-item {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}
+
+.seiton-prompt-root .seiton-prompt-item:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.seiton-prompt-root .seiton-context-picker {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}

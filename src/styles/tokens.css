@@ -41,19 +41,24 @@ body,
   --st-leading-tight: 1.35;
   --st-leading-normal: 1.6;
   --st-leading-relaxed: 1.8;
+  --st-paper: #ffffff;
+  --st-ink-strong: #111111;
+  --st-border-subtle: #d4d4d8;
   --st-hairline: var(--background-modifier-border);
   --st-ink: var(--text-normal);
   --st-muted: var(--text-muted);
   --st-faint: var(--text-faint);
-  --st-data: #1d5fbf;
-  --st-primary: var(--text-normal);
-  --st-on-primary: var(--background-primary);
-  --st-accent: var(--text-normal);
-  --st-accent-ink: var(--background-primary);
+  --st-data: #15803d;
+  --st-accent-mark: #86efac;
+  --st-accent-mark-ink: #111111;
+  --st-primary: var(--st-ink-strong);
+  --st-on-primary: var(--st-paper);
+  --st-accent: var(--st-ink-strong);
+  --st-accent-ink: var(--st-paper);
   --st-hover: var(--background-modifier-hover);
-  --st-radius-sm: 4px;
-  --st-radius-md: 6px;
-  --st-radius-lg: 10px;
+  --st-radius-sm: 2px;
+  --st-radius-md: 4px;
+  --st-radius-lg: 4px;
   --st-transition: 0ms;
   --seiton-meta: #6b6b6b;
 }
@@ -98,6 +103,11 @@ body.theme-dark,
 .theme-dark .st-select-backdrop,
 .theme-dark .st-select-pop,
 .theme-dark .st-ui {
-  --st-data: #7aa7ff;
+  --st-paper: #111111;
+  --st-ink-strong: #fafafa;
+  --st-border-subtle: #2e2e32;
+  --st-data: #4ade80;
+  --st-accent-mark: #4ade80;
+  --st-accent-mark-ink: #0d0d0d;
   --seiton-meta: #a9a9a3;
 }

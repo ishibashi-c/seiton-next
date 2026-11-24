@@ -128,17 +128,18 @@
 .seiton-prompt-composer {
   background: var(--background-primary);
   border: 1px solid var(--st-hairline);
+  border-left: 3px solid var(--st-data);
   border-radius: var(--st-radius-md);
   display: flex;
   flex-direction: column;
   min-height: 300px;
   order: -1;
   padding: 14px 16px 12px;
-  transition: border-color var(--st-transition);
+  transition: none;
 }
 
 .seiton-prompt-composer:focus-within {
-  border-color: var(--st-accent);
+  border-color: var(--st-data);
 }
 
 .seiton-prompt-root textarea.seiton-prompt-composer-input {
@@ -211,10 +212,10 @@
 
 .seiton-prompt-root button.seiton-prompt-copy {
   background: var(--st-primary);
-  border-radius: var(--st-radius-sm);
+  border-radius: var(--st-radius-md);
   color: var(--st-on-primary);
   font-size: var(--st-text-sm);
-  font-weight: 620;
+  font-weight: 600;
   min-height: 30px;
   padding: 4px 12px;
 }

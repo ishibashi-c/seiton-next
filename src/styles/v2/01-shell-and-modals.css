@@ -1,0 +1,270 @@
+/* --------------------------------------------------------------------------
+   Shared Shell, Header, Navigation & All Modals/Popovers (B&W + 2px Frame)
+   Never overrides .seiton-home-inner width or horizontal padding.
+   -------------------------------------------------------------------------- */
+
+.seiton-home,
+.seiton-prompt-root {
+  background: var(--st-paper);
+}
+
+.seiton-page-title {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.seiton-page-count {
+  background: var(--st-accent-mark);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 2px;
+  color: var(--st-accent-mark-ink);
+  font-size: var(--st-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin-left: 8px;
+  padding: 1px 6px;
+}
+
+.seiton-home button.seiton-primary-text.seiton-primary-text,
+.seiton-projects button.seiton-primary-text.seiton-primary-text,
+.seiton-prompt-root button.seiton-primary-text.seiton-primary-text {
+  background: var(--st-ink-strong);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--st-paper);
+  font-size: var(--st-text-xs);
+  font-weight: 700;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+.seiton-home button.seiton-primary-text.seiton-primary-text:hover,
+.seiton-projects button.seiton-primary-text.seiton-primary-text:hover,
+.seiton-prompt-root button.seiton-primary-text.seiton-primary-text:hover {
+  background: var(--st-ink-strong);
+  color: var(--st-paper);
+  opacity: 0.88;
+}
+
+.seiton-page-actions button.seiton-text-action {
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+}
+
+.seiton-page-actions button.seiton-text-action:hover {
+  color: var(--st-ink-strong);
+}
+
+.seiton-top-nav {
+  background: var(--st-paper);
+  border-bottom: 1px solid var(--st-border-subtle);
+}
+
+.seiton-top-tab {
+  color: var(--st-muted);
+  font-weight: 600;
+}
+
+.seiton-top-tab:hover {
+  color: var(--st-ink-strong);
+}
+
+.seiton-top-tab.is-active {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.seiton-top-tab.is-active::after {
+  background: var(--st-ink-strong);
+  height: 2px;
+}
+
+/* Unified Modals & Popovers */
+
+.modal.st-modal,
+.modal.seiton-modal,
+.modal.seiton-filter-modal,
+.modal.seiton-book-modal,
+.modal.seiton-capture-modal,
+.modal.seiton-edit-modal,
+.modal.seiton-promote-modal,
+.modal.seiton-append-modal,
+.modal.seiton-triage-modal,
+.modal.seiton-webclip-modal,
+.modal.seiton-webclip-capture-modal,
+.modal.seiton-bulk-modal,
+.modal.seiton-calil-modal,
+.modal.seiton-cover-modal,
+.modal.seiton-scanner-modal,
+.modal.seiton-migration-modal,
+.modal.seiton-quick-search-modal,
+.st-select-pop.st-select-pop,
+.seiton-card-menu.seiton-card-menu,
+.seiton-calendar-popover {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 14%);
+  color: var(--st-ink-strong);
+}
+
+.modal.seiton-filter-modal .seiton-filter-modal-header,
+.modal.st-modal .st-modal-head {
+  border-bottom: 2px solid var(--st-ink-strong);
+}
+
+.modal.seiton-filter-modal .seiton-filter-modal-title,
+.modal.st-modal .st-modal-title {
+  color: var(--st-ink-strong);
+  font-weight: 700;
+}
+
+.modal.seiton-filter-modal .seiton-filter-modal-footer,
+.modal.st-modal .st-modal-foot,
+.seiton-modal-footer {
+  border-top: 1px solid var(--st-border-subtle);
+}
+
+.modal.st-modal .mod-cta,
+.modal.seiton-modal .mod-cta,
+.modal.seiton-capture-modal .mod-cta,
+.modal.seiton-edit-modal .mod-cta,
+.modal.seiton-promote-modal .mod-cta,
+.modal.seiton-append-modal .mod-cta,
+.modal.seiton-book-modal .mod-cta,
+.modal.seiton-scanner-modal .mod-cta,
+.modal.seiton-triage-modal .mod-cta,
+.modal.seiton-migration-modal .mod-cta,
+.modal.seiton-webclip-modal .mod-cta,
+.modal.seiton-webclip-capture-modal button.mod-cta,
+.modal.seiton-bulk-modal button.mod-cta,
+.modal.seiton-calil-modal button.mod-cta,
+.modal.seiton-cover-modal button.mod-cta,
+.modal.seiton-filter-modal button.seiton-filter-apply-btn,
+.modal.st-modal .st-btn.is-primary {
+  background: var(--st-ink-strong);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.modal.seiton-filter-modal .seiton-filter-search-input,
+.modal.seiton-filter-modal select.seiton-filter-select,
+.modal.st-modal .st-input,
+.modal.st-modal .st-textarea,
+.seiton-capture-modal .seiton-capture-textarea,
+.seiton-edit-textarea {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+}
+
+.modal.seiton-filter-modal .seiton-filter-search-input:focus,
+.modal.seiton-filter-modal select.seiton-filter-select:focus,
+.modal.st-modal .st-input:focus,
+.modal.st-modal .st-textarea:focus,
+.seiton-capture-modal .seiton-capture-textarea:focus,
+.seiton-edit-textarea:focus {
+  border-color: var(--st-ink-strong);
+  box-shadow: inset 0 0 0 1px var(--st-ink-strong);
+}
+
+.modal.seiton-filter-modal button.seiton-filter-pill,
+.modal.seiton-filter-modal button.seiton-filter-chip,
+.modal.seiton-filter-modal button.seiton-filter-reset-btn,
+.modal.seiton-filter-modal button.seiton-filter-cancel-btn {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+  font-weight: 600;
+}
+
+.modal.seiton-filter-modal button.seiton-filter-pill:hover,
+.modal.seiton-filter-modal button.seiton-filter-chip:hover,
+.modal.seiton-filter-modal button.seiton-filter-reset-btn:hover,
+.modal.seiton-filter-modal button.seiton-filter-cancel-btn:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.modal.seiton-filter-modal button.seiton-filter-pill.is-active,
+.modal.seiton-filter-modal button.seiton-filter-chip.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.modal.seiton-filter-modal .seiton-pill-count {
+  border-radius: 2px;
+}
+
+.modal.seiton-filter-modal button.seiton-filter-pill.is-active .seiton-pill-count,
+.modal.seiton-filter-modal button.seiton-filter-chip.is-active .seiton-chip-count {
+  background: transparent;
+  color: var(--st-accent-mark);
+  font-weight: 700;
+  opacity: 1;
+}
+
+.modal.seiton-filter-modal .seiton-filter-tags-grid {
+  background: var(--background-secondary);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+}
+
+.modal.seiton-triage-modal button.seiton-triage-tag-pill,
+.modal.seiton-modal button.seiton-quick-class-pill,
+button.seiton-triage-tag-pill,
+button.seiton-quick-class-pill {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+  font-weight: 600;
+}
+
+.modal.seiton-triage-modal button.seiton-triage-tag-pill.is-active,
+button.seiton-triage-tag-pill.is-active {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  color: var(--st-paper);
+}
+
+button.seiton-card-menu-item {
+  border-radius: 3px;
+  color: var(--st-ink-strong);
+  font-weight: 500;
+}
+
+button.seiton-card-menu-item:hover,
+button.seiton-card-menu-item:focus-visible,
+button.st-select-item:hover,
+button.st-select-item.is-active {
+  background: var(--st-hover);
+  color: var(--st-ink-strong);
+}
+
+button.st-select-item[aria-selected="true"] {
+  font-weight: 700;
+}
+
+/* Override mobile round filter modals back to sharp 4px */
+@media (max-width: 640px) {
+  .is-phone .modal.seiton-filter-modal,
+  .modal.seiton-filter-modal,
+  .modal.st-modal.st-modal {
+    border-radius: 4px;
+  }
+}

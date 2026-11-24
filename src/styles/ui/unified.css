@@ -1,0 +1,184 @@
+/* --------------------------------------------------------------------------
+   Unified UI Layer across all 8 tabs (DESIGN.md)
+   Left-axis alignment, unified toolbar rhythm, sharp corners, focus accent.
+   Never overrides --st-max-frame or page width.
+   -------------------------------------------------------------------------- */
+
+/* 1. Top spacing rhythm below .seiton-top-nav */
+.seiton-tsubuyaki-content,
+.seiton-classes-body,
+.seiton-projects .seiton-projects-body,
+.seiton-bookshelf-controls,
+.seiton-assets .seiton-assets-body {
+  margin-top: 20px;
+}
+
+/* 2. Left-axis section headings (title + count stay together on the left) */
+.seiton-zone-head,
+.seiton-section .seiton-section-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.seiton-zone-head .seiton-zone-actions,
+.seiton-zone-head > .seiton-text-action,
+.seiton-section .seiton-section-head .seiton-section-actions {
+  margin-left: auto;
+}
+
+.seiton-tsubuyaki .seiton-day-head {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.seiton-tsubuyaki .seiton-day-count {
+  margin-left: 0;
+}
+
+/* 3. Prevent Obsidian's default centered button styling on left-aligned text */
+.seiton-home button.seiton-home-card-link,
+.seiton-home button.seiton-item-title,
+.seiton-home button.seiton-book-card-title,
+.seiton-home button.seiton-related-title,
+.seiton-home button.seiton-text-action,
+.seiton-home button.seiton-index-label,
+.seiton-home button.seiton-asset-subtab {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.seiton-empty,
+.seiton-section-empty {
+  text-align: left;
+}
+
+.seiton-assets .seiton-asset-chart-empty {
+  padding: 20px 16px;
+  text-align: left;
+}
+
+/* 4. Sharp & consistent corner radius (--st-radius-md = 6px) across controls */
+.seiton-bookshelf input.seiton-library-search,
+.seiton-bookshelf .seiton-bookshelf-pill-select .st-select-trigger,
+.seiton-home button.seiton-project-kind-pill,
+.seiton-tsubuyaki .seiton-composer-tag-pill,
+.seiton-home .seiton-composer-tag-pill,
+.seiton-home .st-pill {
+  border-radius: var(--st-radius-md) !important;
+}
+
+/* 5. Library index alignment inside its scoped container */
+.seiton-library .seiton-index-top {
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.seiton-library .seiton-index-total {
+  gap: 8px;
+}
+
+/* 6. Projects unified toolbar (matches Classes toolbar) & Next Action accent */
+.seiton-project-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.seiton-project-term-row {
+  align-items: center;
+  border-bottom: 1px solid var(--st-hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+.seiton-project-term-tabs {
+  align-items: center;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-start;
+}
+
+.seiton-home button.seiton-project-term-tab {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--st-radius-md);
+  color: var(--st-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--st-text-xs);
+  gap: 6px;
+  justify-content: flex-start;
+  min-height: 28px;
+  padding: 4px 10px;
+  text-align: left;
+}
+
+.seiton-home button.seiton-project-term-tab:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-project-term-tab.is-active {
+  background: var(--background-primary);
+  border-color: var(--st-hairline);
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-project-term-count {
+  color: var(--st-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.seiton-project-summary {
+  align-items: baseline;
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.seiton-project-summary-num {
+  color: var(--st-data);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.seiton-project-summary-label {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+}
+
+.seiton-project-next-card {
+  border-color: color-mix(in srgb, var(--st-data) 42%, var(--st-hairline));
+  border-left: 3px solid var(--st-data);
+}
+
+/* 7. Assets subnav left-axis polish */
+.seiton-assets .seiton-asset-subnav {
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0;
+}
+
+.seiton-assets .seiton-asset-index-top {
+  align-items: flex-end;
+  justify-content: space-between;
+}

@@ -1,6 +1,6 @@
 import { setIcon } from "obsidian";
 import { createSelect, type SelectControl } from "../ui/select";
-import type { LibrarySort } from "./query";
+import type { LibraryFilter, LibrarySort } from "./query";
 import type { LibrarySelection } from "./selection";
 
 export const SORT_LABELS: Array<{ key: LibrarySort; label: string }> = [
@@ -10,11 +10,23 @@ export const SORT_LABELS: Array<{ key: LibrarySort; label: string }> = [
   { key: "random", label: "シャッフル" },
 ];
 
+const QUICK_KINDS: Array<{ id: LibraryFilter; label: string }> = [
+  { id: "all", label: "すべて" },
+  { id: "memo", label: "メモ" },
+  { id: "class", label: "授業" },
+  { id: "webclip", label: "Web" },
+  { id: "book", label: "本" },
+  { id: "other", label: "ノート" },
+  { id: "prompt", label: "プロンプト" },
+];
+
 export interface LibraryControlsOptions {
   getActiveFilterCount: () => number;
+  getFilter: () => LibraryFilter;
   getLayout: () => "cards" | "list";
   getQuery: () => string;
   getSort: () => LibrarySort;
+  onFilterChange: (filter: LibraryFilter) => void;
   onLayoutChange: (layout: "cards" | "list") => void;
   onOpenFilterModal: () => void;
   onQueryChange: (query: string) => void;
@@ -29,6 +41,8 @@ export class LibraryControls {
   private filterBadge: HTMLElement | null = null;
   private filterBtn: HTMLButtonElement | null = null;
   private sortSelect: SelectControl | null = null;
+  private kindButtons = new Map<LibraryFilter, HTMLButtonElement>();
+  private unreadWebBtn: HTMLButtonElement | null = null;
   private searchTimer: number | null = null;
 
   constructor(options: LibraryControlsOptions) {
@@ -157,8 +171,30 @@ export class LibraryControls {
     });
     this.options.selection.bindToggle(selectToggle);
 
-    // クイック抽出ピル群
-    const quickBar = parent.createDiv({ cls: "seiton-library-quick-pills" });
+    // 2段目: 左に種類プリセット、右にクイックアクション
+    const subbar = parent.createDiv({ cls: "seiton-library-subbar" });
+    const kindStrip = subbar.createDiv({
+      attr: { "aria-label": "種類で絞り込み", role: "group" },
+      cls: "seiton-library-kinds",
+    });
+    this.kindButtons.clear();
+    const activeFilter = this.options.getFilter();
+    for (const kind of QUICK_KINDS) {
+      const btn = kindStrip.createEl("button", {
+        attr: {
+          "aria-pressed": activeFilter === kind.id ? "true" : "false",
+          type: "button",
+        },
+        cls: `seiton-library-kind-btn${activeFilter === kind.id ? " is-active" : ""}`,
+        text: kind.label,
+      });
+      btn.addEventListener("click", () => {
+        this.options.onFilterChange(kind.id);
+      });
+      this.kindButtons.set(kind.id, btn);
+    }
+
+    const quickBar = subbar.createDiv({ cls: "seiton-library-quick-pills" });
     const unreadWebBtn = quickBar.createEl("button", {
       attr: { type: "button" },
       cls: "seiton-text-action seiton-library-quick-pill",
@@ -168,10 +204,13 @@ export class LibraryControls {
     setIcon(unreadWebIcon, "globe");
     unreadWebBtn.prepend(unreadWebIcon);
     unreadWebBtn.addEventListener("click", () => {
-      this.options.onQueryChange("kind:webclip");
-      this.setQuery("kind:webclip");
+      const next =
+        this.options.getQuery().trim() === "kind:webclip" ? "" : "kind:webclip";
+      this.options.onQueryChange(next);
+      this.setQuery(next);
       this.options.onRefresh();
     });
+    this.unreadWebBtn = unreadWebBtn;
 
     const shuffleBtn = quickBar.createEl("button", {
       attr: { type: "button" },
@@ -187,7 +226,24 @@ export class LibraryControls {
       this.options.onRefresh();
     });
 
+    this.setActiveFilter(activeFilter, this.options.getQuery());
     this.updateFilterBadge();
+  }
+
+  setActiveFilter(filter: LibraryFilter, query = ""): void {
+    for (const [id, btn] of this.kindButtons.entries()) {
+      const active = id === filter;
+      btn.toggleClass("is-active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    }
+    if (this.unreadWebBtn) {
+      const isWebQuery = query.trim() === "kind:webclip";
+      this.unreadWebBtn.toggleClass("is-active", isWebQuery);
+      this.unreadWebBtn.setAttribute(
+        "aria-pressed",
+        isWebQuery ? "true" : "false"
+      );
+    }
   }
 
   setQuery(query: string): void {
@@ -227,9 +283,15 @@ export class LibraryControls {
   }
 
   reset(): void {
+    if (this.searchTimer !== null) {
+      window.clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
     this.searchInput = null;
     this.filterBadge = null;
     this.filterBtn = null;
     this.sortSelect = null;
+    this.kindButtons.clear();
+    this.unreadWebBtn = null;
   }
 }

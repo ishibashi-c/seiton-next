@@ -6,17 +6,18 @@
 
 .seiton-prompt-composer {
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--st-radius-lg);
-  padding: 18px 20px;
+  border: 1px solid var(--st-hairline);
+  border-left: 3px solid var(--st-data);
+  border-radius: var(--st-radius-md);
+  padding: 16px 18px;
 }
 
 .seiton-prompt-item {
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--st-radius-lg);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
   margin-bottom: 12px;
-  padding: 16px;
+  padding: 14px 16px;
 }
 
 .seiton-prompt-history {

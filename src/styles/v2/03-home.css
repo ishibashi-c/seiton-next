@@ -1,0 +1,397 @@
+/* --------------------------------------------------------------------------
+   Home v2 (.st2-home)
+   High-contrast B&W editorial desk + 2px focus borders + ~5% Green state markers
+   -------------------------------------------------------------------------- */
+
+.st2-home {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.st2-home-grid {
+  align-items: start;
+  display: grid;
+  gap: 24px 28px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(276px, 1fr);
+  margin-top: 20px;
+}
+
+.st2-home-main,
+.st2-home-side {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.st2-home-section {
+  min-width: 0;
+}
+
+.st2-home-section .seiton-zone {
+  margin-top: 0;
+}
+
+.st2-home-section .seiton-zone-head {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+
+.st2-home-section .seiton-zone-head h2 {
+  color: var(--st-ink-strong);
+  font-size: var(--st-text-sm);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* Capture Desk — 2px ink protagonist frame */
+
+.st2-home .seiton-capture-card {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+  display: grid;
+  gap: 6px 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 0;
+  padding: 12px 14px 10px;
+}
+
+.st2-home .seiton-capture-card:focus-within {
+  border-color: var(--st-ink-strong);
+}
+
+.st2-home .seiton-capture-label {
+  color: var(--st-ink-strong);
+  font-size: var(--st-text-xs);
+  font-weight: 700;
+  margin: 0;
+}
+
+.st2-home .seiton-capture-destination {
+  color: var(--st-muted);
+  font-size: 11px;
+  justify-self: end;
+  margin: 0;
+}
+
+.st2-home .seiton-capture-card .seiton-capture-textarea {
+  color: var(--st-ink-strong);
+  font-size: var(--st-text-base);
+  line-height: 1.6;
+  min-height: 46px;
+}
+
+.st2-home .seiton-capture-card .seiton-save-button {
+  background: var(--st-ink-strong);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 4px;
+  color: var(--st-paper);
+  font-size: var(--st-text-xs);
+  font-weight: 700;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 14px;
+}
+
+/* Timetable integration: 1px resting chips, 2px black border + green slot on .is-now */
+
+.st2-home .seiton-home-timetable {
+  margin-top: 0;
+}
+
+.st2-home button.seiton-timetable-chip {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  min-height: 34px;
+  padding: 5px 10px;
+}
+
+.st2-home button.seiton-timetable-chip:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.st2-home button.seiton-timetable-chip.is-now {
+  border: 2px solid var(--st-ink-strong);
+}
+
+.st2-home button.seiton-timetable-chip.is-now .seiton-timetable-chip-slot {
+  color: var(--st-data);
+  font-weight: 700;
+}
+
+/* Resume Ledger rows */
+
+.st2-home-resume-row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.st2-home-resume-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.st2-home button.st2-home-resume-title {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink-strong);
+  cursor: pointer;
+  display: block;
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  height: auto;
+  justify-content: flex-start;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.st2-home button.st2-home-resume-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.st2-home-resume-meta {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st2-home-resume-side {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.st2-home-resume-date {
+  color: var(--st-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Active Projects — 2px solid black emphasized cards + Green Next marker */
+
+.st2-home-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.st2-home-project {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.st2-home-project:hover {
+  background: var(--st-hover);
+}
+
+.st2-home-project-head {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.st2-home button.st2-home-project-title {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink-strong);
+  cursor: pointer;
+  display: block;
+  font-family: var(--font-interface);
+  font-size: var(--st-text-sm);
+  font-weight: 700;
+  height: auto;
+  justify-content: flex-start;
+  line-height: 1.35;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st2-home-project-date {
+  color: var(--st-muted);
+  flex: none;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.st2-home-project-next {
+  align-items: baseline;
+  color: var(--st-ink-strong);
+  display: flex;
+  font-size: var(--st-text-xs);
+  gap: 6px;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.st2-home-project-next-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st2-home-project-next.is-empty {
+  color: var(--st-muted);
+}
+
+/* Shortcuts — resting 1px border, snaps to black on hover */
+
+.st2-home .seiton-shortcuts {
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.st2-home button.seiton-shortcut-main {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  min-height: 34px;
+  padding: 5px 8px;
+}
+
+.st2-home button.seiton-shortcut-main:hover {
+  background: var(--st-paper);
+  border-color: var(--st-ink-strong);
+}
+
+/* Rediscovery Bottom Strip — 2px top anchor, 1px quiet cards */
+
+.st2-home-rediscovery {
+  border-top: 2px solid var(--st-ink-strong);
+  margin-top: 24px;
+  padding-top: 18px;
+}
+
+.st2-home-rediscovery-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.st2-home-rediscovery-card {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.st2-home-rediscovery-card:hover {
+  border-color: var(--st-ink-strong);
+}
+
+.st2-home-rediscovery-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.st2-home button.st2-home-rediscovery-title {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--st-ink-strong);
+  cursor: pointer;
+  display: -webkit-box;
+  font-family: var(--font-text);
+  font-size: var(--st-text-sm);
+  font-weight: 600;
+  height: auto;
+  justify-content: flex-start;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: auto-phrase;
+}
+
+.st2-home-rediscovery-meta {
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Starter */
+
+.st2-home-starter {
+  background: var(--st-paper);
+  border: 2px solid var(--st-ink-strong);
+  border-radius: 4px;
+  margin-top: 20px;
+  padding: 16px 18px;
+}
+
+.st2-home-starter h2 {
+  color: var(--st-ink-strong);
+  font-size: var(--st-text-md);
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.st2-home-starter-text {
+  color: var(--st-muted);
+  font-size: var(--st-text-sm);
+  margin-bottom: 12px;
+}
+
+@media (max-width: 860px) {
+  .st2-home-grid {
+    gap: 20px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .st2-home-rediscovery-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

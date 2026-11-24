@@ -78,3 +78,17 @@
   padding: 16px;
 }
 
+.seiton-project-task-item {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--st-radius-md);
+  padding: 8px 12px;
+}
+
+.seiton-project-task-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+

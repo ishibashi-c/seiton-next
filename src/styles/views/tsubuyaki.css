@@ -340,7 +340,7 @@
 }
 
 .seiton-calendar-day.is-today {
-  box-shadow: inset 0 0 0 1px var(--interactive-accent);
+  box-shadow: inset 0 0 0 1px var(--st-data);
   font-weight: 600;
 }
 
@@ -389,7 +389,7 @@
 }
 
 .seiton-calendar-day-dot {
-  background: var(--interactive-accent);
+  background: var(--st-data);
   border-radius: 50%;
   bottom: 2px;
   height: 3px;
@@ -451,15 +451,17 @@
 }
 
 .seiton-calendar-footer-btn.mod-cta {
-  background: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-  font-weight: 500;
+  background: var(--st-ink);
+  border-color: var(--st-ink);
+  border-radius: var(--st-radius-md);
+  color: var(--st-on-primary);
+  font-weight: 600;
 }
 
 .seiton-calendar-footer-btn.mod-cta:hover {
-  background: var(--interactive-accent-hover);
-  border-color: var(--interactive-accent-hover);
+  background: var(--st-ink);
+  border-color: var(--st-ink);
+  opacity: 0.86;
 }
 
 .seiton-calendar-footer-btn.mod-cta.is-disabled {
@@ -572,7 +574,7 @@
   align-items: baseline;
   display: flex;
   gap: 8px;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding-bottom: 4px;
 }
 
@@ -851,5 +853,91 @@
   .seiton-tsubuyaki-row {
     padding: 10px 0;
   }
+}
+
+/* Redesigned Tsubuyaki 2-tier left-axis toolbar */
+
+.seiton-tsubuyaki-presets {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.seiton-home button.seiton-tsubuyaki-preset {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--st-radius-md);
+  color: var(--st-muted);
+  display: inline-flex;
+  font-size: var(--st-text-xs);
+  justify-content: flex-start;
+  min-height: 28px;
+  padding: 4px 10px;
+  text-align: left;
+}
+
+.seiton-home button.seiton-tsubuyaki-preset:hover {
+  background: var(--st-hover);
+  color: var(--st-ink);
+}
+
+.seiton-home button.seiton-tsubuyaki-preset.is-active {
+  background: var(--background-primary);
+  border-color: var(--st-hairline);
+  color: var(--st-ink);
+  font-weight: 600;
+}
+
+.seiton-tsubuyaki-subbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.seiton-tsubuyaki-subbar .seiton-tsubuyaki-tags {
+  flex: 1 1 auto;
+  margin-top: 0;
+  min-width: 0;
+}
+
+.seiton-tsubuyaki-subbar-actions {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.seiton-tsubuyaki-search-wrap {
+  position: relative;
+}
+
+.seiton-tsubuyaki-search-wrap .seiton-tsubuyaki-search-icon {
+  left: 9px;
+  pointer-events: none;
+  position: absolute;
+}
+
+.seiton-tsubuyaki-search-wrap input.seiton-tsubuyaki-search {
+  background: var(--background-primary);
+  border: 1px solid var(--st-hairline);
+  border-radius: var(--st-radius-md);
+  height: 30px;
+  padding: 0 10px 0 28px;
+  width: 156px;
+}
+
+.seiton-tsubuyaki-search-wrap input.seiton-tsubuyaki-search:focus {
+  border-color: var(--st-ink);
+}
+
+.seiton-tsubuyaki-count {
+  color: var(--st-data);
+  font-weight: 600;
 }
 

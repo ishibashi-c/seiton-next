@@ -132,6 +132,7 @@ export default class SeitonNextPlugin extends Plugin {
           this.promptService,
           this.notes,
           () => this.settings,
+          (patch) => this.saveSettings(patch),
           this.links
         )
     );
@@ -166,9 +167,10 @@ export default class SeitonNextPlugin extends Plugin {
           leaf,
           this.indexService,
           this.notes,
+          this.properties,
           () => this.settings,
           (patch) => this.saveSettings(patch),
-          (path) => this.coordinator.openFile(path)
+          (path) => this.coordinator.openFileAtEnd(path)
         )
     );
     this.registerView(
@@ -200,6 +202,7 @@ export default class SeitonNextPlugin extends Plugin {
           this.properties,
           this.notes,
           this.promptService,
+          this.memoService,
           { openPrompt: (path) => void this.coordinator.openPrompt(path) }
         )
     );
