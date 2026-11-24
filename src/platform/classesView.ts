@@ -1128,15 +1128,64 @@ export class SeitonClassesView extends ItemView {
       settings
     );
 
-    // 5. 時間割 / クイック起動ストリップ（当学期表示時）
-    if (
-      this.activeFilter === "current" ||
-      this.activeFilter === currentTermKey
-    ) {
-      const currentTermGroups = [...courseGroupsMap.values()].filter(
-        (group) => `${group.grade} ${group.term}` === currentTermKey
+    // 5. 時間割 / クイック起動ストリップ（全学期以外の特定学期表示時）
+    if (this.activeFilter !== "all") {
+      const isCurrentTerm =
+        this.activeFilter === "current" || this.activeFilter === currentTermKey;
+      const [parsedGrade, parsedTerm] = isCurrentTerm
+        ? [settings.currentGrade, settings.currentTerm]
+        : (this.activeFilter.split(" ") as [AcademicGrade, AcademicTerm]);
+      const targetGrade = parsedGrade || settings.currentGrade;
+      const targetTerm = parsedTerm || settings.currentTerm;
+      const targetKey = `${targetGrade} ${targetTerm}`;
+
+      const termGroupsMap = new Map<string, CourseGroup>();
+      for (const reg of registeredCourses) {
+        if (`${reg.grade} ${reg.term}` !== targetKey) {
+          continue;
+        }
+        const key = reg.name.trim();
+        termGroupsMap.set(key, {
+          courseName: key,
+          grade: reg.grade,
+          isInferred: false,
+          maxRound: 0,
+          notes: [],
+          registration: reg,
+          term: reg.term,
+        });
+      }
+      for (const note of scopeNotes) {
+        if (`${note.grade} ${note.term}` !== targetKey) {
+          continue;
+        }
+        let group = termGroupsMap.get(note.course);
+        if (!group) {
+          group = {
+            courseName: note.course,
+            grade: note.grade,
+            isInferred: note.isInferred,
+            maxRound: 0,
+            notes: [],
+            term: note.term,
+          };
+          termGroupsMap.set(note.course, group);
+        }
+        group.notes.push(note);
+        if (note.round > group.maxRound) {
+          group.maxRound = note.round;
+        }
+      }
+      this.renderTimetableStrip(
+        this.bodyEl,
+        [...termGroupsMap.values()],
+        settings,
+        {
+          grade: targetGrade,
+          isCurrentTerm,
+          term: targetTerm,
+        }
       );
-      this.renderTimetableStrip(this.bodyEl, currentTermGroups, settings);
     }
 
     // 6. 「執筆中（固定済み）」セクション
@@ -1184,6 +1233,7 @@ export class SeitonClassesView extends ItemView {
     currentBtn.addEventListener("click", () => {
       this.activeFilter = "current";
       this.selectedCourse = "";
+      this.timetableUserToggled = false;
       this.rerenderCached();
     });
 
@@ -1207,6 +1257,7 @@ export class SeitonClassesView extends ItemView {
       termBtn.addEventListener("click", () => {
         this.activeFilter = termKey;
         this.selectedCourse = "";
+        this.timetableUserToggled = false;
         this.rerenderCached();
       });
     }
@@ -1223,6 +1274,7 @@ export class SeitonClassesView extends ItemView {
     allBtn.addEventListener("click", () => {
       this.activeFilter = "all";
       this.selectedCourse = "";
+      this.timetableUserToggled = false;
       this.rerenderCached();
     });
 
@@ -1342,22 +1394,29 @@ export class SeitonClassesView extends ItemView {
   /** 時間割ストリップ（配置済み科目がなければコンパクトバー、配置済みまたは展開時は週間時間割を表示） */
   private renderTimetableStrip(
     container: HTMLElement,
-    currentTermGroups: CourseGroup[],
-    settings: SeitonSettings
+    termGroups: CourseGroup[],
+    settings: SeitonSettings,
+    scope: {
+      grade: AcademicGrade;
+      isCurrentTerm: boolean;
+      term: AcademicTerm;
+    }
   ): void {
-    const currentRegistrations = (settings.courses ?? []).filter(
-      (c) =>
-        c.grade === settings.currentGrade && c.term === settings.currentTerm
+    const termRegistrations = (settings.courses ?? []).filter(
+      (c) => c.grade === scope.grade && c.term === scope.term
     );
     const groupByName = new Map(
-      currentTermGroups.map((group) => [group.courseName, group])
+      termGroups.map((group) => [group.courseName, group])
     );
-    const unregisteredGroups = currentTermGroups.filter(
+    const unregisteredGroups = termGroups.filter(
       (group) => !group.registration
     );
 
     const today = todayKey();
     const hasTodayNote = (courseName: string): boolean => {
+      if (!scope.isCurrentTerm) {
+        return false;
+      }
       const group = groupByName.get(courseName);
       return Boolean(
         group?.notes.some((note) => !note.isExtra && note.lectureDate === today)
@@ -1365,34 +1424,51 @@ export class SeitonClassesView extends ItemView {
     };
 
     const { scheduled, unscheduled, visibleDays, visiblePeriods } =
-      partitionCoursesForTimetable(currentRegistrations);
+      partitionCoursesForTimetable(termRegistrations);
 
     const isOpen = this.timetableUserToggled
       ? this.timetableOpen
-      : scheduled.size > 0;
+      : scope.isCurrentTerm && scheduled.size > 0;
 
     if (!isOpen) {
       const strip = container.createDiv({
         cls: "seiton-classes-quick-strip",
       });
       const left = strip.createDiv({ cls: "seiton-classes-quick-left" });
-      left.createSpan({
-        cls: "seiton-timetable-ondemand-label",
-        text: "今日のノート",
-      });
-      const chips = left.createDiv({ cls: "seiton-timetable-ondemand-list" });
-      this.renderOndemandChips(
-        chips,
-        unscheduled,
-        unregisteredGroups,
-        groupByName,
-        hasTodayNote
-      );
+      if (scope.isCurrentTerm) {
+        left.createSpan({
+          cls: "seiton-timetable-ondemand-label",
+          text: "今日のノート",
+        });
+        const chips = left.createDiv({
+          cls: "seiton-timetable-ondemand-list",
+        });
+        this.renderOndemandChips(
+          chips,
+          unscheduled,
+          unregisteredGroups,
+          groupByName,
+          hasTodayNote,
+          true
+        );
 
-      if (unscheduled.length === 0 && unregisteredGroups.length === 0) {
+        if (unscheduled.length === 0 && unregisteredGroups.length === 0) {
+          chips.createSpan({
+            cls: "seiton-classes-quick-empty",
+            text: "科目を登録すると1クリックで今日のノートを開けます",
+          });
+        }
+      } else {
+        left.createSpan({
+          cls: "seiton-timetable-ondemand-label",
+          text: `週間時間割（${scope.grade} ${scope.term}）`,
+        });
+        const chips = left.createDiv({
+          cls: "seiton-timetable-ondemand-list",
+        });
         chips.createSpan({
           cls: "seiton-classes-quick-empty",
-          text: "科目を登録すると1クリックで今日のノートを開けます",
+          text: `${termRegistrations.length}科目登録済み（開いて時間割・オンデマンドを確認）`,
         });
       }
 
@@ -1418,11 +1494,13 @@ export class SeitonClassesView extends ItemView {
     });
     headLeft.createEl("h2", {
       cls: "seiton-classes-timetable-title",
-      text: `週間時間割（${settings.currentGrade} ${settings.currentTerm}）`,
+      text: `週間時間割（${scope.grade} ${scope.term}）`,
     });
     headLeft.createSpan({
       cls: "seiton-classes-timetable-hint",
-      text: "クリックで今日のノートを書く · 空きコマで科目登録",
+      text: scope.isCurrentTerm
+        ? "クリックで今日のノートを書く · 空きコマで科目登録"
+        : "クリックで科目を絞り込み · 歯車で科目設定",
     });
     const closeBtn = head.createEl("button", {
       cls: "st-btn is-ghost is-sm seiton-classes-timetable-toggle",
@@ -1436,8 +1514,8 @@ export class SeitonClassesView extends ItemView {
     });
 
     const now = new Date();
-    const todayWeekday = weekdayLabelOf(now);
-    const activePeriod = currentPeriodOf(now);
+    const todayWeekday = scope.isCurrentTerm ? weekdayLabelOf(now) : "";
+    const activePeriod = scope.isCurrentTerm ? currentPeriodOf(now) : null;
 
     const tableWrap = box.createDiv({ cls: "seiton-timetable-wrap" });
     const grid = tableWrap.createDiv({ cls: "seiton-timetable-grid" });
@@ -1496,9 +1574,11 @@ export class SeitonClassesView extends ItemView {
             attr: {
               role: "button",
               tabindex: "0",
-              title: todayExists
-                ? `${reg.name} の今日のノートを開く`
-                : `${reg.name} の今日のノートを作成`,
+              title: scope.isCurrentTerm
+                ? todayExists
+                  ? `${reg.name} の今日のノートを開く`
+                  : `${reg.name} の今日のノートを作成`
+                : `${reg.name} で絞り込む`,
             },
             cls: `seiton-timetable-slot${todayExists ? " has-today" : ""}`,
           });
@@ -1534,7 +1614,13 @@ export class SeitonClassesView extends ItemView {
           });
 
           const activate = () => {
-            void this.createClassNote(reg.name);
+            if (scope.isCurrentTerm) {
+              void this.createClassNote(reg.name);
+              return;
+            }
+            this.selectedCourse =
+              this.selectedCourse === reg.name ? "" : reg.name;
+            this.rerenderCached();
           };
           slotBtn.addEventListener("click", (event) => {
             if ((event.target as Element).closest("button")) {
@@ -1565,7 +1651,8 @@ export class SeitonClassesView extends ItemView {
         unscheduled,
         unregisteredGroups,
         groupByName,
-        hasTodayNote
+        hasTodayNote,
+        scope.isCurrentTerm
       );
     }
   }
@@ -1575,7 +1662,8 @@ export class SeitonClassesView extends ItemView {
     unscheduled: CourseRegistration[],
     unregisteredGroups: CourseGroup[],
     groupByName: Map<string, CourseGroup>,
-    hasTodayNote: (courseName: string) => boolean
+    hasTodayNote: (courseName: string) => boolean,
+    isCurrentTerm: boolean
   ): void {
     for (const reg of unscheduled) {
       const count =
@@ -1587,9 +1675,11 @@ export class SeitonClassesView extends ItemView {
       });
       const openBtn = chip.createEl("button", {
         attr: {
-          title: todayExists
-            ? `${reg.name} の今日のノートを開く`
-            : `${reg.name} の今日のノートを作成`,
+          title: isCurrentTerm
+            ? todayExists
+              ? `${reg.name} の今日のノートを開く`
+              : `${reg.name} の今日のノートを作成`
+            : `${reg.name} で絞り込む`,
           type: "button",
         },
         cls: "seiton-ondemand-chip-main",
@@ -1603,7 +1693,12 @@ export class SeitonClassesView extends ItemView {
         text: `${count}回`,
       });
       openBtn.addEventListener("click", () => {
-        void this.createClassNote(reg.name);
+        if (isCurrentTerm) {
+          void this.createClassNote(reg.name);
+          return;
+        }
+        this.selectedCourse = this.selectedCourse === reg.name ? "" : reg.name;
+        this.rerenderCached();
       });
 
       const editBtn = chip.createEl("button", {
@@ -1622,6 +1717,7 @@ export class SeitonClassesView extends ItemView {
 
     for (const group of unregisteredGroups) {
       const todayExists = hasTodayNote(group.courseName);
+      const count = group.notes.filter((note) => !note.isExtra).length;
       const chip = chips.createDiv({
         cls: `seiton-ondemand-chip is-inferred${todayExists ? " has-today" : ""}`,
       });
@@ -1632,10 +1728,16 @@ export class SeitonClassesView extends ItemView {
       openBtn.createSpan({ text: group.courseName });
       openBtn.createSpan({
         cls: "seiton-ondemand-chip-count",
-        text: `${group.notes.length}回`,
+        text: `${count}回`,
       });
       openBtn.addEventListener("click", () => {
-        void this.createClassNote(group.courseName);
+        if (isCurrentTerm) {
+          void this.createClassNote(group.courseName);
+          return;
+        }
+        this.selectedCourse =
+          this.selectedCourse === group.courseName ? "" : group.courseName;
+        this.rerenderCached();
       });
 
       const regBtn = chip.createEl("button", {
