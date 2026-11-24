@@ -674,6 +674,7 @@ export class SeitonClassesView extends ItemView {
   private bodyEl: HTMLElement | null = null;
   private sublineEl: HTMLElement | null = null;
   private classSchedule: ClassSessionEntry[] = [];
+  private justPinnedPath: string | null = null;
   private lastIndex: VaultIndex | null = null;
   private refreshTimer: number | null = null;
   private refreshing = false;
@@ -756,6 +757,7 @@ export class SeitonClassesView extends ItemView {
     this.contentEl.empty();
     this.bodyEl = null;
     this.sublineEl = null;
+    this.justPinnedPath = null;
     this.lastIndex = null;
   }
 
@@ -1193,6 +1195,7 @@ export class SeitonClassesView extends ItemView {
 
     // 7. 「これまでの記録（蓄積）」カードウォール
     this.renderArchiveWall(this.bodyEl, archivedNotes, courseBarItems);
+    this.justPinnedPath = null;
   }
 
   /** 最上段：学期フィルター・サマリー・科目フィルター（すべて左軸揃え） */
@@ -1832,8 +1835,9 @@ export class SeitonClassesView extends ItemView {
     note: EnrichedClassNote,
     isPinned: boolean
   ): void {
+    const isJustPinned = isPinned && this.justPinnedPath === note.path;
     const card = parent.createEl("article", {
-      cls: `seiton-keep-card${isPinned ? " is-pinned" : ""}`,
+      cls: `seiton-keep-card${isPinned ? " is-pinned" : ""}${isJustPinned ? " is-just-pinned" : ""}`,
     });
 
     const top = card.createDiv({ cls: "seiton-keep-card-top" });
@@ -1936,6 +1940,7 @@ export class SeitonClassesView extends ItemView {
       });
       note.record.pinned = nextPinned;
       note.record.frontmatter.pinned = nextPinned;
+      this.justPinnedPath = nextPinned ? note.path : null;
       this.indexService.invalidate(note.path);
       if (this.lastIndex) {
         this.render(this.lastIndex);

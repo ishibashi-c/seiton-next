@@ -123,7 +123,9 @@ export function createSelect(options: SelectOptions): SelectControl {
     const height = pop.offsetHeight;
     const below = rect.bottom + 6;
     const above = rect.top - height - 6;
-    pop.style.top = `${below + height > window.innerHeight - 8 && above > 8 ? above : below}px`;
+    const flippedAbove = below + height > window.innerHeight - 8 && above > 8;
+    pop.style.top = `${flippedAbove ? above : below}px`;
+    pop.style.transformOrigin = flippedAbove ? "bottom center" : "top center";
   };
 
   const select = (next: string): void => {

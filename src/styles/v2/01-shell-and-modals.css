@@ -320,3 +320,198 @@ button.st-select-item[aria-selected="true"] {
     border-radius: 4px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Lightweight GPU Micro-Animations (#1 press, #2 modal, #3 popover, #4 FAB)
+   -------------------------------------------------------------------------- */
+
+@keyframes st-modal-in {
+  from {
+    opacity: 0;
+    scale: 0.97;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes st-pop-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes st-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* #1 Press feedback on buttons, pills, and chips */
+
+.seiton-home button.seiton-primary-text.seiton-primary-text,
+.seiton-projects button.seiton-primary-text.seiton-primary-text,
+.seiton-prompt-root button.seiton-primary-text.seiton-primary-text,
+.seiton-page-actions button.seiton-text-action,
+.modal.st-modal .st-btn,
+.modal.st-modal .mod-cta,
+.seiton-classes button.seiton-classes-term-tab,
+.seiton-classes button.seiton-course-filter-chip,
+.modal.st-modal button.seiton-class-mode-btn,
+.modal.st-modal button.seiton-extra-preset-chip,
+.modal.seiton-modal button.seiton-quick-class-pill,
+button.seiton-quick-class-pill {
+  transition: transform var(--st-motion-fast) var(--st-ease-out);
+}
+
+.seiton-home button.seiton-primary-text.seiton-primary-text:active:not(:disabled),
+.seiton-projects button.seiton-primary-text.seiton-primary-text:active:not(:disabled),
+.seiton-prompt-root button.seiton-primary-text.seiton-primary-text:active:not(:disabled),
+.seiton-page-actions button.seiton-text-action:active:not(:disabled),
+.modal.st-modal .st-btn:active:not(:disabled),
+.modal.st-modal .mod-cta:active:not(:disabled),
+.seiton-classes button.seiton-classes-term-tab:active:not(:disabled),
+.seiton-classes button.seiton-course-filter-chip:active:not(:disabled),
+.modal.st-modal button.seiton-class-mode-btn:active:not(:disabled),
+.modal.st-modal button.seiton-extra-preset-chip:active:not(:disabled),
+.modal.seiton-modal button.seiton-quick-class-pill:active:not(:disabled),
+button.seiton-quick-class-pill:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .seiton-page-actions button.seiton-text-action,
+  .seiton-classes button.seiton-classes-term-tab,
+  .seiton-classes button.seiton-course-filter-chip,
+  .modal.st-modal button.seiton-class-mode-btn,
+  .modal.st-modal button.seiton-extra-preset-chip,
+  .modal.seiton-modal button.seiton-quick-class-pill,
+  button.seiton-quick-class-pill {
+    transition:
+      border-color var(--st-motion-fast) ease,
+      color var(--st-motion-fast) ease,
+      transform var(--st-motion-fast) var(--st-ease-out);
+  }
+}
+
+/* #2 Standard modals entrance (quick search stays 0ms) */
+
+.modal.st-modal:not(.seiton-quick-search-modal),
+.modal.seiton-modal:not(.seiton-quick-search-modal),
+.modal.seiton-filter-modal,
+.modal.seiton-book-modal,
+.modal.seiton-capture-modal,
+.modal.seiton-edit-modal,
+.modal.seiton-promote-modal,
+.modal.seiton-append-modal,
+.modal.seiton-triage-modal,
+.modal.seiton-webclip-modal,
+.modal.seiton-webclip-capture-modal,
+.modal.seiton-bulk-modal,
+.modal.seiton-calil-modal,
+.modal.seiton-cover-modal,
+.modal.seiton-scanner-modal,
+.modal.seiton-migration-modal {
+  animation: st-modal-in var(--st-motion-modal) var(--st-ease-out);
+}
+
+/* #3 Card menu, custom select, calendar popover entrance */
+
+.st-select-pop.st-select-pop,
+.seiton-calendar-popover {
+  animation: st-pop-in var(--st-motion-normal) var(--st-ease-out);
+  transform-origin: top center;
+}
+
+.seiton-card-menu.seiton-card-menu {
+  animation: st-pop-in var(--st-motion-normal) var(--st-ease-out);
+  transform-origin: top right;
+}
+
+.st-select-pop.is-dialog,
+.seiton-card-menu.is-dialog,
+.seiton-calendar-popover.is-dialog {
+  transform-origin: center;
+}
+
+/* #4 Floating action button show/hide & press */
+
+.seiton-fab {
+  transform: translateY(8px) scale(0.96);
+  transition:
+    opacity var(--st-motion-modal) var(--st-ease-out),
+    transform var(--st-motion-modal) var(--st-ease-out);
+}
+
+.seiton-fab.is-visible {
+  transform: none;
+}
+
+.seiton-fab.is-visible:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal.st-modal:not(.seiton-quick-search-modal),
+  .modal.seiton-modal:not(.seiton-quick-search-modal),
+  .modal.seiton-filter-modal,
+  .modal.seiton-book-modal,
+  .modal.seiton-capture-modal,
+  .modal.seiton-edit-modal,
+  .modal.seiton-promote-modal,
+  .modal.seiton-append-modal,
+  .modal.seiton-triage-modal,
+  .modal.seiton-webclip-modal,
+  .modal.seiton-webclip-capture-modal,
+  .modal.seiton-bulk-modal,
+  .modal.seiton-calil-modal,
+  .modal.seiton-cover-modal,
+  .modal.seiton-scanner-modal,
+  .modal.seiton-migration-modal,
+  .st-select-pop.st-select-pop,
+  .seiton-card-menu.seiton-card-menu,
+  .seiton-calendar-popover {
+    animation: st-fade-in 100ms ease;
+  }
+
+  .seiton-fab {
+    transform: none;
+    transition: opacity 100ms ease;
+  }
+
+  .seiton-fab.is-visible:active:not(:disabled),
+  .seiton-tab-body button.st2-btn:active:not(:disabled),
+  .seiton-tab-body button.st2-seg-btn:active:not(:disabled),
+  .seiton-tab-body button.st2-quiet-btn:active:not(:disabled),
+  .seiton-home button.seiton-primary-text.seiton-primary-text:active:not(:disabled),
+  .seiton-projects button.seiton-primary-text.seiton-primary-text:active:not(:disabled),
+  .seiton-prompt-root button.seiton-primary-text.seiton-primary-text:active:not(:disabled),
+  .seiton-page-actions button.seiton-text-action:active:not(:disabled),
+  .modal.st-modal .st-btn:active:not(:disabled),
+  .modal.st-modal .mod-cta:active:not(:disabled),
+  .seiton-classes button.seiton-classes-term-tab:active:not(:disabled),
+  .seiton-classes button.seiton-course-filter-chip:active:not(:disabled),
+  .modal.st-modal button.seiton-class-mode-btn:active:not(:disabled),
+  .modal.st-modal button.seiton-extra-preset-chip:active:not(:disabled),
+  .modal.seiton-modal button.seiton-quick-class-pill:active:not(:disabled),
+  button.seiton-quick-class-pill:active:not(:disabled) {
+    transform: scale(0.99);
+    transition-duration: 80ms;
+  }
+
+  .st-switch.st-switch,
+  .st-switch::after {
+    transition-duration: 90ms;
+  }
+}

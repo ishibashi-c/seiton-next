@@ -60,6 +60,10 @@ body,
   --st-radius-md: 4px;
   --st-radius-lg: 4px;
   --st-transition: 0ms;
+  --st-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --st-motion-fast: 120ms;
+  --st-motion-normal: 150ms;
+  --st-motion-modal: 160ms;
   --seiton-meta: #6b6b6b;
 }
 

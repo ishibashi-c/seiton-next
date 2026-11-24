@@ -106,8 +106,12 @@
   margin: 0;
   min-height: 32px;
   padding: 0 12px;
-  transition: none;
+  transition: transform var(--st-motion-fast) var(--st-ease-out);
   white-space: nowrap;
+}
+
+.seiton-tab-body button.st2-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .seiton-tab-body button.st2-btn:hover {
@@ -172,8 +176,12 @@
   margin: 0;
   min-height: 26px;
   padding: 0 10px;
-  transition: none;
+  transition: transform var(--st-motion-fast) var(--st-ease-out);
   white-space: nowrap;
+}
+
+.seiton-tab-body button.st2-seg-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .seiton-tab-body button.st2-seg-btn:hover {
@@ -268,12 +276,37 @@
   height: 26px;
   min-height: 26px;
   padding: 0 8px;
+  transition: transform var(--st-motion-fast) var(--st-ease-out);
   white-space: nowrap;
+}
+
+.seiton-tab-body button.st2-quiet-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .seiton-tab-body button.st2-quiet-btn:hover {
   border-color: var(--st-ink-strong);
   color: var(--st-ink-strong);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .seiton-tab-body button.st2-btn,
+  .seiton-tab-body button.st2-quiet-btn {
+    transition:
+      border-color var(--st-motion-fast) ease,
+      color var(--st-motion-fast) ease,
+      transform var(--st-motion-fast) var(--st-ease-out);
+  }
+}
+
+/* Toggle Switch (#5 state indication) */
+
+.st-switch.st-switch {
+  transition: background-color var(--st-motion-normal) var(--st-ease-out);
+}
+
+.st-switch::after {
+  transition: transform var(--st-motion-normal) var(--st-ease-out);
 }
 
 /* Badges: B&W resting vs crisp Green highlight marker (.is-focus) */

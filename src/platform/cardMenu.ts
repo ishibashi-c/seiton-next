@@ -97,12 +97,11 @@ export function showCardMenu(
       Math.max(8, rect.right - width)
     );
     const below = rect.bottom + 4;
-    const top =
-      below + height > window.innerHeight - 8
-        ? Math.max(8, rect.top - height - 4)
-        : below;
+    const flippedAbove = below + height > window.innerHeight - 8;
+    const top = flippedAbove ? Math.max(8, rect.top - height - 4) : below;
     menu.style.left = `${left}px`;
     menu.style.top = `${top}px`;
+    menu.style.transformOrigin = flippedAbove ? "bottom right" : "top right";
     menu.style.visibility = "visible";
   }
 
