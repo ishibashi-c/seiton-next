@@ -9,6 +9,10 @@ import {
   timetableCellKey,
   weekdayLabelOf,
 } from "../domain/classes";
+import {
+  type ClassSessionEntry,
+  findSessionForDate,
+} from "../domain/classSchedule";
 import { userMessageOf } from "../domain/errors";
 import {
   buildFrontmatter,
@@ -16,6 +20,8 @@ import {
   yamlQuoted,
 } from "../domain/frontmatter";
 import { normalizeLectureDate } from "../domain/lectureDate";
+import type { ClassNoteType } from "../domain/noteTemplates";
+import { loadClassSchedule } from "../services/classSchedule";
 import type { NoteService } from "../services/noteService";
 import type { PropertyService } from "../services/propertyService";
 import type {
@@ -179,6 +185,7 @@ export interface EnrichedClassNote {
   course: string;
   excerpt: string;
   grade: AcademicGrade;
+  isExtra: boolean;
   isInferred: boolean;
   lectureDate: string;
   mtime: number;
@@ -666,6 +673,7 @@ export class SeitonClassesView extends ItemView {
   private timetableUserToggled = false;
   private bodyEl: HTMLElement | null = null;
   private sublineEl: HTMLElement | null = null;
+  private classSchedule: ClassSessionEntry[] = [];
   private lastIndex: VaultIndex | null = null;
   private refreshTimer: number | null = null;
   private refreshing = false;
@@ -709,6 +717,11 @@ export class SeitonClassesView extends ItemView {
           kind: "primary",
           label: "講義ノートを作成",
           onClick: () => this.openNewClassNote(this.selectedCourse),
+        },
+        {
+          kind: "text",
+          label: "＋ 授業外ノート",
+          onClick: () => this.openNewClassNote(this.selectedCourse, "extra"),
         },
         {
           kind: "text",
@@ -758,6 +771,7 @@ export class SeitonClassesView extends ItemView {
         this.getSettings,
         this.saveSettings
       );
+      this.classSchedule = await loadClassSchedule(this.app);
       const index = await this.indexService.get();
       if (!this.bodyEl) {
         return;
@@ -804,7 +818,10 @@ export class SeitonClassesView extends ItemView {
     );
   }
 
-  private openNewClassNote(defaultCourse = ""): void {
+  private openNewClassNote(
+    defaultCourse = "",
+    defaultClassNoteType: ClassNoteType = "lecture"
+  ): void {
     new NewNoteModal(
       this.app,
       this.notes,
@@ -814,6 +831,7 @@ export class SeitonClassesView extends ItemView {
         void this.openFile(path);
       },
       {
+        defaultClassNoteType,
         defaultCourse,
         defaultTemplate: "class",
         getSettings: this.getSettings,
@@ -882,9 +900,17 @@ export class SeitonClassesView extends ItemView {
     }
 
     const registeredCourses = settings.courses ?? [];
-    const registeredCourseMap = new Map<string, CourseRegistration>(
-      registeredCourses.map((c) => [c.name.trim(), c])
-    );
+    const registeredCourseMap = new Map<string, CourseRegistration>();
+    for (const c of registeredCourses) {
+      const key = c.name.trim();
+      const existing = registeredCourseMap.get(key);
+      if (
+        !existing ||
+        (c.grade === settings.currentGrade && c.term === settings.currentTerm)
+      ) {
+        registeredCourseMap.set(key, c);
+      }
+    }
 
     // 1. ノートの分類・推定
     const classNotes: EnrichedClassNote[] = [];
@@ -897,18 +923,24 @@ export class SeitonClassesView extends ItemView {
         normalizeLectureDate(note.frontmatter.lecture_date) ||
         (note.created ?? "").slice(0, 10);
 
-      const reg = registeredCourseMap.get(course);
+      const noteGradeRaw =
+        typeof note.frontmatter.grade === "string"
+          ? note.frontmatter.grade.trim()
+          : "";
+      const noteTermRaw =
+        typeof note.frontmatter.term === "string"
+          ? note.frontmatter.term.trim()
+          : "";
+      const reg =
+        registeredCourses.find(
+          (c) =>
+            c.name.trim() === course &&
+            (!noteGradeRaw || c.grade === noteGradeRaw) &&
+            (!noteTermRaw || c.term === noteTermRaw)
+        ) ?? registeredCourseMap.get(course);
 
-      let grade =
-        typeof note.frontmatter.grade === "string" &&
-        note.frontmatter.grade.trim() !== ""
-          ? (note.frontmatter.grade.trim() as AcademicGrade)
-          : reg?.grade;
-      let term =
-        typeof note.frontmatter.term === "string" &&
-        note.frontmatter.term.trim() !== ""
-          ? (note.frontmatter.term.trim() as AcademicTerm)
-          : reg?.term;
+      let grade = noteGradeRaw ? (noteGradeRaw as AcademicGrade) : reg?.grade;
+      let term = noteTermRaw ? (noteTermRaw as AcademicTerm) : reg?.term;
 
       let isInferred = false;
       if (!grade || !term) {
@@ -920,15 +952,29 @@ export class SeitonClassesView extends ItemView {
         }
       }
 
+      const isExtra = note.frontmatter.class_note_type === "extra";
+      const fmSession = Number(note.frontmatter.session);
+      const scheduledRound =
+        findSessionForDate(this.classSchedule, course, lectureDate, term)
+          ?.round ?? 0;
       const roundMatch =
         /第\s*(\d+)\s*回/.exec(note.title) ??
         /第\s*(\d+)\s*回/.exec(note.basename);
-      const round = roundMatch ? Number(roundMatch[1]) : 0;
+      const round = isExtra
+        ? 0
+        : Number.isInteger(fmSession) && fmSession > 0
+          ? fmSession
+          : scheduledRound > 0
+            ? scheduledRound
+            : roundMatch
+              ? Number(roundMatch[1])
+              : 0;
 
       classNotes.push({
         course,
         excerpt: note.excerpt,
         grade,
+        isExtra,
         isInferred,
         lectureDate,
         mtime: note.mtime,
@@ -943,15 +989,23 @@ export class SeitonClassesView extends ItemView {
     // 2. 科目ごとにグループ化
     const courseGroupsMap = new Map<string, CourseGroup>();
     for (const reg of registeredCourses) {
-      courseGroupsMap.set(reg.name.trim(), {
-        courseName: reg.name.trim(),
-        grade: reg.grade,
-        isInferred: false,
-        maxRound: 0,
-        notes: [],
-        registration: reg,
-        term: reg.term,
-      });
+      const key = reg.name.trim();
+      const existing = courseGroupsMap.get(key);
+      if (
+        !existing ||
+        (reg.grade === settings.currentGrade &&
+          reg.term === settings.currentTerm)
+      ) {
+        courseGroupsMap.set(key, {
+          courseName: key,
+          grade: reg.grade,
+          isInferred: false,
+          maxRound: 0,
+          notes: [],
+          registration: reg,
+          term: reg.term,
+        });
+      }
     }
 
     for (const note of classNotes) {
@@ -1027,7 +1081,10 @@ export class SeitonClassesView extends ItemView {
     const courseBarItems = [...courseBarNames]
       .sort((a, b) => a.localeCompare(b, "ja"))
       .map((name) => {
-        const reg = registeredCourseMap.get(name);
+        const reg =
+          registeredCourses.find(
+            (c) => c.name.trim() === name && matchesScope(c.grade, c.term)
+          ) ?? registeredCourseMap.get(name);
         const group = courseGroupsMap.get(name);
         return {
           count: scopeCourseCounts.get(name) ?? 0,
@@ -1238,6 +1295,14 @@ export class SeitonClassesView extends ItemView {
           writeBtn.addEventListener("click", () => {
             void this.createClassNote(selectedItem.courseName);
           });
+          const extraBtn = actions.createEl("button", {
+            cls: "st-btn is-ghost is-sm",
+            text: "＋ 授業外ノート",
+            type: "button",
+          });
+          extraBtn.addEventListener("click", () => {
+            this.openNewClassNote(selectedItem.courseName, "extra");
+          });
           if (selectedItem.registration) {
             const editBtn = actions.createEl("button", {
               cls: "st-btn is-ghost is-sm",
@@ -1294,7 +1359,9 @@ export class SeitonClassesView extends ItemView {
     const today = todayKey();
     const hasTodayNote = (courseName: string): boolean => {
       const group = groupByName.get(courseName);
-      return Boolean(group?.notes.some((note) => note.lectureDate === today));
+      return Boolean(
+        group?.notes.some((note) => !note.isExtra && note.lectureDate === today)
+      );
     };
 
     const { scheduled, unscheduled, visibleDays, visiblePeriods } =
@@ -1420,7 +1487,10 @@ export class SeitonClassesView extends ItemView {
         }
 
         for (const reg of slotCourses) {
-          const count = groupByName.get(reg.name.trim())?.notes.length ?? 0;
+          const count =
+            groupByName
+              .get(reg.name.trim())
+              ?.notes.filter((note) => !note.isExtra).length ?? 0;
           const todayExists = hasTodayNote(reg.name.trim());
           const slotBtn = cell.createDiv({
             attr: {
@@ -1508,7 +1578,9 @@ export class SeitonClassesView extends ItemView {
     hasTodayNote: (courseName: string) => boolean
   ): void {
     for (const reg of unscheduled) {
-      const count = groupByName.get(reg.name.trim())?.notes.length ?? 0;
+      const count =
+        groupByName.get(reg.name.trim())?.notes.filter((note) => !note.isExtra)
+          .length ?? 0;
       const todayExists = hasTodayNote(reg.name.trim());
       const chip = chips.createDiv({
         cls: `seiton-ondemand-chip${todayExists ? " has-today" : ""}`,
@@ -1663,10 +1735,22 @@ export class SeitonClassesView extends ItemView {
     });
 
     const top = card.createDiv({ cls: "seiton-keep-card-top" });
-    top.createSpan({
+    const badges = top.createDiv({ cls: "seiton-keep-card-badges" });
+    badges.createSpan({
       cls: "seiton-keep-card-course",
       text: note.course,
     });
+    if (note.isExtra) {
+      badges.createSpan({
+        cls: "seiton-keep-card-badge is-extra",
+        text: "授業外",
+      });
+    } else if (note.round > 0) {
+      badges.createSpan({
+        cls: "seiton-keep-card-badge",
+        text: `第${note.round}回`,
+      });
+    }
     const pinBtn = top.createEl("button", {
       attr: {
         "aria-label": isPinned
@@ -1766,17 +1850,29 @@ export class SeitonClassesView extends ItemView {
   private async createClassNote(courseName: string): Promise<void> {
     const today = todayKey();
     const settings = this.getSettings();
-    const reg = (settings.courses ?? []).find(
-      (c) => c.name.trim() === courseName.trim()
-    );
+    const courses = settings.courses ?? [];
+    const reg =
+      courses.find(
+        (c) =>
+          c.name.trim() === courseName.trim() &&
+          c.grade === settings.currentGrade &&
+          c.term === settings.currentTerm
+      ) ?? courses.find((c) => c.name.trim() === courseName.trim());
     const grade = reg?.grade ?? settings.currentGrade;
     const term = reg?.term ?? settings.currentTerm;
+    const matchedSession = findSessionForDate(
+      this.classSchedule,
+      courseName,
+      today,
+      term
+    );
 
     try {
       const result = await this.notes.findOrCreateClassNote({
         course: courseName,
         grade,
         lectureDate: today,
+        session: matchedSession?.round ?? null,
         term,
       });
       showToast(

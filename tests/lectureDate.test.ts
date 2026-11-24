@@ -4,7 +4,11 @@ import {
   lectureDateFromBasename,
   normalizeLectureDate,
 } from "../src/domain/lectureDate";
-import { buildNoteDocument, classNotePath } from "../src/domain/noteTemplates";
+import {
+  buildNoteDocument,
+  classExtraNotePath,
+  classNotePath,
+} from "../src/domain/noteTemplates";
 
 describe("講義日", () => {
   it("既存ファイル名の日付形式を読む", () => {
@@ -53,5 +57,46 @@ describe("授業ノートの生成", () => {
     );
     expect(frontmatterField(document, "course")).toBe("社会デザイン概論");
     expect(document).not.toContain("tags:");
+  });
+
+  it("session と class_note_type=extra と授業外パスを生成する", () => {
+    expect(classExtraNotePath("2026-11-19", "科学・技術と社会", "宿題")).toBe(
+      "Seiton/Notes/2026-11-19 科学・技術と社会 宿題.md"
+    );
+    expect(classExtraNotePath("2026-11-19", "現代の社会論", "")).toBe(
+      "Seiton/Notes/2026-11-19 現代の社会論 授業外.md"
+    );
+
+    const lectureDoc = buildNoteDocument({
+      body: "",
+      classNoteType: "lecture",
+      course: "表象文化論",
+      createdAt: "2026-11-24T10:40:00+09:00",
+      grade: "1年",
+      kind: "class",
+      lectureDate: "2026-11-24",
+      pinned: true,
+      session: 8,
+      term: "後期",
+      title: "2026-11-24 表象文化論",
+    });
+    expect(frontmatterField(lectureDoc, "session")).toBe("8");
+    expect(frontmatterField(lectureDoc, "class_note_type")).toBeNull();
+
+    const extraDoc = buildNoteDocument({
+      body: "",
+      classNoteType: "extra",
+      course: "科学・技術と社会",
+      createdAt: "2026-11-19T18:00:00+09:00",
+      grade: "1年",
+      kind: "class",
+      lectureDate: "2026-11-19",
+      pinned: true,
+      session: 9,
+      term: "後期",
+      title: "2026-11-19 科学・技術と社会 宿題",
+    });
+    expect(frontmatterField(extraDoc, "class_note_type")).toBe("extra");
+    expect(frontmatterField(extraDoc, "session")).toBeNull();
   });
 });

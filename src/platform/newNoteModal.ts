@@ -1,14 +1,25 @@
 import type { App } from "obsidian";
 import { Modal } from "obsidian";
+import {
+  type ClassSessionEntry,
+  findSessionForDate,
+  listCourseSessions,
+  resolveSuggestedSession,
+} from "../domain/classSchedule";
 import { userMessageOf } from "../domain/errors";
-import { NOTE_TEMPLATES, type NoteTemplateId } from "../domain/noteTemplates";
+import {
+  type ClassNoteType,
+  NOTE_TEMPLATES,
+  type NoteTemplateId,
+} from "../domain/noteTemplates";
 import { buildVocabulary } from "../domain/vocabulary";
+import { loadClassSchedule } from "../services/classSchedule";
 import type { ClassCandidate, NoteService } from "../services/noteService";
-import type { SeitonSettings } from "../services/settings";
+import type { CourseRegistration, SeitonSettings } from "../services/settings";
 import type { VaultIndexService } from "../services/vaultIndex";
 import { button, fieldRow, selectField, textField } from "./ui/field";
 import { buildSeitonModal } from "./ui/modal";
-import type { SelectControl } from "./ui/select";
+import { createSelect, type SelectControl } from "./ui/select";
 import { renderVocabularyChips } from "./vocabularyChips";
 
 function todayKey(): string {
@@ -20,7 +31,15 @@ function todayKey(): string {
   ].join("-");
 }
 
+const EXTRA_NOTE_PRESETS = [
+  "宿題",
+  "ディスカッション",
+  "レポート",
+  "メモ",
+] as const;
+
 export interface NewNoteModalOptions {
+  defaultClassNoteType?: ClassNoteType;
   defaultCourse?: string;
   defaultTemplate?: NoteTemplateId;
   getSettings?: () => SeitonSettings;
@@ -33,13 +52,23 @@ export class NewNoteModal extends Modal {
   private readonly onCreated: (path: string) => void;
   private readonly getSettings?: () => SeitonSettings;
   private template: NoteTemplateId = "note";
+  private classNoteType: ClassNoteType = "lecture";
   private title = "";
   private project: string;
   private course = "";
+  private lectureDate = todayKey();
+  private session: number | null = null;
+  private classSchedule: ClassSessionEntry[] = [];
+  private titleInput: HTMLInputElement | null = null;
+  private dateInput: HTMLInputElement | null = null;
   private courseControl: SelectControl | null = null;
+  private sessionFieldRow: HTMLElement | null = null;
+  private sessionControl: SelectControl | null = null;
+  private extraPresetRow: HTMLElement | null = null;
+  private modeLectureBtn: HTMLButtonElement | null = null;
+  private modeExtraBtn: HTMLButtonElement | null = null;
   private newCourseInput: HTMLInputElement | null = null;
   private newCourseRow: HTMLElement | null = null;
-  private lectureDate = todayKey();
   private statusEl: HTMLElement | null = null;
   private candidatesEl: HTMLElement | null = null;
   private classFields: HTMLElement | null = null;
@@ -63,6 +92,9 @@ export class NewNoteModal extends Modal {
     if (options?.defaultTemplate) {
       this.template = options.defaultTemplate;
     }
+    if (options?.defaultClassNoteType) {
+      this.classNoteType = options.defaultClassNoteType;
+    }
     if (options?.defaultCourse) {
       this.course = options.defaultCourse;
     }
@@ -79,7 +111,6 @@ export class NewNoteModal extends Modal {
       cls: "seiton-quick-class-section",
     });
     quickClassSection.style.display = "none";
-    void this.renderQuickClassPills(quickClassSection);
 
     selectField(body, {
       choices: NOTE_TEMPLATES.map((template) => ({
@@ -96,13 +127,14 @@ export class NewNoteModal extends Modal {
 
     const titleInput = textField(body, {
       description:
-        "空欄なら授業は「講義日 科目名」、それ以外は「無題」になります。",
+        "空欄なら授業は「講義日 科目名」、授業外は「授業外」、それ以外は「無題」になります。",
       label: "タイトル",
       onChange: (value) => {
         this.title = value;
       },
       placeholder: "例: 認知科学の授業メモ",
     });
+    this.titleInput = titleInput;
     window.setTimeout(() => titleInput.focus(), 50);
 
     const projectRow = fieldRow(body, {
@@ -136,6 +168,56 @@ export class NewNoteModal extends Modal {
     }
 
     this.classFields = body.createDiv({ cls: "seiton-class-fields" });
+
+    const modeRow = fieldRow(this.classFields, {
+      description:
+        "宿題・ディスカッション等の授業外メモは講義回と切り離して作成できます。",
+      label: "ノート種別",
+    });
+    const modeToggle = modeRow.createDiv({
+      attr: { "aria-label": "授業ノート種別", role: "group" },
+      cls: "seiton-class-mode-toggle",
+    });
+    this.modeLectureBtn = modeToggle.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-class-mode-btn",
+      text: "講義回ノート",
+    });
+    this.modeExtraBtn = modeToggle.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-class-mode-btn",
+      text: "授業外ノート（宿題・ディスカッション等）",
+    });
+    this.modeLectureBtn.addEventListener("click", () => {
+      this.setClassNoteType("lecture");
+    });
+    this.modeExtraBtn.addEventListener("click", () => {
+      this.setClassNoteType("extra");
+    });
+
+    this.extraPresetRow = fieldRow(this.classFields, {
+      description:
+        "種別をクリックするとタイトルに入ります（必要なら後ろに番号等を追記できます）。",
+      label: "授業外の種類",
+    });
+    const presetChips = this.extraPresetRow.createDiv({
+      cls: "seiton-extra-preset-row",
+    });
+    for (const preset of EXTRA_NOTE_PRESETS) {
+      const btn = presetChips.createEl("button", {
+        attr: { type: "button" },
+        cls: "seiton-extra-preset-chip",
+        text: preset,
+      });
+      btn.addEventListener("click", () => {
+        this.title = preset;
+        if (this.titleInput) {
+          this.titleInput.value = preset;
+          this.titleInput.focus();
+        }
+      });
+    }
+
     this.courseControl = selectField(this.classFields, {
       choices: [{ label: "既存の科目から選択", value: "" }],
       description: "既存の科目から選ぶか、新しい科目を入力します。",
@@ -144,10 +226,12 @@ export class NewNoteModal extends Modal {
         if (value === "__new") {
           this.course = this.newCourseInput?.value.trim() ?? "";
           this.showNewCourse(true);
+          this.syncSessionOptions(false);
           return;
         }
         this.course = value;
         this.showNewCourse(false);
+        this.syncSessionOptions(true);
       },
       value: "",
     });
@@ -164,14 +248,66 @@ export class NewNoteModal extends Modal {
     newCourseInput.placeholder = "例: 社会デザイン概論";
     newCourseInput.addEventListener("input", () => {
       this.course = newCourseInput.value.trim();
+      this.syncSessionOptions(false);
     });
     this.newCourseInput = newCourseInput;
 
-    textField(this.classFields, {
+    const sessionRow = fieldRow(this.classFields, {
+      description: "開講日カレンダーから講義回を選ぶと日付も自動で揃います。",
+      label: "講義回（開講日）",
+    });
+    sessionRow.style.display = "none";
+    this.sessionFieldRow = sessionRow;
+    const sessionSelect = createSelect({
+      choices: [{ label: "日付を手動指定", value: "__manual" }],
+      onChange: (value) => {
+        if (value === "__manual") {
+          const reg = this.resolveCourseRegistration(this.course);
+          const matched = findSessionForDate(
+            this.classSchedule,
+            this.course,
+            this.lectureDate,
+            reg?.term
+          );
+          this.session = matched?.round ?? null;
+          return;
+        }
+        const [roundStr = "", dateStr = ""] = value.split(":");
+        const round = Number(roundStr);
+        if (dateStr) {
+          this.lectureDate = dateStr;
+          if (this.dateInput) {
+            this.dateInput.value = dateStr;
+          }
+        }
+        this.session = Number.isInteger(round) && round > 0 ? round : null;
+      },
+      value: "__manual",
+    });
+    sessionRow.append(sessionSelect.element);
+    this.sessionControl = sessionSelect;
+
+    this.dateInput = textField(this.classFields, {
       description: "授業テンプレートのとき必須です。",
       label: "講義日",
       onChange: (value) => {
         this.lectureDate = value;
+        if (this.classNoteType === "lecture") {
+          const reg = this.resolveCourseRegistration(this.course);
+          const matched = findSessionForDate(
+            this.classSchedule,
+            this.course,
+            value,
+            reg?.term
+          );
+          if (matched && this.sessionControl) {
+            this.session = matched.round;
+            this.sessionControl.setValue(`${matched.round}:${matched.date}`);
+          } else {
+            this.session = null;
+            this.sessionControl?.setValue("__manual");
+          }
+        }
       },
       type: "date",
       value: this.lectureDate,
@@ -179,7 +315,7 @@ export class NewNoteModal extends Modal {
 
     this.showNewCourse(false);
     this.updateClassFields();
-    void this.loadCourses();
+    void this.initClassData(quickClassSection);
 
     this.candidatesEl = body.createDiv({ cls: "seiton-class-candidates" });
     this.statusEl = body.createDiv({ cls: "st-status" });
@@ -203,9 +339,137 @@ export class NewNoteModal extends Modal {
     this.statusEl = null;
     this.candidatesEl = null;
     this.classFields = null;
+    this.titleInput = null;
+    this.dateInput = null;
     this.courseControl = null;
+    this.sessionFieldRow = null;
+    this.sessionControl = null;
+    this.extraPresetRow = null;
+    this.modeLectureBtn = null;
+    this.modeExtraBtn = null;
     this.newCourseInput = null;
     this.newCourseRow = null;
+  }
+
+  private resolveCourseRegistration(
+    courseName: string
+  ): CourseRegistration | undefined {
+    const trimmed = courseName.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+    const settings = this.getSettings?.();
+    const courses = settings?.courses ?? [];
+    return (
+      courses.find(
+        (c) =>
+          c.name.trim() === trimmed &&
+          c.grade === settings?.currentGrade &&
+          c.term === settings?.currentTerm
+      ) ?? courses.find((c) => c.name.trim() === trimmed)
+    );
+  }
+
+  private async initClassData(quickClassSection: HTMLElement): Promise<void> {
+    this.classSchedule = await loadClassSchedule(this.app);
+    await Promise.all([
+      this.loadCourses(),
+      this.renderQuickClassPills(quickClassSection),
+    ]);
+  }
+
+  private setClassNoteType(nextType: ClassNoteType): void {
+    if (this.classNoteType === nextType) {
+      return;
+    }
+    this.classNoteType = nextType;
+    this.candidatesEl?.empty();
+    this.forceCreate = false;
+    if (nextType === "extra") {
+      this.session = null;
+      this.lectureDate = todayKey();
+      if (this.dateInput) {
+        this.dateInput.value = this.lectureDate;
+      }
+    }
+    this.updateClassModeUI();
+    if (nextType === "lecture") {
+      this.syncSessionOptions(true);
+    }
+  }
+
+  private updateClassModeUI(): void {
+    const isLecture = this.classNoteType === "lecture";
+    this.modeLectureBtn?.toggleClass("is-active", isLecture);
+    this.modeExtraBtn?.toggleClass("is-active", !isLecture);
+    this.modeLectureBtn?.setAttribute("aria-pressed", String(isLecture));
+    this.modeExtraBtn?.setAttribute("aria-pressed", String(!isLecture));
+    if (this.extraPresetRow) {
+      this.extraPresetRow.style.display = isLecture ? "none" : "";
+    }
+    if (this.titleInput) {
+      this.titleInput.placeholder =
+        this.template === "class" && !isLecture
+          ? "例: 宿題 / ディスカッション1 / レポート"
+          : "例: 認知科学の授業メモ";
+    }
+    if (!isLecture && this.sessionFieldRow) {
+      this.sessionFieldRow.style.display = "none";
+    }
+  }
+
+  private syncSessionOptions(autoSelectSuggested: boolean): void {
+    if (!(this.sessionFieldRow && this.sessionControl)) {
+      return;
+    }
+    const reg = this.resolveCourseRegistration(this.course);
+    const term = reg?.term;
+    const sessions = listCourseSessions(this.classSchedule, this.course, term);
+    if (this.classNoteType !== "lecture" || sessions.length === 0) {
+      this.sessionFieldRow.style.display = "none";
+      if (this.classNoteType === "extra") {
+        this.session = null;
+      }
+      return;
+    }
+
+    this.sessionFieldRow.style.display = "";
+    const choices = [
+      ...sessions.map((entry) => {
+        const slotParts = [entry.dayOfWeek, entry.period].filter(Boolean);
+        const slot = slotParts.length > 0 ? `（${slotParts.join(" ")}）` : "";
+        const cancelled = entry.cancelled ? " (休講)" : "";
+        return {
+          label: `第${entry.round}回 · ${entry.date}${slot}${cancelled}`,
+          value: `${entry.round}:${entry.date}`,
+        };
+      }),
+      { label: "日付を手動指定", value: "__manual" },
+    ];
+    this.sessionControl.setChoices(choices);
+
+    const today = todayKey();
+    const target = autoSelectSuggested
+      ? (findSessionForDate(this.classSchedule, this.course, today, term) ??
+        resolveSuggestedSession(this.classSchedule, this.course, today, term))
+      : findSessionForDate(
+          this.classSchedule,
+          this.course,
+          this.lectureDate,
+          term
+        );
+
+    if (target) {
+      this.lectureDate = target.date;
+      if (this.dateInput) {
+        this.dateInput.value = target.date;
+      }
+      this.session = target.round;
+      this.sessionControl.setValue(`${target.round}:${target.date}`);
+    } else {
+      this.session = null;
+      this.sessionControl.setValue("__manual");
+    }
   }
 
   private showNewCourse(show: boolean): void {
@@ -280,9 +544,13 @@ export class NewNoteModal extends Modal {
     if (this.course && counts.has(this.course)) {
       control.setValue(this.course);
       this.showNewCourse(false);
+      this.syncSessionOptions(this.classNoteType === "lecture");
     } else if (counts.size === 0) {
       control.setValue("__new");
       this.showNewCourse(true);
+      this.syncSessionOptions(false);
+    } else {
+      this.syncSessionOptions(false);
     }
   }
 
@@ -309,6 +577,9 @@ export class NewNoteModal extends Modal {
 
     for (const note of index.notes) {
       if (note.archived || note.kind !== "class" || !note.course.trim()) {
+        continue;
+      }
+      if (note.frontmatter.class_note_type === "extra") {
         continue;
       }
       const course = note.course.trim();
@@ -347,15 +618,19 @@ export class NewNoteModal extends Modal {
       text: "科目から1タップで今日の授業ノートを作成",
     });
 
+    const today = todayKey();
     const pills = container.createDiv({ cls: "seiton-quick-class-pills" });
     for (const [course, info] of topCourses) {
-      const nextRound = info.count + 1;
-      const label = info.isCurrent
-        ? `${course}（第${nextRound}回）`
-        : `${course}（第${nextRound}回）`;
+      const reg = this.resolveCourseRegistration(course);
+      const matched =
+        findSessionForDate(this.classSchedule, course, today, reg?.term) ??
+        resolveSuggestedSession(this.classSchedule, course, today, reg?.term);
+      const nextRound = matched ? matched.round : info.count + 1;
+      const targetDate = matched ? matched.date : today;
+      const label = `${course}（第${nextRound}回）`;
       const pill = pills.createEl("button", {
         attr: {
-          title: `「${todayKey()} ${course}（第${nextRound}回）」を作成`,
+          title: `「${targetDate} ${course}（第${nextRound}回）」を作成`,
           type: "button",
         },
         cls: `seiton-quick-class-pill st-pill${info.isCurrent ? " is-current" : ""}`,
@@ -363,9 +638,11 @@ export class NewNoteModal extends Modal {
       });
       pill.addEventListener("click", () => {
         this.template = "class";
+        this.classNoteType = "lecture";
         this.course = course;
-        this.lectureDate = todayKey();
-        this.title = `${todayKey()} ${course}（第${nextRound}回）`;
+        this.lectureDate = targetDate;
+        this.session = matched ? matched.round : null;
+        this.title = `${targetDate} ${course}（第${nextRound}回）`;
         void this.submit();
       });
     }
@@ -375,12 +652,19 @@ export class NewNoteModal extends Modal {
     if (this.classFields) {
       this.classFields.style.display = this.template === "class" ? "" : "none";
     }
+    this.updateClassModeUI();
+    if (this.template === "class" && this.classNoteType === "lecture") {
+      this.syncSessionOptions(false);
+    }
     this.candidatesEl?.empty();
     this.forceCreate = false;
   }
 
   private async submit(): Promise<void> {
-    if (this.template === "class") {
+    const isClass = this.template === "class";
+    const isExtraClass = isClass && this.classNoteType === "extra";
+
+    if (isClass) {
       if (!this.course.trim()) {
         this.setStatus("授業科目を入力してください。", true);
         return;
@@ -389,7 +673,7 @@ export class NewNoteModal extends Modal {
         this.setStatus("講義日を入力してください。", true);
         return;
       }
-      if (!this.forceCreate) {
+      if (!isExtraClass && !this.forceCreate) {
         try {
           const candidates = await this.noteService.findClassCandidates(
             this.course,
@@ -409,24 +693,36 @@ export class NewNoteModal extends Modal {
     try {
       this.setStatus("作成中…");
       const settings = this.getSettings?.();
-      const matchedCourse =
-        this.template === "class"
-          ? settings?.courses.find((c) => c.name.trim() === this.course.trim())
-          : undefined;
+      const matchedCourse = isClass
+        ? this.resolveCourseRegistration(this.course)
+        : undefined;
+      const fallbackSession =
+        isClass && !isExtraClass
+          ? (this.session ??
+            findSessionForDate(
+              this.classSchedule,
+              this.course,
+              this.lectureDate,
+              matchedCourse?.term
+            )?.round ??
+            null)
+          : null;
 
       const path = await this.noteService.createNote({
-        course: this.template === "class" ? this.course : null,
-        grade:
-          this.template === "class"
-            ? (matchedCourse?.grade ?? settings?.currentGrade ?? null)
-            : null,
-        lectureDate: this.template === "class" ? this.lectureDate : null,
+        classNoteType: isExtraClass ? "extra" : null,
+        course: isClass ? this.course : null,
+        extraLabel: isExtraClass ? this.title.trim() || "授業外" : null,
+        grade: isClass
+          ? (matchedCourse?.grade ?? settings?.currentGrade ?? null)
+          : null,
+        lectureDate: isClass ? this.lectureDate : null,
+        pinned: isExtraClass ? true : undefined,
         project: this.project.trim() || this.defaultProject || null,
+        session: fallbackSession,
         template: this.template,
-        term:
-          this.template === "class"
-            ? (matchedCourse?.term ?? settings?.currentTerm ?? null)
-            : null,
+        term: isClass
+          ? (matchedCourse?.term ?? settings?.currentTerm ?? null)
+          : null,
         title: this.title,
       });
 

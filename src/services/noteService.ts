@@ -6,10 +6,11 @@ import {
   lectureDateFromBasename,
   normalizeLectureDate,
 } from "../domain/lectureDate";
-import type { NoteTemplateId } from "../domain/noteTemplates";
+import type { ClassNoteType, NoteTemplateId } from "../domain/noteTemplates";
 import {
   buildNoteDocument,
   buildTemplateBody,
+  classExtraNotePath,
   classNotePath,
   datedNotePath,
   findTemplate,
@@ -19,11 +20,14 @@ import { formatLocalIso } from "../domain/time";
 import type { PropertyService } from "./propertyService";
 
 export interface CreateNoteInput {
+  classNoteType?: ClassNoteType | null;
   course?: string | null;
+  extraLabel?: string | null;
   grade?: string | null;
   lectureDate?: string | null;
   pinned?: boolean;
   project?: string | null;
+  session?: number | null;
   template: NoteTemplateId;
   term?: string | null;
   title: string;
@@ -52,9 +56,10 @@ export class NoteService {
     const createdAt = formatLocalIso(now);
     const dateKey = createdAt.slice(0, 10);
     const course = input.course?.trim() ?? "";
-    const lectureDate =
-      template.id === "class" ? normalizeLectureDate(input.lectureDate) : "";
-    if (template.id === "class") {
+    const isClass = template.id === "class";
+    const isExtraClass = isClass && input.classNoteType === "extra";
+    const lectureDate = isClass ? normalizeLectureDate(input.lectureDate) : "";
+    if (isClass) {
       if (!course) {
         throw new Error("授業科目を入力してください。");
       }
@@ -62,26 +67,37 @@ export class NoteService {
         throw new Error("講義日を YYYY-MM-DD で入力してください。");
       }
     }
+    const extraLabel = isExtraClass
+      ? (input.extraLabel || input.title || "").trim() || "授業外"
+      : "";
     const title =
       input.title.replace(/\r\n|\r|\n/gu, " ").trim() ||
-      (template.id === "class" ? `${lectureDate} ${course}` : "無題");
+      (isExtraClass
+        ? `${lectureDate} ${course} ${extraLabel}`
+        : isClass
+          ? `${lectureDate} ${course}`
+          : "無題");
     const base =
       template.id === "project"
         ? projectNotePath(title)
-        : template.id === "class"
-          ? classNotePath(lectureDate, course)
-          : datedNotePath(dateKey, title);
+        : isExtraClass
+          ? classExtraNotePath(lectureDate, course, extraLabel)
+          : isClass
+            ? classNotePath(lectureDate, course)
+            : datedNotePath(dateKey, title);
     const body = buildTemplateBody(template.id);
     const content = buildNoteDocument({
       body,
+      classNoteType: isExtraClass ? "extra" : null,
       course: course || null,
       createdAt,
-      grade: template.id === "class" ? input.grade?.trim() || null : null,
+      grade: isClass ? input.grade?.trim() || null : null,
       kind,
       lectureDate: lectureDate || null,
       pinned: input.pinned,
       project: input.project ?? null,
-      term: template.id === "class" ? input.term?.trim() || null : null,
+      session: isClass && !isExtraClass ? (input.session ?? null) : null,
+      term: isClass ? input.term?.trim() || null : null,
       title,
     });
 
@@ -98,6 +114,7 @@ export class NoteService {
     course: string;
     grade?: string | null;
     lectureDate: string;
+    session?: number | null;
     term?: string | null;
   }): Promise<{ created: boolean; path: string }> {
     const course = input.course.trim();
@@ -118,6 +135,7 @@ export class NoteService {
       lectureDate,
       pinned: true,
       project: null,
+      session: input.session ?? null,
       template: "class",
       term: input.term ?? null,
       title: `${lectureDate} ${course}`,
@@ -140,6 +158,9 @@ export class NoteService {
         this.app.metadataCache.getFileCache(file)?.frontmatter ?? {};
       const kind = typeof frontmatter.kind === "string" ? frontmatter.kind : "";
       if (kind && kind !== "class") {
+        continue;
+      }
+      if (frontmatter.class_note_type === "extra") {
         continue;
       }
       const noteCourse =

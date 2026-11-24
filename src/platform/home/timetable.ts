@@ -6,8 +6,10 @@ import {
   currentPeriodOf,
   weekdayLabelOf,
 } from "../../domain/classes";
+import { findSessionForDate } from "../../domain/classSchedule";
 import { userMessageOf } from "../../domain/errors";
 import { normalizeLectureDate } from "../../domain/lectureDate";
+import { loadClassSchedule } from "../../services/classSchedule";
 import type { NoteService } from "../../services/noteService";
 import type {
   CourseRegistration,
@@ -149,7 +151,12 @@ export class HomeTimetable {
     body.empty();
     const existingCoursesToday = new Set<string>();
     for (const note of index.notes) {
-      if (note.archived || note.kind !== "class" || !note.course.trim()) {
+      if (
+        note.archived ||
+        note.kind !== "class" ||
+        !note.course.trim() ||
+        note.frontmatter.class_note_type === "extra"
+      ) {
         continue;
       }
       const date =
@@ -244,10 +251,18 @@ export class HomeTimetable {
     this.busy = true;
     try {
       const today = todayKey();
+      const schedule = await loadClassSchedule(this.app);
+      const matchedSession = findSessionForDate(
+        schedule,
+        course.name,
+        today,
+        course.term
+      );
       const result = await this.notes.findOrCreateClassNote({
         course: course.name,
         grade: course.grade,
         lectureDate: today,
+        session: matchedSession?.round ?? null,
         term: course.term,
       });
       this.indexService.invalidate();

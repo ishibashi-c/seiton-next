@@ -7,6 +7,8 @@ export const NOTES_FOLDER = "Seiton/Notes";
 export const LINKS_FILE = `${SYSTEM_FOLDER}/Links.md`;
 /** 授業の当学期・履修科目台帳。Vault内のMarkdownに保存し端末間で同期する。 */
 export const COURSES_FILE = `${SYSTEM_FOLDER}/Courses.md`;
+/** 授業の開講日（回・日付）カレンダー。Vault内のMarkdownに保存し端末間で同期する。 */
+export const CLASS_SCHEDULE_FILE = `${SYSTEM_FOLDER}/ClassSchedule.md`;
 export const ASSETS_FOLDER = `${SYSTEM_FOLDER}/Assets`;
 export const VIEWS_FOLDER = `${SYSTEM_FOLDER}/Views`;
 export const TEMPLATES_FOLDER = `${SYSTEM_FOLDER}/Templates`;

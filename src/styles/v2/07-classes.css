@@ -110,11 +110,41 @@
   border: 2px solid var(--st-ink-strong);
 }
 
+.seiton-classes .seiton-keep-card-badges {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  min-width: 0;
+}
+
 .seiton-classes .seiton-keep-card-course {
   background: var(--background-secondary);
   border: 1px solid var(--st-border-subtle);
   border-radius: 2px;
   color: var(--st-ink-strong);
+  min-width: 0;
+}
+
+.seiton-classes .seiton-keep-card-badge {
+  background: var(--st-paper);
+  border: 1px solid var(--st-ink-strong);
+  border-radius: 2px;
+  color: var(--st-ink-strong);
+  flex: none;
+  font-size: var(--st-text-2xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.4;
+  padding: 1px 6px;
+}
+
+.seiton-classes .seiton-keep-card-badge.is-extra {
+  background: var(--background-secondary);
+  border-color: var(--st-border-subtle);
+  border-style: dashed;
+  color: var(--st-muted);
+  font-weight: 600;
 }
 
 .seiton-classes button.seiton-keep-pin-btn.is-pinned {

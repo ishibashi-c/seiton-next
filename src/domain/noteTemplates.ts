@@ -103,8 +103,11 @@ export function buildTemplateBody(id: NoteTemplateId): string {
   }
 }
 
+export type ClassNoteType = "lecture" | "extra";
+
 export interface NoteDocumentInput {
   body: string;
+  classNoteType?: ClassNoteType | null;
   course?: string | null;
   createdAt: string;
   eol?: string;
@@ -113,6 +116,7 @@ export interface NoteDocumentInput {
   lectureDate?: string | null;
   pinned?: boolean;
   project?: string | null;
+  session?: number | null;
   term?: string | null;
   title: string;
 }
@@ -133,6 +137,17 @@ export function buildNoteDocument(input: NoteDocumentInput): string {
   }
   if (input.lectureDate?.trim()) {
     fields.lecture_date = yamlQuoted(input.lectureDate.trim());
+  }
+  if (
+    input.classNoteType !== "extra" &&
+    typeof input.session === "number" &&
+    Number.isInteger(input.session) &&
+    input.session > 0
+  ) {
+    fields.session = String(input.session);
+  }
+  if (input.classNoteType === "extra") {
+    fields.class_note_type = yamlQuoted("extra");
   }
   if (input.grade?.trim()) {
     fields.grade = yamlQuoted(input.grade.trim());
@@ -160,4 +175,17 @@ export function projectNotePath(title: string): string {
 
 export function classNotePath(lectureDate: string, course: string): string {
   return `Seiton/Notes/${sanitizeNoteTitle(lectureDate)} ${sanitizeNoteTitle(course)}.md`;
+}
+
+export function classExtraNotePath(
+  dateKey: string,
+  course: string,
+  label: string
+): string {
+  const cleanDate = sanitizeNoteTitle(dateKey);
+  const cleanCourse = sanitizeNoteTitle(course);
+  const trimmed = label.trim();
+  const suffix =
+    trimmed && trimmed !== "無題" ? sanitizeNoteTitle(trimmed) : "授業外";
+  return `Seiton/Notes/${cleanDate} ${cleanCourse} ${suffix}.md`;
 }

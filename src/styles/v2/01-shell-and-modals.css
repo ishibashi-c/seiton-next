@@ -235,6 +235,58 @@ button.seiton-quick-class-pill {
   font-weight: 600;
 }
 
+.modal.st-modal .seiton-class-mode-toggle {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.modal.st-modal button.seiton-class-mode-btn {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-muted);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  min-height: 32px;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.modal.st-modal button.seiton-class-mode-btn:hover {
+  border-color: var(--st-ink-strong);
+  color: var(--st-ink-strong);
+}
+
+.modal.st-modal button.seiton-class-mode-btn.is-active {
+  background: var(--st-ink-strong);
+  border: 2px solid var(--st-ink-strong);
+  color: var(--st-paper);
+  font-weight: 700;
+}
+
+.modal.st-modal .seiton-extra-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.modal.st-modal button.seiton-extra-preset-chip {
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: 4px;
+  color: var(--st-ink-strong);
+  font-size: var(--st-text-xs);
+  font-weight: 600;
+  min-height: 28px;
+  padding: 3px 10px;
+}
+
+.modal.st-modal button.seiton-extra-preset-chip:hover {
+  border-color: var(--st-ink-strong);
+}
+
 .modal.seiton-triage-modal button.seiton-triage-tag-pill.is-active,
 button.seiton-triage-tag-pill.is-active {
   background: var(--st-ink-strong);
