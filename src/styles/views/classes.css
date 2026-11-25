@@ -687,14 +687,19 @@
 
 .seiton-home button.seiton-keep-card-title {
   color: var(--st-ink);
+  display: block;
   font-size: var(--st-text-base);
   font-weight: 620;
-  justify-content: flex-start;
+  height: auto;
   line-height: 1.4;
+  max-width: 100%;
   min-height: 0;
+  overflow-wrap: anywhere;
   padding: 0;
   text-align: left;
+  white-space: normal;
   width: 100%;
+  word-break: break-word;
   word-break: auto-phrase;
 }
 
