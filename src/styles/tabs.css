@@ -207,21 +207,3 @@
   padding-inline: 2px;
   scroll-padding-inline: 8px;
 }
-
-@media (max-width: 520px) {
-  /* Six tabs do not fit on a phone. Wrap them instead of hiding the last one
-     behind a scrollbar that has no visible affordance. */
-  .seiton-top-nav {
-    flex-wrap: wrap;
-    gap: 0 8px;
-    height: auto;
-    overflow-x: visible;
-  }
-
-  .seiton-top-nav .seiton-top-tab {
-    font-size: var(--st-text-xs);
-    letter-spacing: -0.01em;
-    min-height: 36px;
-    padding: 6px 0;
-  }
-}

@@ -64,27 +64,95 @@
 }
 
 .seiton-top-nav {
+  align-items: center;
   background: var(--st-paper);
-  border-bottom: 1px solid var(--st-border-subtle);
+  border-bottom: 2px solid var(--st-ink-strong);
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  height: auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  padding: 2px 0 10px;
+  scroll-padding-inline: 8px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.seiton-top-tab {
+.seiton-top-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.seiton-top-nav button.seiton-top-tab {
+  align-items: center;
+  background: var(--st-paper);
+  border: 1px solid var(--st-border-subtle);
+  border-radius: var(--st-radius-md);
   color: var(--st-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--st-text-sm);
   font-weight: 600;
+  height: 32px;
+  justify-content: center;
+  line-height: 1;
+  min-height: 32px;
+  padding: 0 12px;
+  transition:
+    background-color var(--st-transition),
+    border-color var(--st-transition),
+    color var(--st-transition),
+    transform var(--st-motion-fast) var(--st-ease-out);
+  white-space: nowrap;
 }
 
-.seiton-top-tab:hover {
+.seiton-top-nav button.seiton-top-tab:hover {
+  background: var(--st-paper);
+  border-color: var(--st-ink-strong);
   color: var(--st-ink-strong);
 }
 
-.seiton-top-tab.is-active {
-  color: var(--st-ink-strong);
+.seiton-top-nav button.seiton-top-tab:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.seiton-top-nav button.seiton-top-tab.is-active,
+.seiton-top-nav button.seiton-top-tab.is-active:hover {
+  background: var(--st-ink-strong);
+  border-color: var(--st-ink-strong);
+  box-shadow: none;
+  color: var(--st-paper);
   font-weight: 700;
 }
 
-.seiton-top-tab.is-active::after {
-  background: var(--st-ink-strong);
-  height: 2px;
+.seiton-top-nav button.seiton-top-tab.is-active::after {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .seiton-top-nav {
+    flex-wrap: nowrap;
+    gap: 6px;
+    height: auto;
+    min-height: 0;
+    overflow-x: auto;
+    padding: 2px 0 8px;
+  }
+
+  .seiton-top-nav button.seiton-top-tab {
+    font-size: var(--st-text-xs);
+    height: 36px;
+    min-height: 36px;
+    padding: 0 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seiton-top-nav button.seiton-top-tab:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 /* Unified Modals & Popovers */
