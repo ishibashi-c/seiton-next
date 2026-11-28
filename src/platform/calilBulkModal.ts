@@ -570,7 +570,7 @@ export class CalilBulkModal extends Modal {
     let hits = 0;
     let failures = 0;
     const updates: Record<string, CalilLastResult> = {};
-    this.setProgress(`検索中 0/${targets.length}`);
+    this.setProgress(`検索中 0/${targets.length}`, true);
     await mapWithConcurrency(targets, 1, async (row) => {
       if (this.closed) {
         return;
@@ -612,7 +612,7 @@ export class CalilBulkModal extends Modal {
         row.message = error instanceof Error ? error.message : String(error);
       }
       done += 1;
-      this.setProgress(`検索中 ${done}/${targets.length}`);
+      this.setProgress(`検索中 ${done}/${targets.length}`, true);
       this.renderRows();
     });
     this.busy = false;
@@ -626,12 +626,27 @@ export class CalilBulkModal extends Modal {
       });
     }
     const summary = `今回の検索: 対象 ${targets.length}冊 / 貸出可 ${hits}冊 / 失敗 ${failures}冊`;
-    this.setProgress(summary);
+    this.setProgress(summary, false);
     showToast(summary);
   }
 
-  private setProgress(message: string): void {
-    this.statusEl?.setText(message);
+  private setProgress(message: string, loading = false): void {
+    const el = this.statusEl;
+    if (!el) {
+      return;
+    }
+    el.toggleClass("is-loading", loading);
+    el.empty();
+    if (!loading) {
+      el.setText(message);
+      return;
+    }
+    const dots = el.createSpan({ cls: "seiton-calil-dots" });
+    dots.setAttr("aria-hidden", "true");
+    for (let i = 0; i < 3; i += 1) {
+      dots.createSpan();
+    }
+    el.createSpan({ text: message });
   }
 
   private openSettings(): void {

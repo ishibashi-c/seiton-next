@@ -572,7 +572,7 @@ export class BookDetailModal extends Modal {
     }
     this.setBusy(true);
     this.setStatus("カーリルを照会中…");
-    this.renderCalilMessage("カーリルに問い合わせています…");
+    this.renderCalilLoading();
     try {
       const result = await this.bookService.searchCalil(this.isbn);
       this.renderCalilResult(result);
@@ -663,6 +663,46 @@ export class BookDetailModal extends Modal {
         text: `ほか${rest}館（カーリルで見る）`,
       });
     }
+  }
+
+  private renderCalilLoading(): void {
+    const container = this.calilEl;
+    if (!container) {
+      return;
+    }
+    container.empty();
+    const top = container.createDiv({ cls: "seiton-book-calil-top" });
+    top.createDiv({ cls: "seiton-book-calil-title", text: "蔵書を調べる" });
+
+    const card = container.createDiv({ cls: "seiton-calil-loading" });
+    card.setAttr("role", "status");
+    card.setAttr("aria-live", "polite");
+
+    const head = card.createDiv({ cls: "seiton-calil-loading-head" });
+    const dots = head.createSpan({ cls: "seiton-calil-dots" });
+    dots.setAttr("aria-hidden", "true");
+    for (let i = 0; i < 3; i += 1) {
+      dots.createSpan();
+    }
+    head.createSpan({
+      cls: "seiton-calil-loading-label",
+      text: "カーリルに照会中",
+    });
+    if (this.isbn !== "") {
+      head.createSpan({
+        cls: "seiton-calil-loading-isbn",
+        text: this.isbn,
+      });
+    }
+
+    card.createDiv({
+      cls: "seiton-calil-loading-note",
+      text: "設定した図書館の蔵書・貸出状況を確認しています",
+    });
+
+    const track = card.createDiv({ cls: "seiton-calil-loading-track" });
+    track.setAttr("aria-hidden", "true");
+    track.createDiv({ cls: "seiton-calil-loading-bar" });
   }
 
   private renderCalilMessage(message: string, isError = false): void {
