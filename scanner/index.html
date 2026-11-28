@@ -361,6 +361,7 @@
       <div class="controls">
         <button id="torch-btn" class="btn" type="button" hidden>ライト</button>
         <button id="pause-btn" class="btn" type="button">一時停止</button>
+        <button id="copy-btn" class="btn" type="button" hidden>ISBNをコピー</button>
       </div>
 
       <div id="status" class="status" aria-live="polite">
@@ -413,7 +414,6 @@
       (() => {
         const params = new URLSearchParams(window.location.search);
         const mode = params.get("mode") === "single" ? "single" : "batch";
-        const vaultName = (params.get("vault") || "").trim();
 
         const modeBadge = document.getElementById("mode-badge");
         const video = document.getElementById("video");
@@ -423,6 +423,7 @@
         const retryBtn = document.getElementById("retry-btn");
         const torchBtn = document.getElementById("torch-btn");
         const pauseBtn = document.getElementById("pause-btn");
+        const copyBtn = document.getElementById("copy-btn");
         const statusEl = document.getElementById("status");
         const singleReturn = document.getElementById("single-return");
         const singleIsbnEl = document.getElementById("single-isbn");
@@ -515,11 +516,31 @@
           statusEl.textContent = text;
         }
 
-        function buildObsidianUri(query) {
-          if (vaultName) {
-            query.set("vault", vaultName);
+        function buildObsidianUri(pairs) {
+          const qs = Object.entries(pairs)
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            .join("&");
+          return `obsidian://seiton-next?${qs}`;
+        }
+
+        function currentIsbnPayload() {
+          if (mode === "single") {
+            return (singleIsbnEl.textContent || "").trim();
           }
-          return `obsidian://seiton-next?${query.toString()}`;
+          return scanned.join("\n");
+        }
+
+        async function copyIsbnsToClipboard(notify = false) {
+          const payload = currentIsbnPayload();
+          if (!payload || !navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(payload);
+            if (notify) {
+              setStatus("ISBN をクリップボードにコピーしました", "success");
+            }
+          } catch {}
         }
 
         function updateBatchUI() {
@@ -547,6 +568,7 @@
             queueList.append(row);
           }
 
+          copyBtn.hidden = scanned.length === 0;
           sendBtn.textContent = `Obsidian に送る (${scanned.length}冊)`;
           if (scanned.length === 0) {
             sendBtn.href = "#";
@@ -554,15 +576,10 @@
             sendBtn.style.opacity = "0.45";
             sendBtn.style.pointerEvents = "none";
           } else {
-            const q = new URLSearchParams();
-            if (scanned.length === 1) {
-              q.set("action", "book");
-              q.set("isbn", scanned[0]);
-            } else {
-              q.set("action", "books");
-              q.set("isbns", scanned.join(","));
-            }
-            sendBtn.href = buildObsidianUri(q);
+            sendBtn.href =
+              scanned.length === 1
+                ? buildObsidianUri({ action: "book", isbn: scanned[0] })
+                : buildObsidianUri({ action: "books", isbns: scanned.join(",") });
             sendBtn.removeAttribute("aria-disabled");
             sendBtn.style.opacity = "1";
             sendBtn.style.pointerEvents = "auto";
@@ -582,11 +599,12 @@
             playBeep();
             vibrate();
             stopCamera();
-            const q = new URLSearchParams({ action: "book", isbn });
-            const uri = buildObsidianUri(q);
+            const uri = buildObsidianUri({ action: "book", isbn });
             singleIsbnEl.textContent = isbn;
             singleOpenLink.href = uri;
             singleReturn.hidden = false;
+            copyBtn.hidden = false;
+            void copyIsbnsToClipboard(false);
             setStatus(`ISBN: ${isbn} を読み取りました。Obsidian に移動します…`, "success");
             window.location.href = uri;
             return;
@@ -775,6 +793,18 @@
 
         retryBtn.addEventListener("click", () => {
           void startCamera();
+        });
+
+        copyBtn.addEventListener("click", () => {
+          void copyIsbnsToClipboard(true);
+        });
+
+        sendBtn.addEventListener("click", () => {
+          void copyIsbnsToClipboard(false);
+        });
+
+        singleOpenLink.addEventListener("click", () => {
+          void copyIsbnsToClipboard(false);
         });
 
         manualForm.addEventListener("submit", (e) => {

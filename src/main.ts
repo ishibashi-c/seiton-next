@@ -211,31 +211,33 @@ export default class SeitonNextPlugin extends Plugin {
       void this.coordinator.openHome();
     });
     this.registerObsidianProtocolHandler("seiton-next", (params) => {
-      void handleSeitonUri(
-        {
-          addShortcutLink: (url, title) =>
-            this.coordinator.addShortcutLink(url, title),
-          app: this.app,
-          indexService: this.indexService,
-          memoService: this.memoService,
-          openAddBook: (isbn) => this.coordinator.openAddBook(isbn),
-          openAssets: () => this.coordinator.openAssets(),
-          openBarcodeScannerWithIsbns: (isbns) =>
-            this.coordinator.openBarcodeScannerWithIsbns(isbns),
-          openBookDetail: (record) => this.coordinator.openBookDetail(record),
-          openBookshelf: () => this.coordinator.openBookshelf(),
-          openHome: () => this.coordinator.openHome(),
-          openLibrary: () => this.coordinator.openLibrary(),
-          openProjects: () => this.coordinator.openProjects(),
-          openPromptView: () => this.coordinator.openPrompt(),
-          openTsubuyaki: () => this.coordinator.openTsubuyaki(),
-          openWebClipCapture: (input) =>
-            this.coordinator.openWebClipCapture(input),
-          refreshHomeViews: () => this.coordinator.refreshHomeViews(),
-          version: this.manifest.version,
-        },
-        params
-      );
+      this.app.workspace.onLayoutReady(() => {
+        void handleSeitonUri(
+          {
+            addShortcutLink: (url, title) =>
+              this.coordinator.addShortcutLink(url, title),
+            app: this.app,
+            indexService: this.indexService,
+            memoService: this.memoService,
+            openAddBook: (isbn) => this.coordinator.openAddBook(isbn),
+            openAssets: () => this.coordinator.openAssets(),
+            openBarcodeScannerWithIsbns: (isbns) =>
+              this.coordinator.openBarcodeScannerWithIsbns(isbns),
+            openBookDetail: (record) => this.coordinator.openBookDetail(record),
+            openBookshelf: () => this.coordinator.openBookshelf(),
+            openHome: () => this.coordinator.openHome(),
+            openLibrary: () => this.coordinator.openLibrary(),
+            openProjects: () => this.coordinator.openProjects(),
+            openPromptView: () => this.coordinator.openPrompt(),
+            openTsubuyaki: () => this.coordinator.openTsubuyaki(),
+            openWebClipCapture: (input) =>
+              this.coordinator.openWebClipCapture(input),
+            refreshHomeViews: () => this.coordinator.refreshHomeViews(),
+            version: this.manifest.version,
+          },
+          params
+        );
+      });
     });
     const workspaceWithShareMenu = this.app
       .workspace as typeof this.app.workspace & {

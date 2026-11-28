@@ -28,12 +28,10 @@ export const SCANNER_WEB_URL =
   "https://ishibashi-c.github.io/seiton-next/scanner/";
 
 export function openBrowserBarcodeScanner(
-  app: App,
+  _app: App,
   mode: "batch" | "single" = "batch"
 ): void {
-  const url = `${SCANNER_WEB_URL}?mode=${encodeURIComponent(
-    mode
-  )}&vault=${encodeURIComponent(app.vault.getName())}`;
+  const url = `${SCANNER_WEB_URL}?mode=${encodeURIComponent(mode)}`;
   window.open(url, "_blank");
 }
 
@@ -372,6 +370,15 @@ export class BarcodeScannerModal extends Modal {
       if (!this.isAnalyzingImage) {
         this.fileInput?.click();
       }
+    });
+
+    const pasteIsbnBtn = controls.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-scanner-ctrl-btn",
+      text: "クリップボードから取込",
+    });
+    pasteIsbnBtn.addEventListener("click", () => {
+      void this.importFromClipboard();
     });
 
     this.statusEl = wrap.createDiv({ cls: "seiton-scanner-status" });
@@ -728,6 +735,36 @@ export class BarcodeScannerModal extends Modal {
       this.handleDetectedBarcode(isbn);
       input.focus();
     });
+  }
+
+  private async importFromClipboard(): Promise<void> {
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.clipboard ||
+      typeof navigator.clipboard.readText !== "function"
+    ) {
+      showToast("クリップボードの読み取りに対応していません。");
+      return;
+    }
+    try {
+      const text = await navigator.clipboard.readText();
+      const rawTokens = text
+        .split(/[\s,、;]+/u)
+        .map((t) => extractIsbnFromBarcode(t))
+        .filter((t): t is string => t !== null);
+      const unique = [...new Set(rawTokens)];
+      if (unique.length === 0) {
+        showToast("クリップボードに有効な13桁ISBNが見つかりませんでした。");
+        return;
+      }
+      for (const isbn of unique) {
+        this.handleDetectedBarcode(isbn);
+      }
+    } catch {
+      showToast(
+        "クリップボードを読み取れませんでした。権限を確認してください。"
+      );
+    }
   }
 
   private async scanImageFile(file: File | Blob): Promise<void> {
