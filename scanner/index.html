@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Seiton Barcode Scanner</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #f4f4f5;
+        --ink: #111111;
+        --muted: #52525b;
+        --border: #d4d4d8;
+        --accent: #15803d;
+        --accent-soft: #86efac;
+        --warn: #b45309;
+        --err: #b91c1c;
+        color-scheme: light dark;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111111;
+          --surface: #1c1c20;
+          --ink: #fafafa;
+          --muted: #a1a1aa;
+          --border: #2e2e32;
+          --accent: #4ade80;
+          --accent-soft: #4ade80;
+          --warn: #fbbf24;
+          --err: #f87171;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans",
+          "Noto Sans JP", system-ui, sans-serif;
+        margin: 0;
+        min-height: 100dvh;
+        padding: 0;
+      }
+
+      .app {
+        display: flex;
+        flex-direction: column;
+        margin: 0 auto;
+        max-width: 540px;
+        min-height: 100dvh;
+        padding: max(12px, env(safe-area-inset-top)) 14px
+          max(16px, env(safe-area-inset-bottom));
+        gap: 12px;
+      }
+
+      .head {
+        align-items: center;
+        border-bottom: 2px solid var(--ink);
+        display: flex;
+        justify-content: space-between;
+        padding-bottom: 8px;
+      }
+
+      .head-title {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+
+      .head-badge {
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 7px;
+      }
+
+      .stage {
+        aspect-ratio: 4 / 3;
+        background: #0b0b0c;
+        border: 2px solid var(--ink);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      }
+
+      video {
+        display: block;
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+      }
+
+      .overlay {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        inset: 0;
+        justify-content: center;
+        pointer-events: none;
+        position: absolute;
+      }
+
+      .guide {
+        align-items: center;
+        border: 2px solid var(--accent);
+        border-radius: 2px;
+        box-shadow: 0 0 0 9999px rgb(0 0 0 / 42%);
+        display: flex;
+        height: 38%;
+        justify-content: center;
+        width: 86%;
+      }
+
+      .guide.is-detected {
+        background: color-mix(in srgb, var(--accent-soft) 22%, transparent);
+        border-color: var(--accent-soft);
+      }
+
+      .guide-line {
+        background: color-mix(in srgb, var(--accent) 78%, transparent);
+        height: 1.5px;
+        width: 92%;
+      }
+
+      .caption {
+        background: rgb(17 17 17 / 84%);
+        border-radius: 2px;
+        bottom: 10px;
+        color: #fafafa;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        position: absolute;
+        text-align: center;
+      }
+
+      .fallback {
+        align-items: center;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        inset: 0;
+        justify-content: center;
+        padding: 18px;
+        position: absolute;
+        text-align: center;
+      }
+
+      .fallback[hidden] {
+        display: none;
+      }
+
+      .fallback-msg {
+        color: var(--ink);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .controls {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .btn {
+        align-items: center;
+        appearance: none;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--ink);
+        cursor: pointer;
+        display: inline-flex;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        justify-content: center;
+        min-height: 38px;
+        padding: 0 14px;
+        text-decoration: none;
+      }
+
+      .btn.is-primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--bg);
+        font-weight: 700;
+        min-height: 44px;
+        width: 100%;
+      }
+
+      .btn.is-active {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--bg);
+      }
+
+      .status {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.45;
+        min-height: 18px;
+      }
+
+      .status.is-success {
+        color: var(--accent);
+      }
+
+      .status.is-warn {
+        color: var(--warn);
+      }
+
+      .status.is-error {
+        color: var(--err);
+      }
+
+      .single-return {
+        background: var(--surface);
+        border: 2px solid var(--ink);
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .single-return[hidden] {
+        display: none;
+      }
+
+      .single-isbn {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .queue {
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 8px;
+        padding-top: 10px;
+      }
+
+      .queue[hidden] {
+        display: none;
+      }
+
+      .queue-head {
+        align-items: center;
+        display: flex;
+        font-size: 13px;
+        font-weight: 700;
+        justify-content: space-between;
+      }
+
+      .queue-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 180px;
+        overflow-y: auto;
+      }
+
+      .queue-item {
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 10px;
+      }
+
+      .queue-isbn {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .queue-del {
+        background: transparent;
+        border: 0;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 16px;
+        padding: 2px 8px;
+      }
+
+      .manual {
+        display: flex;
+        gap: 8px;
+      }
+
+      .manual input {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--ink);
+        flex: 1 1 auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 14px;
+        min-height: 38px;
+        min-width: 0;
+        padding: 0 10px;
+      }
+
+      .foot {
+        margin-top: auto;
+        padding-top: 4px;
+      }
+
+      .privacy {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+        margin: 6px 0 0;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="head">
+        <h1 class="head-title">Seiton バーコードスキャン</h1>
+        <span id="mode-badge" class="head-badge">連続</span>
+      </header>
+
+      <section class="stage">
+        <video id="video" playsinline muted autoplay></video>
+        <div class="overlay">
+          <div id="guide" class="guide">
+            <div class="guide-line"></div>
+          </div>
+          <div class="caption">
+            上段のバーコード（978…）を枠内に合わせてください
+          </div>
+        </div>
+        <div id="fallback" class="fallback" hidden>
+          <div id="fallback-msg" class="fallback-msg"></div>
+          <button id="retry-btn" class="btn" type="button">カメラを再起動</button>
+        </div>
+      </section>
+
+      <div class="controls">
+        <button id="torch-btn" class="btn" type="button" hidden>ライト</button>
+        <button id="pause-btn" class="btn" type="button">一時停止</button>
+      </div>
+
+      <div id="status" class="status" aria-live="polite">
+        カメラを起動しています…
+      </div>
+
+      <section id="single-return" class="single-return" hidden>
+        <div>読み取った ISBN: <span id="single-isbn" class="single-isbn"></span></div>
+        <a id="single-open-link" class="btn is-primary" href="#">
+          Obsidian で開く
+        </a>
+      </section>
+
+      <form id="manual-form" class="manual">
+        <input
+          id="manual-input"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="ISBN（13桁）を手入力…"
+        />
+        <button class="btn" type="submit">追加</button>
+      </form>
+
+      <section id="queue-section" class="queue" hidden>
+        <div class="queue-head">
+          <span>読み取り済み</span>
+          <span id="queue-count">0冊</span>
+        </div>
+        <div id="queue-list" class="queue-list"></div>
+      </section>
+
+      <footer class="foot">
+        <a
+          id="send-btn"
+          class="btn is-primary"
+          href="#"
+          hidden
+          aria-disabled="true"
+        >
+          Obsidian に送る (0冊)
+        </a>
+        <p class="privacy">
+          端末内で解析し、カメラ画像は一切保存されません（完全無料）
+        </p>
+      </footer>
+    </main>
+
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get("mode") === "single" ? "single" : "batch";
+        const vaultName = (params.get("vault") || "").trim();
+
+        const modeBadge = document.getElementById("mode-badge");
+        const video = document.getElementById("video");
+        const guide = document.getElementById("guide");
+        const fallback = document.getElementById("fallback");
+        const fallbackMsg = document.getElementById("fallback-msg");
+        const retryBtn = document.getElementById("retry-btn");
+        const torchBtn = document.getElementById("torch-btn");
+        const pauseBtn = document.getElementById("pause-btn");
+        const statusEl = document.getElementById("status");
+        const singleReturn = document.getElementById("single-return");
+        const singleIsbnEl = document.getElementById("single-isbn");
+        const singleOpenLink = document.getElementById("single-open-link");
+        const manualForm = document.getElementById("manual-form");
+        const manualInput = document.getElementById("manual-input");
+        const queueSection = document.getElementById("queue-section");
+        const queueCount = document.getElementById("queue-count");
+        const queueList = document.getElementById("queue-list");
+        const sendBtn = document.getElementById("send-btn");
+
+        modeBadge.textContent = mode === "single" ? "1冊スキャン" : "連続スキャン";
+        if (mode === "batch") {
+          queueSection.hidden = false;
+          sendBtn.hidden = false;
+        }
+
+        let stream = null;
+        let detector = null;
+        let scanTimer = null;
+        let frameInFlight = false;
+        let paused = false;
+        let torchOn = false;
+        let lastIsbn = null;
+        let lastScanAt = 0;
+        let lastPriceHintAt = 0;
+        const scanned = [];
+
+        function normalizeDigits(raw) {
+          return String(raw || "").replace(/[^0-9]/g, "");
+        }
+
+        function isValidIsbn13(code) {
+          if (!/^(978|979)\d{10}$/.test(code)) return false;
+          let sum = 0;
+          for (let i = 0; i < 12; i += 1) {
+            sum += Number(code[i]) * (i % 2 === 0 ? 1 : 3);
+          }
+          const check = (10 - (sum % 10)) % 10;
+          return check === Number(code[12]);
+        }
+
+        function isPriceCode(raw) {
+          return /^192\d{10}$/.test(normalizeDigits(raw));
+        }
+
+        function classifyValues(values) {
+          let sawPrice = false;
+          for (const raw of values) {
+            const digits = normalizeDigits(raw);
+            if (isValidIsbn13(digits)) {
+              return { isbn: digits, sawPrice: false };
+            }
+            if (isPriceCode(digits)) {
+              sawPrice = true;
+            }
+          }
+          return { isbn: null, sawPrice };
+        }
+
+        function playBeep() {
+          try {
+            const Ctor = window.AudioContext || window.webkitAudioContext;
+            if (!Ctor) return;
+            const ctx = new Ctor();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(1760, ctx.currentTime);
+            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+            window.setTimeout(() => {
+              void ctx.close();
+            }, 120);
+          } catch {}
+        }
+
+        function vibrate() {
+          try {
+            if ("vibrate" in navigator) navigator.vibrate(40);
+          } catch {}
+        }
+
+        function setStatus(text, tone = "") {
+          statusEl.className = tone ? `status is-${tone}` : "status";
+          statusEl.textContent = text;
+        }
+
+        function buildObsidianUri(query) {
+          if (vaultName) {
+            query.set("vault", vaultName);
+          }
+          return `obsidian://seiton-next?${query.toString()}`;
+        }
+
+        function updateBatchUI() {
+          queueCount.textContent = `${scanned.length}冊`;
+          queueList.innerHTML = "";
+          for (const isbn of scanned) {
+            const row = document.createElement("div");
+            row.className = "queue-item";
+            const label = document.createElement("span");
+            label.className = "queue-isbn";
+            label.textContent = isbn;
+            const del = document.createElement("button");
+            del.className = "queue-del";
+            del.type = "button";
+            del.setAttribute("aria-label", "削除");
+            del.textContent = "×";
+            del.addEventListener("click", () => {
+              const idx = scanned.indexOf(isbn);
+              if (idx >= 0) {
+                scanned.splice(idx, 1);
+                updateBatchUI();
+              }
+            });
+            row.append(label, del);
+            queueList.append(row);
+          }
+
+          sendBtn.textContent = `Obsidian に送る (${scanned.length}冊)`;
+          if (scanned.length === 0) {
+            sendBtn.href = "#";
+            sendBtn.setAttribute("aria-disabled", "true");
+            sendBtn.style.opacity = "0.45";
+            sendBtn.style.pointerEvents = "none";
+          } else {
+            const q = new URLSearchParams();
+            if (scanned.length === 1) {
+              q.set("action", "book");
+              q.set("isbn", scanned[0]);
+            } else {
+              q.set("action", "books");
+              q.set("isbns", scanned.join(","));
+            }
+            sendBtn.href = buildObsidianUri(q);
+            sendBtn.removeAttribute("aria-disabled");
+            sendBtn.style.opacity = "1";
+            sendBtn.style.pointerEvents = "auto";
+          }
+        }
+
+        function onDetectedIsbn(isbn) {
+          const now = Date.now();
+          if (lastIsbn === isbn && now - lastScanAt < 2000) return;
+          lastIsbn = isbn;
+          lastScanAt = now;
+
+          guide.classList.add("is-detected");
+          window.setTimeout(() => guide.classList.remove("is-detected"), 450);
+
+          if (mode === "single") {
+            playBeep();
+            vibrate();
+            stopCamera();
+            const q = new URLSearchParams({ action: "book", isbn });
+            const uri = buildObsidianUri(q);
+            singleIsbnEl.textContent = isbn;
+            singleOpenLink.href = uri;
+            singleReturn.hidden = false;
+            setStatus(`ISBN: ${isbn} を読み取りました。Obsidian に移動します…`, "success");
+            window.location.href = uri;
+            return;
+          }
+
+          if (scanned.includes(isbn)) {
+            setStatus(`ISBN: ${isbn} はすでに読み取り済みです`, "warn");
+            return;
+          }
+
+          playBeep();
+          vibrate();
+          scanned.unshift(isbn);
+          updateBatchUI();
+          setStatus(`ISBN: ${isbn} を追加しました（計 ${scanned.length}冊）`, "success");
+        }
+
+        async function initDetector() {
+          if (typeof window.BarcodeDetector !== "function") {
+            return false;
+          }
+          try {
+            if (typeof window.BarcodeDetector.getSupportedFormats === "function") {
+              const formats = await window.BarcodeDetector.getSupportedFormats();
+              if (!formats.includes("ean_13")) return false;
+            }
+            detector = new window.BarcodeDetector({ formats: ["ean_13"] });
+            return true;
+          } catch {
+            return false;
+          }
+        }
+
+        function stopCamera() {
+          if (scanTimer !== null) {
+            window.clearTimeout(scanTimer);
+            scanTimer = null;
+          }
+          frameInFlight = false;
+          torchOn = false;
+          torchBtn.classList.remove("is-active");
+          torchBtn.textContent = "ライト";
+          torchBtn.hidden = true;
+          if (stream) {
+            for (const track of stream.getTracks()) {
+              track.stop();
+            }
+            stream = null;
+          }
+          video.srcObject = null;
+          pauseBtn.textContent = "カメラを開始";
+        }
+
+        function showFallback(message) {
+          fallbackMsg.textContent = message;
+          fallback.hidden = false;
+        }
+
+        function scheduleTick() {
+          if (!stream || paused || !detector) return;
+          scanTimer = window.setTimeout(() => {
+            void tick();
+          }, 160);
+        }
+
+        async function tick() {
+          if (!stream || paused || !detector || frameInFlight) {
+            scheduleTick();
+            return;
+          }
+          if (video.readyState < 2 || video.videoWidth === 0) {
+            scheduleTick();
+            return;
+          }
+          frameInFlight = true;
+          try {
+            const barcodes = await detector.detect(video);
+            const values = barcodes.map((b) => b.rawValue || "").filter(Boolean);
+            const { isbn, sawPrice } = classifyValues(values);
+            if (isbn) {
+              onDetectedIsbn(isbn);
+            } else if (sawPrice) {
+              const now = Date.now();
+              if (now - lastPriceHintAt > 1800) {
+                lastPriceHintAt = now;
+                setStatus(
+                  "下段の価格コード（192…）です。上段の 978… を枠に合わせてください。",
+                  "warn"
+                );
+              }
+            }
+          } catch {
+            // frame decode skipped
+          } finally {
+            frameInFlight = false;
+            scheduleTick();
+          }
+        }
+
+        async function startCamera() {
+          stopCamera();
+          paused = false;
+
+          const hasDetector = await initDetector();
+          if (!hasDetector) {
+            showFallback(
+              "このブラウザは BarcodeDetector に非対応です。Android 版 Google Chrome で開くか、下の ISBN 手入力をご利用ください。"
+            );
+            setStatus("対応ブラウザ（Chrome 等）で開いてください", "error");
+            return;
+          }
+
+          if (
+            !navigator.mediaDevices ||
+            typeof navigator.mediaDevices.getUserMedia !== "function"
+          ) {
+            showFallback("カメラ API を利用できない環境です。");
+            return;
+          }
+
+          setStatus("カメラを起動しています…");
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: false,
+              video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+              },
+            });
+
+            const track = stream.getVideoTracks()[0];
+            if (track && typeof track.getCapabilities === "function") {
+              const caps = track.getCapabilities();
+              if (Array.isArray(caps.focusMode) && caps.focusMode.includes("continuous")) {
+                await track
+                  .applyConstraints({ advanced: [{ focusMode: "continuous" }] })
+                  .catch(() => {});
+              }
+              if (caps.torch) {
+                torchBtn.hidden = false;
+              }
+            }
+
+            video.srcObject = stream;
+            await video.play().catch(() => {});
+            fallback.hidden = true;
+            pauseBtn.textContent = "一時停止";
+            setStatus("かざすだけで自動読み取り中（画像は保存されません）");
+            scheduleTick();
+          } catch (err) {
+            stopCamera();
+            const name = err && err.name ? err.name : "";
+            const msg =
+              name === "NotAllowedError"
+                ? "カメラ権限が許可されていません。ブラウザのアドレスバー付近の権限アイコンからカメラを許可して再試行してください。"
+                : "カメラを起動できませんでした。他のアプリがカメラを使っていないか確認してください。";
+            showFallback(msg);
+            setStatus("カメラを起動できませんでした", "error");
+          }
+        }
+
+        torchBtn.addEventListener("click", async () => {
+          const track = stream && stream.getVideoTracks()[0];
+          if (!track) return;
+          const next = !torchOn;
+          try {
+            await track.applyConstraints({ advanced: [{ torch: next }] });
+            torchOn = next;
+            torchBtn.classList.toggle("is-active", next);
+            torchBtn.textContent = next ? "ライト ON" : "ライト";
+          } catch {
+            setStatus("ライトを切り替えられませんでした", "warn");
+          }
+        });
+
+        pauseBtn.addEventListener("click", () => {
+          if (stream && !paused) {
+            paused = true;
+            stopCamera();
+            showFallback("カメラを一時停止しています。");
+          } else {
+            void startCamera();
+          }
+        });
+
+        retryBtn.addEventListener("click", () => {
+          void startCamera();
+        });
+
+        manualForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const digits = normalizeDigits(manualInput.value);
+          if (!isValidIsbn13(digits)) {
+            setStatus("有効な13桁の ISBN（978/979…）を入力してください", "error");
+            return;
+          }
+          manualInput.value = "";
+          onDetectedIsbn(digits);
+        });
+
+        window.addEventListener("pagehide", stopCamera);
+        updateBatchUI();
+        void startCamera();
+      })();
+    </script>
+  </body>
+</html>

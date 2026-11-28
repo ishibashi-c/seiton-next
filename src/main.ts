@@ -220,6 +220,8 @@ export default class SeitonNextPlugin extends Plugin {
           memoService: this.memoService,
           openAddBook: (isbn) => this.coordinator.openAddBook(isbn),
           openAssets: () => this.coordinator.openAssets(),
+          openBarcodeScannerWithIsbns: (isbns) =>
+            this.coordinator.openBarcodeScannerWithIsbns(isbns),
           openBookDetail: (record) => this.coordinator.openBookDetail(record),
           openBookshelf: () => this.coordinator.openBookshelf(),
           openHome: () => this.coordinator.openHome(),

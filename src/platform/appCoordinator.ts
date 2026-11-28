@@ -417,6 +417,16 @@ export class AppCoordinator {
     }).open();
   }
 
+  openBarcodeScannerWithIsbns(isbns: string[]): void {
+    new BarcodeScannerModal(this.app, this.books, {
+      initialIsbns: isbns,
+      onSaved: () => {
+        this.indexService.invalidate();
+        void this.openBookshelf();
+      },
+    }).open();
+  }
+
   openBookDetail(record: NoteRecord): void {
     new BookDetailModal(this.app, this.books, record, {
       onSaved: () => this.indexService.invalidate(),

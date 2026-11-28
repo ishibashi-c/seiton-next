@@ -1,5 +1,5 @@
 import type { App } from "obsidian";
-import { Modal } from "obsidian";
+import { Modal, Platform } from "obsidian";
 import {
   parseReadingStatus,
   READING_STATUS_LABELS,
@@ -12,7 +12,10 @@ import type { BookService, CreateBookResult } from "../../services/bookService";
 import { markSeitonModal } from "../ui/modal";
 import { ButtonComponent, Setting, type TextComponent } from "../ui/setting";
 import { showToast } from "../ui/toast";
-import { BarcodeScannerModal } from "./barcodeScannerModal";
+import {
+  BarcodeScannerModal,
+  openBrowserBarcodeScanner,
+} from "./barcodeScannerModal";
 
 export interface AddBookModalOptions {
   initialIsbn?: string;
@@ -87,6 +90,11 @@ export class AddBookModal extends Modal {
         .setButtonText("スキャン")
         .setTooltip("バーコードをカメラで読み取る")
         .onClick(() => {
+          if (Platform.isAndroidApp) {
+            openBrowserBarcodeScanner(this.app, "single");
+            this.close();
+            return;
+          }
           new BarcodeScannerModal(this.app, this.bookService, {
             onScanSingle: (scannedIsbn) => {
               this.isbn = scannedIsbn;
@@ -179,9 +187,13 @@ export class AddBookModal extends Modal {
       return false;
     });
 
-    window.setTimeout(() => {
-      this.isbnText?.inputEl.focus();
-    }, 60);
+    if (this.isbn.trim() === "") {
+      window.setTimeout(() => {
+        this.isbnText?.inputEl.focus();
+      }, 60);
+    } else {
+      void this.lookup();
+    }
   }
 
   override onClose(): void {

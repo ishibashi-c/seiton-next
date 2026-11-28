@@ -1,14 +1,14 @@
 /**
  * 本のバーコード（ISBN）スキャナーモーダル。
  *
- * - 背面カメラ（ライブプレビュー）を既定にし、ガイド枠内から自動検出する。
- * - ネイティブ `BarcodeDetector`（Android WebView / Chrome 等）で 2段バーコードを同時認識し、
- *   上段の `978/979` のみを抽出する。非対応環境では多段 `@zxing/browser` を使用。
- * - 撮影画像を端末や Vault に一切保存しない（すべてメモリ上の Canvas で処理）。
+ * - Android 版 Obsidian（APK に CAMERA 権限がない環境）では、GitHub Pages で配信する
+ *   ゼロ保存 Web スキャナー（Chrome）を起動し、`obsidian://seiton-next` URI で戻る。
+ * - PC / カメラ権限のある環境では背面カメラ（ライブプレビュー）を既定にし、ガイド枠内から自動検出する。
  * - 画像ファイル選択 / D&D / 貼り付け / ISBN 手動入力・USBリーダーにも併用対応。
+ * - 撮影画像を端末や Vault に一切保存しない。
  */
 
-import { type App, Modal, setIcon } from "obsidian";
+import { type App, Modal, Platform, setIcon } from "obsidian";
 import {
   extractIsbnFromBarcode,
   formatCameraErrorMessage,
@@ -24,6 +24,19 @@ import { markSeitonModal } from "../ui/modal";
 import { showToast } from "../ui/toast";
 import { BarcodeDecoder } from "./barcodeDecoder";
 
+export const SCANNER_WEB_URL =
+  "https://ishibashi-c.github.io/seiton-next/scanner/";
+
+export function openBrowserBarcodeScanner(
+  app: App,
+  mode: "batch" | "single" = "batch"
+): void {
+  const url = `${SCANNER_WEB_URL}?mode=${encodeURIComponent(
+    mode
+  )}&vault=${encodeURIComponent(app.vault.getName())}`;
+  window.open(url, "_blank");
+}
+
 export interface ScannedBookItem {
   authors: string;
   candidate: BookCandidate | null;
@@ -37,6 +50,8 @@ export interface ScannedBookItem {
 }
 
 export interface BarcodeScannerModalOptions {
+  /** Chrome Web スキャナー等から受け取った ISBN 群を初期キューに入れる */
+  initialIsbns?: string[];
   onSaved?: (count: number) => void;
   onScanSingle?: (isbn: string) => void;
   /** 1冊だけスキャンして即時完了するモード */
@@ -61,6 +76,8 @@ export class BarcodeScannerModal extends Modal {
   private videoEl: HTMLVideoElement | null = null;
   private fallbackEl: HTMLElement | null = null;
   private fallbackMsgEl: HTMLElement | null = null;
+  private fallbackRetryBtn: HTMLButtonElement | null = null;
+  private fallbackChromeBtn: HTMLButtonElement | null = null;
   private guideEl: HTMLElement | null = null;
   private torchBtn: HTMLButtonElement | null = null;
   private toggleCamBtn: HTMLButtonElement | null = null;
@@ -111,6 +128,18 @@ export class BarcodeScannerModal extends Modal {
 
     this.renderUI();
     this.registerGlobalPaste();
+
+    const initial = this.options.initialIsbns ?? [];
+    if (initial.length > 0) {
+      this.seedInitialIsbns(initial);
+      return;
+    }
+
+    if (Platform.isAndroidApp) {
+      this.showAndroidHandoff();
+      return;
+    }
+
     void this.startCamera();
   }
 
@@ -132,6 +161,8 @@ export class BarcodeScannerModal extends Modal {
     this.videoEl = null;
     this.fallbackEl = null;
     this.fallbackMsgEl = null;
+    this.fallbackRetryBtn = null;
+    this.fallbackChromeBtn = null;
     this.guideEl = null;
     this.torchBtn = null;
     this.toggleCamBtn = null;
@@ -249,7 +280,7 @@ export class BarcodeScannerModal extends Modal {
       text: "上段のバーコード（978…）を枠内に合わせてください",
     });
 
-    // カメラ停止・失敗時のフォールバック表示
+    // カメラ停止・失敗・Android Chrome 連携時のフォールバック表示
     const fallback = stage.createDiv({ cls: "seiton-scanner-fallback" });
     fallback.hide();
     this.fallbackEl = fallback;
@@ -257,11 +288,30 @@ export class BarcodeScannerModal extends Modal {
       cls: "seiton-scanner-fallback-msg",
       text: "カメラを起動しています…",
     });
+
+    const chromeBtn = fallback.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-scanner-retry-btn",
+      text: "Chromeでバーコードをスキャン",
+    });
+    chromeBtn.hide();
+    this.fallbackChromeBtn = chromeBtn;
+    chromeBtn.addEventListener("click", () => {
+      openBrowserBarcodeScanner(
+        this.app,
+        this.options.single ? "single" : "batch"
+      );
+      if (!this.options.single) {
+        this.close();
+      }
+    });
+
     const retryBtn = fallback.createEl("button", {
       attr: { type: "button" },
       cls: "seiton-scanner-retry-btn",
       text: "カメラを再起動",
     });
+    this.fallbackRetryBtn = retryBtn;
     retryBtn.addEventListener("click", () => {
       void this.startCamera();
     });
@@ -275,6 +325,9 @@ export class BarcodeScannerModal extends Modal {
       text: "カメラを停止",
     });
     this.toggleCamBtn = toggleBtn;
+    if (Platform.isAndroidApp) {
+      toggleBtn.hide();
+    }
     toggleBtn.addEventListener("click", () => {
       if (this.stream && !this.cameraPaused) {
         this.cameraPaused = true;
@@ -297,6 +350,18 @@ export class BarcodeScannerModal extends Modal {
       void this.toggleTorch();
     });
 
+    const browserBtn = controls.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-scanner-ctrl-btn",
+      text: "ブラウザでスキャン",
+    });
+    browserBtn.addEventListener("click", () => {
+      openBrowserBarcodeScanner(
+        this.app,
+        this.options.single ? "single" : "batch"
+      );
+    });
+
     const fileBtn = controls.createEl("button", {
       attr: { type: "button" },
       cls: "seiton-scanner-ctrl-btn",
@@ -309,8 +374,71 @@ export class BarcodeScannerModal extends Modal {
       }
     });
 
-    // ステータス表示領域（レイアウトジャンプ防止のため固定高を確保）
     this.statusEl = wrap.createDiv({ cls: "seiton-scanner-status" });
+  }
+
+  private showAndroidHandoff(): void {
+    this.fallbackMsgEl?.setText(
+      "Android版Obsidianアプリはカメラ権限を持たないため、Chromeの高速スキャナーで読み取ってSeitonへ戻ります（画像は一切保存されません）。"
+    );
+    this.fallbackRetryBtn?.hide();
+    this.fallbackChromeBtn?.show();
+    this.fallbackEl?.show();
+    this.showStatus(
+      "Chromeでスキャンするか、下のISBN手入力をご利用ください。",
+      "loading"
+    );
+  }
+
+  private seedInitialIsbns(rawList: readonly string[]): void {
+    let added = 0;
+    for (const raw of rawList) {
+      const isbn = extractIsbnFromBarcode(raw);
+      if (!isbn || this.items.some((item) => item.isbn === isbn)) {
+        continue;
+      }
+      const id = `scan_${Date.now()}_${added}_${Math.random()
+        .toString(36)
+        .slice(2, 6)}`;
+      this.items.push({
+        authors: "",
+        candidate: null,
+        coverUrl: "",
+        id,
+        isbn,
+        loading: true,
+        publisher: "",
+        title: "",
+      });
+      added += 1;
+    }
+
+    this.renderQueueItems();
+    for (const item of this.items) {
+      void this.lookupItem(item.id, item.isbn);
+    }
+
+    if (Platform.isAndroidApp) {
+      this.fallbackMsgEl?.setText(
+        `スキャンした ${added}冊 を取り込みました。内容を確認して「本棚に追加」を押してください。`
+      );
+      this.fallbackChromeBtn?.setText("Chromeで追加スキャン");
+      this.fallbackRetryBtn?.hide();
+      this.fallbackChromeBtn?.show();
+      this.fallbackEl?.show();
+    } else {
+      this.fallbackMsgEl?.setText(
+        `スキャンした ${added}冊 を取り込みました。内容を確認して「本棚に追加」を押してください。`
+      );
+      this.fallbackChromeBtn?.hide();
+      this.fallbackRetryBtn?.setText("カメラで追加スキャン");
+      this.fallbackRetryBtn?.show();
+      this.fallbackEl?.show();
+    }
+
+    if (added > 0) {
+      this.showStatus(`スキャンした ${added}冊 を書誌照会中…`, "loading");
+    }
   }
 
   private async startCamera(): Promise<void> {
@@ -327,7 +455,7 @@ export class BarcodeScannerModal extends Modal {
       typeof navigator.mediaDevices.getUserMedia !== "function"
     ) {
       this.showCameraFallback(
-        "この環境ではライブカメラを利用できません。下の「画像から読み取り」または ISBN 入力をご利用ください。"
+        "この環境ではライブカメラを利用できません。「ブラウザでスキャン」または「画像から読み取り」をご利用ください。"
       );
       return;
     }
@@ -379,7 +507,10 @@ export class BarcodeScannerModal extends Modal {
       }
       this.stopCamera();
       this.showCameraFallback(formatCameraErrorMessage(error));
-      this.showStatus("画像ファイルや手動入力でも登録できます。", "warn");
+      this.showStatus(
+        "「ブラウザでスキャン」や画像ファイル・手動入力でも登録できます。",
+        "warn"
+      );
     }
   }
 
@@ -450,12 +581,15 @@ export class BarcodeScannerModal extends Modal {
 
   private showCameraFallback(message: string): void {
     this.fallbackMsgEl?.setText(message);
+    this.fallbackChromeBtn?.hide();
+    this.fallbackRetryBtn?.setText("カメラを再起動");
+    this.fallbackRetryBtn?.show();
     this.fallbackEl?.show();
     this.updateCameraToggleButton();
   }
 
   private updateCameraToggleButton(): void {
-    if (!this.toggleCamBtn) {
+    if (!this.toggleCamBtn || Platform.isAndroidApp) {
       return;
     }
     this.toggleCamBtn.setText(this.stream ? "カメラを停止" : "カメラを開始");
