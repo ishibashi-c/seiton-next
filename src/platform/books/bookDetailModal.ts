@@ -14,7 +14,6 @@ import {
 } from "../../domain/book";
 import { stripCoverEmbed, withCoverEmbed } from "../../domain/bookCoverEmbed";
 import {
-  CALIL_TIME_DEPENDENT_NOTICE,
   type CalilBranch,
   calilBestBranch,
   calilBookUrl,
@@ -589,9 +588,7 @@ export class BookDetailModal extends Modal {
           result.branches
         );
       }
-      this.setStatus(
-        `カーリルを照会し、本棚に反映しました（${result.fetchedAt} 時点）`
-      );
+      this.setStatus("本棚に反映しました");
     } catch (error) {
       const message = userMessageOf(error);
       this.renderCalilMessage(message, true);
@@ -726,27 +723,24 @@ export class BookDetailModal extends Modal {
     container.empty();
 
     const top = container.createDiv({ cls: "seiton-book-calil-top" });
-    top.createDiv({ cls: "seiton-book-calil-title", text: "蔵書を調べる" });
+    const topLeft = top.createDiv({ cls: "seiton-book-calil-top-left" });
+    topLeft.createDiv({ cls: "seiton-book-calil-title", text: "蔵書を調べる" });
+    topLeft.createSpan({
+      cls: "seiton-book-calil-time",
+      text: `${formatCalilTimestamp(result.fetchedAt)} 時点`,
+    });
     const bookLink = top.createEl("a", {
       cls: "seiton-book-calil-link",
       href: calilBookUrl(result.isbn),
-      text: "カーリルで見る",
+      text: "カーリルで見る ↗",
     });
     bookLink.setAttr("rel", "noopener noreferrer");
     bookLink.setAttr("target", "_blank");
 
-    container.createDiv({
-      cls: "seiton-book-calil-meta",
-      text: `取得日時: ${result.fetchedAt}（この端末の時刻）`,
-    });
-    container.createDiv({
-      cls: "seiton-book-calil-notice",
-      text: result.notice === "" ? CALIL_TIME_DEPENDENT_NOTICE : result.notice,
-    });
     if (result.continuePending) {
       container.createDiv({
         cls: "seiton-book-calil-pending",
-        text: "カーリル側で検索が続いています。時間をおいて再照会してください。",
+        text: "一部の館は照会中です。少し待って再照会してください。",
       });
     }
 
@@ -759,10 +753,20 @@ export class BookDetailModal extends Modal {
       return;
     }
 
-    const summary = container.createDiv({ cls: "seiton-book-calil-summary" });
-    summary.createDiv({
+    const stateKind = calilBranchStateClass(best.state);
+    const summary = container.createDiv({
+      cls: `seiton-book-calil-summary is-${stateKind}`,
+    });
+    const summaryHead = summary.createDiv({
+      cls: "seiton-book-calil-summary-head",
+    });
+    summaryHead.createDiv({
       cls: "seiton-book-calil-summary-place",
-      text: `${best.formal || best.libkey}で${best.state}`,
+      text: best.formal || best.libkey || best.systemname,
+    });
+    summaryHead.createSpan({
+      cls: `seiton-book-calil-state-badge is-${stateKind}`,
+      text: best.state,
     });
     if (best.address !== "") {
       summary.createDiv({
@@ -770,12 +774,7 @@ export class BookDetailModal extends Modal {
         text: best.address,
       });
     }
-    const actions = summary.createDiv({ cls: "seiton-book-calil-actions" });
-    this.calilLink(actions, calilLibraryPageUrl(best), "カーリル");
-    this.calilLink(actions, calilMapUrl(best), "地図");
-    if (best.reserveUrl !== "") {
-      this.calilLink(actions, best.reserveUrl, "予約");
-    }
+    this.renderCalilActions(summary, best);
 
     const rest = result.branches.filter((branch) => branch !== best);
     if (rest.length > 0) {
@@ -793,25 +792,32 @@ export class BookDetailModal extends Modal {
   }
 
   private renderCalilBranch(parent: HTMLElement, branch: CalilBranch): void {
+    const stateKind = calilBranchStateClass(branch.state);
     const item = parent.createDiv({ cls: "seiton-book-calil-branch" });
     const head = item.createDiv({ cls: "seiton-book-calil-branch-head" });
+    const branchLabel =
+      branch.formal || branch.libkey || branch.systemname || branch.systemid;
     head.createSpan({
-      cls: "seiton-book-calil-system",
-      text: branch.systemname,
+      cls: "seiton-book-calil-library",
+      text: branchLabel,
     });
-    if (branch.configured) {
-      head.createSpan({
-        cls: "seiton-book-calil-configured",
-        text: "設定した図書館",
-      });
-    }
     head.createSpan({
-      cls: "seiton-book-calil-state",
-      text: branch.libkey ? `${branch.libkey}: ${branch.state}` : branch.state,
+      cls: `seiton-book-calil-state-badge is-${stateKind}`,
+      text: branch.state,
     });
 
-    if (branch.formal !== "" && branch.formal !== branch.libkey) {
-      item.createDiv({ cls: "seiton-book-calil-library", text: branch.formal });
+    const metaParts: string[] = [];
+    if (branch.systemname !== "" && branch.systemname !== branchLabel) {
+      metaParts.push(branch.systemname);
+    }
+    if (branch.configured) {
+      metaParts.push("設定した図書館");
+    }
+    if (metaParts.length > 0) {
+      item.createDiv({
+        cls: "seiton-book-calil-meta",
+        text: metaParts.join(" · "),
+      });
     }
     if (branch.address !== "") {
       item.createDiv({
@@ -819,11 +825,15 @@ export class BookDetailModal extends Modal {
         text: branch.address,
       });
     }
-    const actions = item.createDiv({ cls: "seiton-book-calil-actions" });
-    this.calilLink(actions, calilLibraryPageUrl(branch), "カーリル");
-    this.calilLink(actions, calilMapUrl(branch), "地図");
+    this.renderCalilActions(item, branch);
+  }
+
+  private renderCalilActions(parent: HTMLElement, branch: CalilBranch): void {
+    const actions = parent.createDiv({ cls: "seiton-book-calil-actions" });
+    this.calilLink(actions, calilLibraryPageUrl(branch), "カーリル ↗");
+    this.calilLink(actions, calilMapUrl(branch), "地図 ↗");
     if (branch.reserveUrl !== "") {
-      this.calilLink(actions, branch.reserveUrl, "予約");
+      this.calilLink(actions, branch.reserveUrl, "予約 ↗");
     }
   }
 
@@ -893,6 +903,34 @@ export class BookDetailModal extends Modal {
     );
     this.initialMemo = this.memo;
   }
+}
+
+function formatCalilTimestamp(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${date.getMonth() + 1}/${date.getDate()} ${hh}:${mm}`;
+}
+
+function calilBranchStateClass(
+  state: string
+): "available" | "held" | "lent" | "unavailable" {
+  if (state.includes("貸出可")) {
+    return "available";
+  }
+  if (state.includes("貸出中") || state.includes("予約")) {
+    return "lent";
+  }
+  if (
+    (state.includes("蔵書") && !state.includes("なし")) ||
+    state.includes("館内")
+  ) {
+    return "held";
+  }
+  return "unavailable";
 }
 
 // ---------------------------------------------------------------------------

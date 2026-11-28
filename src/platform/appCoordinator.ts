@@ -401,9 +401,9 @@ export class AppCoordinator {
   openAddBook(isbn = ""): void {
     new AddBookModal(this.app, this.books, {
       ...(isbn === "" ? {} : { initialIsbn: isbn }),
-      onCreated: (result) => {
+      onCreated: () => {
         this.indexService.invalidate();
-        void this.openFile(result.path);
+        void this.openBookshelf();
       },
     }).open();
   }
