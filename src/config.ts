@@ -13,7 +13,6 @@ export const ASSETS_FOLDER = `${SYSTEM_FOLDER}/Assets`;
 export const VIEWS_FOLDER = `${SYSTEM_FOLDER}/Views`;
 export const TEMPLATES_FOLDER = `${SYSTEM_FOLDER}/Templates`;
 export const ARCHIVE_FOLDER = `${SYSTEM_FOLDER}/Archive`;
-export const MIGRATION_FOLDER = `${SYSTEM_FOLDER}/Migration`;
 export const VIEW_TYPE_HOME = "seiton-next-home";
 export const VIEW_TYPE_TSUBUYAKI = "seiton-next-tsubuyaki";
 export const VIEW_TYPE_PROMPT = "seiton-next-prompt";

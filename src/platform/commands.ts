@@ -20,7 +20,6 @@ export interface SeitonCommandsHost {
   openLibrary: () => Promise<void>;
   openLinkList: () => Promise<void>;
   openMemoCapture: () => void;
-  openMigration: () => void;
   openNewNote: () => void;
   openProjects: () => Promise<void>;
   openPrompt: () => Promise<void>;
@@ -156,11 +155,6 @@ export function registerCommands(
     callback: () => void host.openCoverCacheForAll(),
     id: "manage-cover-cache",
     name: "表紙キャッシュを管理",
-  });
-  plugin.addCommand({
-    callback: () => host.openMigration(),
-    id: "migrate-legacy-preview",
-    name: "旧Seitonデータの移行（プレビュー）",
   });
   plugin.addCommand({
     callback: () => host.openActiveWebClipPreview(),

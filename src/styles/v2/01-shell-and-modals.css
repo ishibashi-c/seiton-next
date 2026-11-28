@@ -172,7 +172,6 @@
 .modal.seiton-calil-modal,
 .modal.seiton-cover-modal,
 .modal.seiton-scanner-modal,
-.modal.seiton-migration-modal,
 .modal.seiton-quick-search-modal,
 .st-select-pop.st-select-pop,
 .seiton-card-menu.seiton-card-menu,
@@ -210,7 +209,6 @@
 .modal.seiton-book-modal .mod-cta,
 .modal.seiton-scanner-modal .mod-cta,
 .modal.seiton-triage-modal .mod-cta,
-.modal.seiton-migration-modal .mod-cta,
 .modal.seiton-webclip-modal .mod-cta,
 .modal.seiton-webclip-capture-modal button.mod-cta,
 .modal.seiton-bulk-modal button.mod-cta,
@@ -503,8 +501,7 @@ button.seiton-quick-class-pill:active:not(:disabled) {
 .modal.seiton-bulk-modal,
 .modal.seiton-calil-modal,
 .modal.seiton-cover-modal,
-.modal.seiton-scanner-modal,
-.modal.seiton-migration-modal {
+.modal.seiton-scanner-modal {
   animation: st-modal-in var(--st-motion-modal) var(--st-ease-out);
 }
 
@@ -560,7 +557,6 @@ button.seiton-quick-class-pill:active:not(:disabled) {
   .modal.seiton-calil-modal,
   .modal.seiton-cover-modal,
   .modal.seiton-scanner-modal,
-  .modal.seiton-migration-modal,
   .st-select-pop.st-select-pop,
   .seiton-card-menu.seiton-card-menu,
   .seiton-calendar-popover {

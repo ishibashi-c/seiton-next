@@ -180,7 +180,7 @@ buttons and toasts.
 }.st-modal .seiton-modal-status.is-error{
   color: var(--text-error);
 }/* Section label,
-for the long forms in the book and migration modals. */
+for the long forms in the book modals. */
 
 .st-section.st-section{
   color: var(--st-muted);

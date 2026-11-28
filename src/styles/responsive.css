@@ -350,25 +350,8 @@
   .modal.seiton-capture-modal,
   .modal.seiton-edit-modal,
   .modal.seiton-promote-modal,
-  .modal.seiton-book-modal,
-  .modal.seiton-migration-modal {
+  .modal.seiton-book-modal {
     width: calc(100vw - 20px);
-  }
-
-  .seiton-migration-layout {
-    display: block;
-  }
-
-  .seiton-migration-list-panel {
-    border-right: 0;
-    max-height: 38vh;
-    padding-right: 0;
-  }
-
-  .seiton-migration-preview {
-    max-height: none;
-    padding-left: 0;
-    padding-top: 12px;
   }
 
   /* Toolbar quick pills horizontal scroll strips */

@@ -28,7 +28,6 @@ import { renderPlaceholderCover } from "./platform/coverPlaceholder";
 import { registerFormatting } from "./platform/formatting";
 import { SeitonHomeView } from "./platform/homeView";
 import { SeitonLibraryView } from "./platform/libraryView";
-import { createObsidianMigrationPort } from "./platform/migrationPort";
 import { ObsidianVaultPort } from "./platform/obsidianVaultPort";
 import { SeitonProjectsView } from "./platform/projectsView";
 import { PromptWorkbenchView } from "./platform/promptView";
@@ -42,7 +41,6 @@ import { CoverStore } from "./services/coverStore";
 import { ObsidianHttpClient } from "./services/http";
 import { LinkListService } from "./services/linkListService";
 import { MemoService } from "./services/memoService";
-import { MigrationService } from "./services/migrationService";
 import { NoteService } from "./services/noteService";
 import { PromptService } from "./services/promptService";
 import { PropertyService } from "./services/propertyService";
@@ -63,7 +61,6 @@ export default class SeitonNextPlugin extends Plugin {
   private webClips!: WebClipService;
   private books!: BookService;
   private assetService!: AssetService;
-  private migration!: MigrationService;
   private links!: LinkListService;
   private coordinator!: AppCoordinator;
 
@@ -100,10 +97,6 @@ export default class SeitonNextPlugin extends Plugin {
       properties: this.properties,
       renderPlaceholderCover,
     });
-    this.migration = new MigrationService({
-      logError,
-      port: createObsidianMigrationPort(this.app),
-    });
     this.links = new LinkListService(vault, LINKS_FILE);
     this.assetService = new AssetService(vault);
 
@@ -115,7 +108,6 @@ export default class SeitonNextPlugin extends Plugin {
       indexService: this.indexService,
       links: this.links,
       memoService: this.memoService,
-      migration: this.migration,
       notes: this.notes,
       properties: this.properties,
       saveSettings: (patch) => this.saveSettings(patch),
@@ -305,7 +297,6 @@ export default class SeitonNextPlugin extends Plugin {
       openLibrary: () => this.coordinator.openLibrary(),
       openLinkList: () => this.coordinator.openLinkList(),
       openMemoCapture: () => this.coordinator.openMemoCapture(),
-      openMigration: () => this.coordinator.openMigration(),
       openNewNote: () => this.coordinator.openNewNote(),
       openProjects: () => this.coordinator.openProjects(),
       openPrompt: () => this.coordinator.openPrompt(),

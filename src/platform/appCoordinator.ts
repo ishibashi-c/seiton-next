@@ -21,7 +21,6 @@ import type { BookService } from "../services/bookService";
 import type { CoverStore } from "../services/coverStore";
 import type { LinkListService } from "../services/linkListService";
 import type { MemoService } from "../services/memoService";
-import type { MigrationService } from "../services/migrationService";
 import type { NoteService } from "../services/noteService";
 import type { PropertyService } from "../services/propertyService";
 import type { SeitonSettings } from "../services/settings";
@@ -40,7 +39,6 @@ import { CoverCacheModal } from "./coverCacheModal";
 import { SeitonHomeView } from "./homeView";
 import { SeitonLibraryView } from "./libraryView";
 import { MemoCaptureModal } from "./memoCaptureModal";
-import { MigrationModal } from "./migrationModal";
 import { NewNoteModal } from "./newNoteModal";
 import { openMarkdownAtEnd } from "./openNote";
 import { SeitonProjectsView } from "./projectsView";
@@ -62,7 +60,6 @@ export interface AppCoordinatorContext {
   indexService: VaultIndexService;
   links: LinkListService;
   memoService: MemoService;
-  migration: MigrationService;
   notes: NoteService;
   properties: PropertyService;
   saveSettings: (patch: Partial<SeitonSettings>) => Promise<void>;
@@ -77,7 +74,6 @@ export class AppCoordinator {
   private readonly indexService: VaultIndexService;
   private readonly links: LinkListService;
   private readonly memoService: MemoService;
-  private readonly migration: MigrationService;
   private readonly notes: NoteService;
   private readonly properties: PropertyService;
   private readonly saveSettings: (
@@ -96,7 +92,6 @@ export class AppCoordinator {
     this.indexService = ctx.indexService;
     this.links = ctx.links;
     this.memoService = ctx.memoService;
-    this.migration = ctx.migration;
     this.notes = ctx.notes;
     this.properties = ctx.properties;
     this.saveSettings = ctx.saveSettings;
@@ -441,15 +436,6 @@ export class AppCoordinator {
     } catch (error) {
       showToast(error instanceof Error ? error.message : String(error));
     }
-  }
-
-  openMigration(): void {
-    new MigrationModal(this.app, this.migration, {
-      onConverted: () => {
-        this.indexService.invalidate();
-        showToast("移行結果を確認してください。元ファイルは変更していません。");
-      },
-    }).open();
   }
 
   openWebClipPreview(path: string, source: string): void {

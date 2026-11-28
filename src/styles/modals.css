@@ -55,7 +55,6 @@
 .modal.seiton-book-modal .mod-cta,
 .modal.seiton-scanner-modal .mod-cta,
 .modal.seiton-triage-modal .mod-cta,
-.modal.seiton-migration-modal .mod-cta,
 .modal.seiton-webclip-modal .mod-cta {
   background: var(--st-primary);
   border-radius: var(--st-radius-md);
