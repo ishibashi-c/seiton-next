@@ -1,10 +1,50 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyDetectedBarcodes,
   extractIsbnFromBarcode,
   formatCameraErrorMessage,
   formatScanErrorMessage,
+  isJapanesePriceBarcode,
   isScanCooldown,
 } from "../src/domain/barcode";
+
+describe("isJapanesePriceBarcode", () => {
+  it("192で始まる13桁コードを価格バーコードと判定する", () => {
+    expect(isJapanesePriceBarcode("1923055032009")).toBe(true);
+    expect(isJapanesePriceBarcode("192-3055-03200-9")).toBe(true);
+    expect(isJapanesePriceBarcode("9784274226298")).toBe(false);
+    expect(isJapanesePriceBarcode("19230550")).toBe(false);
+  });
+});
+
+describe("classifyDetectedBarcodes", () => {
+  it("192価格コードと同時に978ISBNが検出されてもISBNを抽出する", () => {
+    expect(
+      classifyDetectedBarcodes(["1923055032009", "9784274226298"])
+    ).toEqual({
+      isbn: "9784274226298",
+      sawPriceBarcode: false,
+    });
+  });
+
+  it("192価格コードのみ検出された場合はsawPriceBarcodeをtrueで返す", () => {
+    expect(classifyDetectedBarcodes(["1923055032009"])).toEqual({
+      isbn: null,
+      sawPriceBarcode: true,
+    });
+  });
+
+  it("空配列や無効コードのみの場合はどちらもfalse/nullを返す", () => {
+    expect(classifyDetectedBarcodes([])).toEqual({
+      isbn: null,
+      sawPriceBarcode: false,
+    });
+    expect(classifyDetectedBarcodes(["invalid", "1234567890123"])).toEqual({
+      isbn: null,
+      sawPriceBarcode: false,
+    });
+  });
+});
 
 describe("extractIsbnFromBarcode", () => {
   it("有効なISBN-13（978/979）を正常に抽出する", () => {

@@ -4,6 +4,39 @@
 
 import { isValidIsbn13, normalizeIsbn } from "./isbn";
 
+export interface BarcodeDetectionOutcome {
+  isbn: string | null;
+  sawPriceBarcode: boolean;
+}
+
+/**
+ * 日本の書籍の2段バーコードの下段（192で始まる価格・CコードJAN）かを判定する。
+ */
+export function isJapanesePriceBarcode(raw: string): boolean {
+  const normalized = normalizeIsbn(raw);
+  return /^192\d{10}$/.test(normalized);
+}
+
+/**
+ * 検出された複数バーコード文字列から有効なISBN-13を優先抽出する。
+ * 有効なISBNがなく下段の価格コード（192…）だけを検出した場合は sawPriceBarcode: true を返す。
+ */
+export function classifyDetectedBarcodes(
+  rawValues: readonly string[]
+): BarcodeDetectionOutcome {
+  let sawPriceBarcode = false;
+  for (const raw of rawValues) {
+    const isbn = extractIsbnFromBarcode(raw);
+    if (isbn) {
+      return { isbn, sawPriceBarcode: false };
+    }
+    if (isJapanesePriceBarcode(raw)) {
+      sawPriceBarcode = true;
+    }
+  }
+  return { isbn: null, sawPriceBarcode };
+}
+
 /**
  * バーコードから読み取った文字列から、有効なISBN-13を抽出する。
  * 日本の書籍の2段バーコードのうち、上段（978または979で始まるISBN）のみを受理し、
