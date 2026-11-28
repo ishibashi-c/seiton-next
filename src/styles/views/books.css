@@ -604,6 +604,14 @@
   max-width: 360px;
 }
 
+.seiton-scanner-fallback-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
 button.seiton-scanner-retry-btn {
   background: var(--st-ink-strong);
   border: 1px solid var(--st-ink-strong);

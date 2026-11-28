@@ -48,8 +48,6 @@ export interface ScannedBookItem {
 }
 
 export interface BarcodeScannerModalOptions {
-  /** Chrome Web スキャナー等から受け取った ISBN 群を初期キューに入れる */
-  initialIsbns?: string[];
   onSaved?: (count: number) => void;
   onScanSingle?: (isbn: string) => void;
   /** 1冊だけスキャンして即時完了するモード */
@@ -76,6 +74,7 @@ export class BarcodeScannerModal extends Modal {
   private fallbackMsgEl: HTMLElement | null = null;
   private fallbackRetryBtn: HTMLButtonElement | null = null;
   private fallbackChromeBtn: HTMLButtonElement | null = null;
+  private fallbackPasteBtn: HTMLButtonElement | null = null;
   private guideEl: HTMLElement | null = null;
   private torchBtn: HTMLButtonElement | null = null;
   private toggleCamBtn: HTMLButtonElement | null = null;
@@ -127,12 +126,6 @@ export class BarcodeScannerModal extends Modal {
     this.renderUI();
     this.registerGlobalPaste();
 
-    const initial = this.options.initialIsbns ?? [];
-    if (initial.length > 0) {
-      this.seedInitialIsbns(initial);
-      return;
-    }
-
     if (Platform.isAndroidApp) {
       this.showAndroidHandoff();
       return;
@@ -161,6 +154,7 @@ export class BarcodeScannerModal extends Modal {
     this.fallbackMsgEl = null;
     this.fallbackRetryBtn = null;
     this.fallbackChromeBtn = null;
+    this.fallbackPasteBtn = null;
     this.guideEl = null;
     this.torchBtn = null;
     this.toggleCamBtn = null;
@@ -287,7 +281,11 @@ export class BarcodeScannerModal extends Modal {
       text: "カメラを起動しています…",
     });
 
-    const chromeBtn = fallback.createEl("button", {
+    const fallbackActions = fallback.createDiv({
+      cls: "seiton-scanner-fallback-actions",
+    });
+
+    const chromeBtn = fallbackActions.createEl("button", {
       attr: { type: "button" },
       cls: "seiton-scanner-retry-btn",
       text: "Chromeでバーコードをスキャン",
@@ -299,12 +297,24 @@ export class BarcodeScannerModal extends Modal {
         this.app,
         this.options.single ? "single" : "batch"
       );
-      if (!this.options.single) {
-        this.close();
-      }
+      this.showStatus(
+        "Chromeでコピーしたら、この画面に戻って「クリップボードから取込」を押してください。",
+        "loading"
+      );
     });
 
-    const retryBtn = fallback.createEl("button", {
+    const fallbackPasteBtn = fallbackActions.createEl("button", {
+      attr: { type: "button" },
+      cls: "seiton-scanner-ctrl-btn",
+      text: "クリップボードから取込",
+    });
+    fallbackPasteBtn.hide();
+    this.fallbackPasteBtn = fallbackPasteBtn;
+    fallbackPasteBtn.addEventListener("click", () => {
+      void this.importFromClipboard();
+    });
+
+    const retryBtn = fallbackActions.createEl("button", {
       attr: { type: "button" },
       cls: "seiton-scanner-retry-btn",
       text: "カメラを再起動",
@@ -386,66 +396,16 @@ export class BarcodeScannerModal extends Modal {
 
   private showAndroidHandoff(): void {
     this.fallbackMsgEl?.setText(
-      "Android版Obsidianアプリはカメラ権限を持たないため、Chromeの高速スキャナーで読み取ってSeitonへ戻ります（画像は一切保存されません）。"
+      "Chromeでバーコードをスキャンしてコピーし、この画面に戻って「クリップボードから取込」を押してください（画像は保存されません）。"
     );
     this.fallbackRetryBtn?.hide();
     this.fallbackChromeBtn?.show();
+    this.fallbackPasteBtn?.show();
     this.fallbackEl?.show();
     this.showStatus(
-      "Chromeでスキャンするか、下のISBN手入力をご利用ください。",
+      "Chromeでスキャン＆コピー後、「クリップボードから取込」を押してください。",
       "loading"
     );
-  }
-
-  private seedInitialIsbns(rawList: readonly string[]): void {
-    let added = 0;
-    for (const raw of rawList) {
-      const isbn = extractIsbnFromBarcode(raw);
-      if (!isbn || this.items.some((item) => item.isbn === isbn)) {
-        continue;
-      }
-      const id = `scan_${Date.now()}_${added}_${Math.random()
-        .toString(36)
-        .slice(2, 6)}`;
-      this.items.push({
-        authors: "",
-        candidate: null,
-        coverUrl: "",
-        id,
-        isbn,
-        loading: true,
-        publisher: "",
-        title: "",
-      });
-      added += 1;
-    }
-
-    this.renderQueueItems();
-    for (const item of this.items) {
-      void this.lookupItem(item.id, item.isbn);
-    }
-
-    if (Platform.isAndroidApp) {
-      this.fallbackMsgEl?.setText(
-        `スキャンした ${added}冊 を取り込みました。内容を確認して「本棚に追加」を押してください。`
-      );
-      this.fallbackChromeBtn?.setText("Chromeで追加スキャン");
-      this.fallbackRetryBtn?.hide();
-      this.fallbackChromeBtn?.show();
-      this.fallbackEl?.show();
-    } else {
-      this.fallbackMsgEl?.setText(
-        `スキャンした ${added}冊 を取り込みました。内容を確認して「本棚に追加」を押してください。`
-      );
-      this.fallbackChromeBtn?.hide();
-      this.fallbackRetryBtn?.setText("カメラで追加スキャン");
-      this.fallbackRetryBtn?.show();
-      this.fallbackEl?.show();
-    }
-
-    if (added > 0) {
-      this.showStatus(`スキャンした ${added}冊 を書誌照会中…`, "loading");
-    }
   }
 
   private async startCamera(): Promise<void> {
@@ -589,6 +549,7 @@ export class BarcodeScannerModal extends Modal {
   private showCameraFallback(message: string): void {
     this.fallbackMsgEl?.setText(message);
     this.fallbackChromeBtn?.hide();
+    this.fallbackPasteBtn?.hide();
     this.fallbackRetryBtn?.setText("カメラを再起動");
     this.fallbackRetryBtn?.show();
     this.fallbackEl?.show();

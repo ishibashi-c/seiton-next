@@ -53,12 +53,12 @@
       .app {
         display: flex;
         flex-direction: column;
+        gap: 12px;
         margin: 0 auto;
         max-width: 540px;
         min-height: 100dvh;
         padding: max(12px, env(safe-area-inset-top)) 14px
           max(16px, env(safe-area-inset-bottom));
-        gap: 12px;
       }
 
       .head {
@@ -203,6 +203,11 @@
         width: 100%;
       }
 
+      .btn.is-primary:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
       .btn.is-active {
         background: var(--ink);
         border-color: var(--ink);
@@ -235,7 +240,7 @@
         border-radius: 4px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
         padding: 12px;
       }
 
@@ -247,6 +252,12 @@
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 16px;
         font-weight: 700;
+      }
+
+      .single-hint {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 0;
       }
 
       .queue {
@@ -330,7 +341,7 @@
         color: var(--muted);
         font-size: 11px;
         line-height: 1.45;
-        margin: 6px 0 0;
+        margin: 8px 0 0;
         text-align: center;
       }
     </style>
@@ -339,7 +350,7 @@
     <main class="app">
       <header class="head">
         <h1 class="head-title">Seiton バーコードスキャン</h1>
-        <span id="mode-badge" class="head-badge">連続</span>
+        <span id="mode-badge" class="head-badge">連続スキャン</span>
       </header>
 
       <section class="stage">
@@ -361,7 +372,6 @@
       <div class="controls">
         <button id="torch-btn" class="btn" type="button" hidden>ライト</button>
         <button id="pause-btn" class="btn" type="button">一時停止</button>
-        <button id="copy-btn" class="btn" type="button" hidden>ISBNをコピー</button>
       </div>
 
       <div id="status" class="status" aria-live="polite">
@@ -370,9 +380,10 @@
 
       <section id="single-return" class="single-return" hidden>
         <div>読み取った ISBN: <span id="single-isbn" class="single-isbn"></span></div>
-        <a id="single-open-link" class="btn is-primary" href="#">
-          Obsidian で開く
-        </a>
+        <button id="single-copy-btn" class="btn is-primary" type="button">
+          ISBN をコピー
+        </button>
+        <p class="single-hint">コピー後、Obsidian に戻って貼り付けてください</p>
       </section>
 
       <form id="manual-form" class="manual">
@@ -395,15 +406,15 @@
       </section>
 
       <footer class="foot">
-        <a
-          id="send-btn"
+        <button
+          id="batch-copy-btn"
           class="btn is-primary"
-          href="#"
+          type="button"
           hidden
-          aria-disabled="true"
+          disabled
         >
-          Obsidian に送る (0冊)
-        </a>
+          ISBN をコピー (0冊)
+        </button>
         <p class="privacy">
           端末内で解析し、カメラ画像は一切保存されません（完全無料）
         </p>
@@ -423,22 +434,21 @@
         const retryBtn = document.getElementById("retry-btn");
         const torchBtn = document.getElementById("torch-btn");
         const pauseBtn = document.getElementById("pause-btn");
-        const copyBtn = document.getElementById("copy-btn");
         const statusEl = document.getElementById("status");
         const singleReturn = document.getElementById("single-return");
         const singleIsbnEl = document.getElementById("single-isbn");
-        const singleOpenLink = document.getElementById("single-open-link");
+        const singleCopyBtn = document.getElementById("single-copy-btn");
         const manualForm = document.getElementById("manual-form");
         const manualInput = document.getElementById("manual-input");
         const queueSection = document.getElementById("queue-section");
         const queueCount = document.getElementById("queue-count");
         const queueList = document.getElementById("queue-list");
-        const sendBtn = document.getElementById("send-btn");
+        const batchCopyBtn = document.getElementById("batch-copy-btn");
 
         modeBadge.textContent = mode === "single" ? "1冊スキャン" : "連続スキャン";
         if (mode === "batch") {
           queueSection.hidden = false;
-          sendBtn.hidden = false;
+          batchCopyBtn.hidden = false;
         }
 
         let stream = null;
@@ -450,6 +460,7 @@
         let lastIsbn = null;
         let lastScanAt = 0;
         let lastPriceHintAt = 0;
+        let singleIsbn = "";
         const scanned = [];
 
         function normalizeDigits(raw) {
@@ -516,31 +527,28 @@
           statusEl.textContent = text;
         }
 
-        function buildObsidianUri(pairs) {
-          const qs = Object.entries(pairs)
-            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-            .join("&");
-          return `obsidian://seiton-next?${qs}`;
-        }
-
-        function currentIsbnPayload() {
-          if (mode === "single") {
-            return (singleIsbnEl.textContent || "").trim();
-          }
-          return scanned.join("\n");
-        }
-
-        async function copyIsbnsToClipboard(notify = false) {
-          const payload = currentIsbnPayload();
-          if (!payload || !navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
-            return;
+        async function copyText(text) {
+          if (!text) return false;
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            try {
+              await navigator.clipboard.writeText(text);
+              return true;
+            } catch {}
           }
           try {
-            await navigator.clipboard.writeText(payload);
-            if (notify) {
-              setStatus("ISBN をクリップボードにコピーしました", "success");
-            }
-          } catch {}
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.setAttribute("readonly", "");
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            const ok = document.execCommand("copy");
+            document.body.removeChild(ta);
+            return ok;
+          } catch {
+            return false;
+          }
         }
 
         function updateBatchUI() {
@@ -568,25 +576,11 @@
             queueList.append(row);
           }
 
-          copyBtn.hidden = scanned.length === 0;
-          sendBtn.textContent = `Obsidian に送る (${scanned.length}冊)`;
-          if (scanned.length === 0) {
-            sendBtn.href = "#";
-            sendBtn.setAttribute("aria-disabled", "true");
-            sendBtn.style.opacity = "0.45";
-            sendBtn.style.pointerEvents = "none";
-          } else {
-            sendBtn.href =
-              scanned.length === 1
-                ? buildObsidianUri({ action: "book", isbn: scanned[0] })
-                : buildObsidianUri({ action: "books", isbns: scanned.join(",") });
-            sendBtn.removeAttribute("aria-disabled");
-            sendBtn.style.opacity = "1";
-            sendBtn.style.pointerEvents = "auto";
-          }
+          batchCopyBtn.textContent = `ISBN をコピー (${scanned.length}冊)`;
+          batchCopyBtn.disabled = scanned.length === 0;
         }
 
-        function onDetectedIsbn(isbn) {
+        async function onDetectedIsbn(isbn) {
           const now = Date.now();
           if (lastIsbn === isbn && now - lastScanAt < 2000) return;
           lastIsbn = isbn;
@@ -599,14 +593,16 @@
             playBeep();
             vibrate();
             stopCamera();
-            const uri = buildObsidianUri({ action: "book", isbn });
+            singleIsbn = isbn;
             singleIsbnEl.textContent = isbn;
-            singleOpenLink.href = uri;
             singleReturn.hidden = false;
-            copyBtn.hidden = false;
-            void copyIsbnsToClipboard(false);
-            setStatus(`ISBN: ${isbn} を読み取りました。Obsidian に移動します…`, "success");
-            window.location.href = uri;
+            const copied = await copyText(isbn);
+            setStatus(
+              copied
+                ? `ISBN: ${isbn} をコピーしました。Obsidian に戻って貼り付けてください。`
+                : `ISBN: ${isbn} を読み取りました。「ISBN をコピー」を押してください。`,
+              "success"
+            );
             return;
           }
 
@@ -685,7 +681,7 @@
             const values = barcodes.map((b) => b.rawValue || "").filter(Boolean);
             const { isbn, sawPrice } = classifyValues(values);
             if (isbn) {
-              onDetectedIsbn(isbn);
+              await onDetectedIsbn(isbn);
             } else if (sawPrice) {
               const now = Date.now();
               if (now - lastPriceHintAt > 1800) {
@@ -795,16 +791,25 @@
           void startCamera();
         });
 
-        copyBtn.addEventListener("click", () => {
-          void copyIsbnsToClipboard(true);
+        singleCopyBtn.addEventListener("click", async () => {
+          const ok = await copyText(singleIsbn);
+          setStatus(
+            ok
+              ? "ISBN をコピーしました。Obsidian に戻って貼り付けてください。"
+              : "コピーに失敗しました。表示された ISBN を選択してコピーしてください。",
+            ok ? "success" : "error"
+          );
         });
 
-        sendBtn.addEventListener("click", () => {
-          void copyIsbnsToClipboard(false);
-        });
-
-        singleOpenLink.addEventListener("click", () => {
-          void copyIsbnsToClipboard(false);
+        batchCopyBtn.addEventListener("click", async () => {
+          if (scanned.length === 0) return;
+          const ok = await copyText(scanned.join("\n"));
+          setStatus(
+            ok
+              ? `${scanned.length}冊の ISBN をコピーしました。Obsidian に戻って「クリップボードから取込」を押してください。`
+              : "コピーに失敗しました。リストから手動でコピーしてください。",
+            ok ? "success" : "error"
+          );
         });
 
         manualForm.addEventListener("submit", (e) => {
@@ -815,7 +820,7 @@
             return;
           }
           manualInput.value = "";
-          onDetectedIsbn(digits);
+          void onDetectedIsbn(digits);
         });
 
         window.addEventListener("pagehide", stopCamera);

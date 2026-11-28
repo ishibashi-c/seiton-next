@@ -92,7 +92,9 @@ export class AddBookModal extends Modal {
         .onClick(() => {
           if (Platform.isAndroidApp) {
             openBrowserBarcodeScanner(this.app, "single");
-            this.close();
+            this.setStatus(
+              "Chromeでスキャン＆コピー後、この画面に戻ってISBN欄に貼り付けてください。"
+            );
             return;
           }
           new BarcodeScannerModal(this.app, this.bookService, {

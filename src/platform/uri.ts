@@ -1,6 +1,5 @@
 import { type App, TFile } from "obsidian";
 import { VIEW_TYPE_LIBRARY } from "../config";
-import { extractIsbnFromBarcode } from "../domain/barcode";
 import {
   buildNoteDocument,
   buildTemplateBody,
@@ -22,7 +21,6 @@ export interface SeitonUriHost {
   memoService: MemoService;
   openAddBook: (isbn: string) => void;
   openAssets: () => Promise<void>;
-  openBarcodeScannerWithIsbns: (isbns: string[]) => void;
   openBookDetail: (record: NoteRecord) => void;
   openBookshelf: () => Promise<void>;
   openHome: () => Promise<void>;
@@ -184,24 +182,6 @@ export async function handleSeitonUri(
         void host.app.workspace.openLinkText(createdPath, "", false);
       }
     ).open();
-    return;
-  }
-
-  if (action === "books" || (action === "book" && params.isbns)) {
-    const rawList = (params.isbns ?? "")
-      .split(/[,\s]+/u)
-      .map((item) => extractIsbnFromBarcode(item))
-      .filter((item): item is string => item !== null);
-    const uniqueIsbns = [...new Set(rawList)];
-    if (uniqueIsbns.length === 0) {
-      showToast("有効な isbn がありません。");
-      return;
-    }
-    if (uniqueIsbns.length === 1 && action === "book") {
-      host.openAddBook(uniqueIsbns[0] ?? "");
-      return;
-    }
-    host.openBarcodeScannerWithIsbns(uniqueIsbns);
     return;
   }
 
