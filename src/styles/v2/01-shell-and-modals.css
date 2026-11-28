@@ -595,24 +595,21 @@ button.seiton-quick-class-pill:active:not(:disabled) {
 }
 
 @media (max-width: 760px) {
-  .modal.seiton-book-modal .setting-item.seiton-book-field,
-  .modal.seiton-book-detail-modal .setting-item {
+  .st-modal .st-field.is-inline:not(:has(.st-switch)) {
     align-items: stretch;
     flex-direction: column;
     gap: 8px;
   }
 
-  .modal.seiton-book-modal .setting-item.seiton-book-field .setting-item-info,
-  .modal.seiton-book-detail-modal .setting-item .setting-item-info {
-    flex: none;
-    margin-right: 0;
+  .st-modal .st-field.is-inline:not(:has(.st-switch)) .st-field-head {
     padding-right: 0;
     width: 100%;
   }
 
-  .modal.seiton-book-modal .setting-item.seiton-book-field .setting-item-control,
-  .modal.seiton-book-detail-modal .setting-item .setting-item-control {
+  .st-modal .st-field.is-inline:not(:has(.st-switch)) .st-field-control {
+    align-items: center;
     flex: none;
+    flex-direction: row;
     flex-wrap: wrap;
     gap: 8px;
     justify-content: flex-start;
@@ -620,16 +617,7 @@ button.seiton-quick-class-pill:active:not(:disabled) {
     width: 100%;
   }
 
-  .modal.seiton-book-modal .setting-item.seiton-book-field .setting-item-control input[type="text"],
-  .modal.seiton-book-modal .setting-item.seiton-book-field .setting-item-control select,
-  .modal.seiton-book-detail-modal .setting-item .setting-item-control input[type="text"],
-  .modal.seiton-book-detail-modal .setting-item .setting-item-control select {
-    flex: 1 1 200px;
-    min-width: 0;
-    width: 100%;
-  }
-
-  .modal.seiton-book-modal .setting-item.seiton-book-field .setting-item-control input.seiton-book-isbn {
+  .st-modal .st-field.is-inline .st-field-control > .st-input.seiton-book-isbn {
     flex: 1 1 100%;
   }
 }

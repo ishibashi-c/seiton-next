@@ -292,7 +292,7 @@ button.seiton-composer-tag-pill {
 
 button.seiton-composer-tag-pill:hover {
   background: var(--background-modifier-hover) !important;
-  border-color: var(--st-border-hover) !important;
+  border-color: var(--background-modifier-border-hover) !important;
   color: var(--st-ink) !important;
 }
 
@@ -321,7 +321,7 @@ button.seiton-weekly-digest-button {
 button.seiton-bulk-promote-button:hover,
 button.seiton-weekly-digest-button:hover {
   background: var(--background-modifier-hover) !important;
-  border-color: var(--st-border-hover) !important;
+  border-color: var(--background-modifier-border-hover) !important;
 }
 
 .seiton-bulk-promote-icon,

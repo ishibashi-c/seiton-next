@@ -165,6 +165,27 @@ buttons and toasts.
   flex: none;
 }.st-field.is-inline .st-field-head{
   padding-right: 16px;
+}.st-field.is-inline:has(.st-input, .st-textarea){
+  align-items: stretch;
+  flex-direction: column;
+  gap: 8px;
+}.st-field.is-inline:has(.st-input, .st-textarea) .st-field-head{
+  padding-right: 0;
+  width: 100%;
+}.st-field.is-inline:has(.st-input, .st-textarea) .st-field-control{
+  align-items: center;
+  flex: none;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  min-width: 0;
+  width: 100%;
+}.st-field.is-inline:has(.st-input, .st-textarea) .st-field-control > .st-input,
+.st-field.is-inline:has(.st-input, .st-textarea) .st-field-control > .st-textarea{
+  flex: 1 1 180px;
+  min-width: 0;
+  width: auto;
 }/* Footer built by the old markup still gets the new buttons. */
 
 .st-modal .seiton-modal-footer{
@@ -743,9 +764,9 @@ body.is-mobile .seiton-prompt-root .st-btn {
 body.is-mobile .st-modal .st-btn.is-primary,
 body.is-mobile .seiton-home .st-btn.is-primary,
 body.is-mobile .seiton-prompt-root .st-btn.is-primary {
-  background: var(--st-accent) !important;
-  border-color: var(--st-accent) !important;
-  color: var(--st-on-accent) !important;
+  background: var(--st-ink-strong) !important;
+  border-color: var(--st-ink-strong) !important;
+  color: var(--st-paper) !important;
 }
 
 body.is-mobile .st-modal .st-btn.is-secondary,

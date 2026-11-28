@@ -222,7 +222,7 @@
 }
 
 .seiton-home button.seiton-active-filter:hover {
-  background: var(--st-surface);
+  background: var(--background-secondary);
 }
 
 .seiton-active-filter-remove {
